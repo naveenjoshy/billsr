@@ -1,308 +1,115 @@
-# HireD – Entity Relationship Diagram
+# Entity-Relationship (ER) Diagram
+## Daily Collection Management System v6.0
 
-## PostgreSQL Database ER Diagram
-
-The following ER diagram represents the database structure documented in `database.md`.
+This diagram represents the relational database structure, foreign key mappings, and cardinalities for the system as defined in PRD v6.0.
 
 ```mermaid
 erDiagram
+    %% Core Relationships
+    tbl_mt_banks ||--o{ tbl_mt_agents : "employs"
+    tbl_mt_banks ||--o{ tbl_mt_schemes : "offers"
+    tbl_mt_banks ||--o{ tbl_mt_customer : "governs"
+    tbl_mt_banks ||--o{ tbl_cf_receiptconfig : "owns"
+    
+    tbl_mt_agents ||--o{ tbl_mt_customer : "onboards"
+    tbl_mt_agents ||--o{ tbl_tt_transact : "collects/processes"
+    
+    tbl_mt_customer ||--o{ tbl_mt_customerscheme : "enrolls in"
+    tbl_mt_customer ||--o{ tbl_tt_transact : "performs"
+    
+    tbl_mt_schemes ||--o{ tbl_mt_customerscheme : "includes"
+    tbl_mt_schemes ||--o{ tbl_cf_receiptconfig : "has layout"
+    tbl_mt_schemes ||--o{ tbl_tt_transact : "categorizes"
 
-    USERS {
-        uuid id PK
-        uuid company_id FK
-        varchar email UK
-        text password_hash
-        varchar role
-        varchar first_name
-        varchar last_name
-        varchar phone
-        boolean is_active
-        timestamptz created_at
-        timestamptz updated_at
+    %% Table Definitions
+
+    tbl_sys_developers {
+        UUID developer_id PK
+        VARCHAR(100) email
+        VARCHAR(255) password_hash
+        VARCHAR(50) role
+        TIMESTAMP created_at
     }
 
-    COMPANIES {
-        uuid id PK
-        varchar name UK
-        varchar contact_person
-        varchar contact_email
-        varchar contact_phone
-        text address_line_1
-        text address_line_2
-        varchar city
-        varchar state
-        varchar postal_code
-        varchar country
-        boolean is_active
-        timestamptz created_at
-        timestamptz updated_at
+    tbl_sys_audit_trail {
+        UUID audit_id PK
+        VARCHAR(100) table_name
+        VARCHAR(100) record_id
+        TEXT description
+        VARCHAR(100) changed_field
+        TEXT previous_value
+        TEXT new_value
+        TIMESTAMP updated_date
+        UUID updated_by
     }
 
-    COMPANY_PAYOUT_RATES {
-        uuid id PK
-        uuid company_id FK
-        numeric driver_percentage
-        numeric company_percentage
-        timestamptz effective_from
-        timestamptz effective_until
-        uuid created_by FK
-        timestamptz created_at
+    tbl_mt_banks {
+        UUID bank_id PK
+        VARCHAR(150) bank_name
+        TEXT address
+        VARCHAR(100) email
+        VARCHAR(15) phone
+        VARCHAR(255) password_hash
+        VARCHAR(100) name_ceo
+        DATE license_expiery
+        DATE grace_period_end
+        VARCHAR(20) account_status
     }
 
-    DRIVERS {
-        uuid id PK
-        uuid user_id FK
-        varchar driver_code UK
-        date date_of_birth
-        text address
-        varchar emergency_contact_name
-        varchar emergency_contact_phone
-        text selfie_url
-        varchar status
-        boolean is_online
-        timestamptz activated_at
-        timestamptz created_at
-        timestamptz updated_at
+    tbl_mt_agents {
+        UUID agent_id PK
+        UUID bank_id FK
+        VARCHAR(100) name
+        VARCHAR(15) phone_no
+        VARCHAR(100) agent_id_number
+        DECIMAL(10_2) cah_holding_limit
+        INT cash_holding_days
     }
 
-    DRIVER_DOCUMENTS {
-        uuid id PK
-        uuid driver_id FK
-        varchar document_type
-        varchar document_number
-        text file_url
-        varchar mime_type
-        bigint file_size
-        boolean is_current
-        timestamptz uploaded_at
+    tbl_mt_schemes {
+        UUID scheme_id PK
+        UUID bank_id FK
+        VARCHAR(100) scheme_name
+        CHAR(1) status
+        CHAR(1) permitted_operation
     }
 
-    DRIVER_AVAILABILITY {
-        uuid id PK
-        uuid driver_id FK
-        date availability_date
-        boolean is_available
-        timestamptz created_at
-        timestamptz updated_at
+    tbl_mt_customer {
+        INT customer_id PK
+        UUID agent_id FK
+        UUID bank_id FK
+        VARCHAR(50) type
+        VARCHAR(100) name
+        DECIMAL(10_8) shop_lat
+        DECIMAL(11_8) shop_long
     }
 
-    ORDERS {
-        uuid id PK
-        varchar order_number UK
-        uuid company_id FK
-        uuid created_by_user_id FK
-        varchar source
-        text pickup_location
-        numeric pickup_latitude
-        numeric pickup_longitude
-        text drop_location
-        numeric drop_latitude
-        numeric drop_longitude
-        timestamptz scheduled_at
-        varchar vehicle_type
-        text service_notes
-        varchar contact_name
-        varchar contact_phone
-        varchar status
-        timestamptz created_at
-        timestamptz updated_at
+    tbl_mt_customerscheme {
+        INT _id PK
+        INT customer_id FK
+        UUID scheme_id FK
+        DECIMAL(10_2) schem_opening_amount
+        DECIMAL(10_2) monthly_target
+        CHAR(1) remittance_periodicity
     }
 
-    TRIPS {
-        uuid id PK
-        varchar trip_number UK
-        uuid order_id FK
-        uuid driver_id FK
-        numeric trip_amount
-        integer estimated_duration_minutes
-        numeric estimated_distance_km
-        varchar eta_source
-        integer eta_override_minutes
-        varchar status
-        boolean selfie_required
-        timestamptz started_at
-        timestamptz closed_at
-        timestamptz created_at
-        timestamptz updated_at
+    tbl_cf_receiptconfig {
+        UUID receipt_id PK
+        UUID bank_id FK
+        UUID scheme_id FK
+        JSON fields
     }
 
-    TRIP_ASSIGNMENTS {
-        uuid id PK
-        uuid trip_id FK
-        uuid driver_id FK
-        uuid assigned_by FK
-        timestamptz assigned_at
-        timestamptz unassigned_at
-        boolean is_current
+    tbl_tt_transact {
+        UUID transact_id PK
+        VARCHAR(50) receipt_no
+        INT customer_id FK
+        UUID agent_id FK
+        UUID scheme_id FK
+        DECIMAL(10_2) transact_amt
+        CHAR(1) transact_type
+        CHAR(1) transaction_status
+        CHAR(1) transact_mode
+        DECIMAL(10_2) new_balance
     }
-
-    TRIP_SELFIES {
-        uuid id PK
-        uuid trip_id FK
-        uuid driver_id FK
-        text file_url
-        timestamptz captured_at
-    }
-
-    TRIP_EXPENSES {
-        uuid id PK
-        uuid trip_id FK
-        uuid driver_id FK
-        numeric amount
-        text description
-        varchar expense_type
-        timestamptz created_at
-    }
-
-    TRIP_OTPS {
-        uuid id PK
-        uuid trip_id FK
-        text otp_hash
-        timestamptz generated_at
-        timestamptz expires_at
-        timestamptz verified_at
-        integer attempts
-        boolean is_verified
-    }
-
-    TRIP_PAYROLL_RECORDS {
-        uuid id PK
-        uuid trip_id FK
-        uuid company_id FK
-        uuid driver_id FK
-        numeric trip_amount
-        numeric driver_percentage
-        numeric company_percentage
-        numeric driver_share
-        numeric company_share
-        numeric total_amount
-        varchar payment_status
-        varchar payout_status
-        uuid wallet_transaction_id FK
-        timestamptz calculated_at
-    }
-
-    DRIVER_WALLETS {
-        uuid id PK
-        uuid driver_id FK
-        numeric balance
-        timestamptz created_at
-        timestamptz updated_at
-    }
-
-    WALLET_TRANSACTIONS {
-        uuid id PK
-        uuid wallet_id FK
-        uuid driver_id FK
-        uuid trip_id FK
-        varchar transaction_type
-        numeric amount
-        numeric balance_before
-        numeric balance_after
-        varchar reference
-        timestamptz created_at
-    }
-
-    STATEMENTS {
-        uuid id PK
-        varchar statement_number UK
-        uuid company_id FK
-        date period_start
-        date period_end
-        numeric total_trip_amount
-        numeric total_driver_share
-        numeric total_company_share
-        varchar status
-        uuid created_by FK
-        timestamptz created_at
-        timestamptz verified_at
-        timestamptz published_at
-    }
-
-    STATEMENT_ITEMS {
-        uuid id PK
-        uuid statement_id FK
-        uuid trip_id FK
-        numeric trip_amount
-        numeric driver_percentage
-        numeric company_percentage
-        numeric driver_share
-        numeric company_share
-    }
-
-    STATEMENT_VERIFICATIONS {
-        uuid id PK
-        uuid statement_id FK
-        uuid admin_id FK
-        varchar verification_type
-        timestamptz verified_at
-    }
-
-    NOTIFICATIONS {
-        uuid id PK
-        uuid user_id FK
-        varchar notification_type
-        varchar title
-        text message
-        varchar related_entity_type
-        uuid related_entity_id
-        varchar channel
-        varchar status
-        timestamptz sent_at
-        timestamptz created_at
-    }
-
-    AUDIT_LOGS {
-        uuid id PK
-        uuid actor_user_id FK
-        varchar action
-        varchar entity_type
-        uuid entity_id
-        jsonb previous_value
-        jsonb new_value
-        inet ip_address
-        timestamptz created_at
-    }
-
-    COMPANIES ||--o{ USERS : has
-    COMPANIES ||--o{ COMPANY_PAYOUT_RATES : has
-    USERS ||--o| DRIVERS : owns
-
-    DRIVERS ||--o{ DRIVER_DOCUMENTS : has
-    DRIVERS ||--o{ DRIVER_AVAILABILITY : has
-
-    COMPANIES ||--o{ ORDERS : receives
-    USERS ||--o{ ORDERS : creates
-    ORDERS ||--o| TRIPS : becomes
-
-    TRIPS ||--o{ TRIP_ASSIGNMENTS : has
-    DRIVERS ||--o{ TRIP_ASSIGNMENTS : receives
-    TRIPS ||--o{ TRIP_SELFIES : has
-    DRIVERS ||--o{ TRIP_SELFIES : uploads
-    TRIPS ||--o{ TRIP_EXPENSES : contains
-    DRIVERS ||--o{ TRIP_EXPENSES : records
-    TRIPS ||--o| TRIP_OTPS : uses
-
-    TRIPS ||--o| TRIP_PAYROLL_RECORDS : generates
-    COMPANIES ||--o{ TRIP_PAYROLL_RECORDS : funds
-    DRIVERS ||--o{ TRIP_PAYROLL_RECORDS : earns
-
-    DRIVERS ||--|| DRIVER_WALLETS : owns
-    DRIVER_WALLETS ||--o{ WALLET_TRANSACTIONS : contains
-    TRIPS ||--o| WALLET_TRANSACTIONS : creates
-
-    COMPANIES ||--o{ STATEMENTS : receives
-    STATEMENTS ||--o{ STATEMENT_ITEMS : contains
-    TRIPS ||--o{ STATEMENT_ITEMS : included_in
-    STATEMENTS ||--o{ STATEMENT_VERIFICATIONS : requires
-    USERS ||--o{ STATEMENT_VERIFICATIONS : performs
-
-    USERS ||--o{ NOTIFICATIONS : receives
-    USERS ||--o{ AUDIT_LOGS : creates
 ```
-
-## Core workflow
-
-`Company → Order → Trip → Assignment → Expenses/OTP → Payroll → Wallet → Statement → Verification`
-
-The diagram intentionally does not model a direct Company → Driver ownership relationship. Drivers are associated with trips/assignments, while payout rates are company-level.

@@ -1,110 +1,99 @@
 # Technical Requirements Document (TRD)
-## Daily Collection Management System v3.0
+## Daily Collection Management System (v1.0 based on PRD v6.0)
+
+### 1. Introduction
+#### 1.1 Purpose
+This Technical Requirements Document (TRD) outlines the architectural, structural, and technical specifications required to build the Daily Collection Management System. This document serves as the technical blueprint for developers, DevOps, and QA teams, translating the features from PRD v6.0 into implementable technical guidelines.
+
+#### 1.2 System Overview
+The system is a centralized financial platform that bridges Super Admins (Developers), Bank Admins, Field Collection Agents, and End Customers. It facilitates secure, offline-capable field collections, dual-directional transactions (deposits/withdrawals), strict agent risk management, dynamic thermal printing, and comprehensive audit tracking.
 
 ---
 
-## 1. Introduction
-
-### 1.1 Purpose
-This document outlines the technical architecture, technology stack, and engineering requirements for building the Daily Collection Management System v3.0. It serves as a blueprint for the development team to ensure the system is scalable, secure, and meets the business objectives defined in the PRD.
-
-### 1.2 Scope
-The system comprises three primary interfaces:
-1.  **Web Admin Portal:** A React-based dashboard for Bank Administrators.
-2.  **Mobile Agent Application:** A React Native mobile application for Field Collection Agents.
-3.  **Backend API & Database:** A Node.js/Express REST API communicating with a MongoDB database, serving both the web and mobile interfaces.
+### 2. System Architecture
+The application will follow a multi-tier Client-Server architecture:
+*   **Presentation Layer (Client):** 
+    *   **Web Portal:** Responsive Single Page Application (SPA) for Super Admins and Bank Admins.
+    *   **Mobile Application:** Cross-platform mobile app for Collection Agents optimized for low-latency and offline balance verification.
+*   **Application Layer (Backend API):** RESTful / GraphQL API handling business logic, transaction validation, role-based routing, and thermal printer payload generation.
+*   **Data Layer (Database):** NoSQL document-based database optimized for high-volume ledger entries and complex hierarchical data (MongoDB).
 
 ---
 
-## 2. Technology Stack (MERN+)
-
-| Component | Technology | Rationale |
-| :--- | :--- | :--- |
-| **Database** | MongoDB (Atlas) | Flexible schema design, robust geospatial querying (GeoJSON) for shop locations, and high scalability for transaction volume. |
-| **Backend Framework** | Node.js with Express.js | Lightweight, non-blocking I/O ideal for handling numerous concurrent API requests from field agents. |
-| **Web Frontend** | React.js (Vite) | Component-based architecture for building a responsive, state-managed Admin dashboard. |
-| **Mobile Frontend** | React Native (Expo/Bare) | Cross-platform (iOS/Android) development using a single JavaScript codebase, crucial for agent device diversity. |
-| **State Management**| Redux Toolkit or Zustand | Predictable state container for managing complex UI states (e.g., transaction workflows, auth). |
-| **Authentication** | JWT (JSON Web Tokens) | Stateless, scalable authentication mechanism for securing APIs. |
-| **Styling (Web)** | Tailwind CSS | Utility-first CSS framework for rapid UI development and consistent design system implementation. |
-| **Styling (Mobile)**| StyleSheet / NativeWind | Performant styling for React Native components. |
+### 3. Proposed Technology Stack
+*   **Backend Framework:** Node.js with Express (or NestJS) / Python (FastAPI).
+*   **Database:** MongoDB (Atlas or self-hosted) for document-oriented flexibility and horizontal scaling.
+*   **Frontend Web (Admin Portal):** React.js or Vue.js with TailwindCSS.
+*   **Frontend Mobile (Agent App):** Flutter or React Native (crucial for native Bluetooth thermal printer integrations).
+*   **Authentication:** JSON Web Tokens (JWT) with bcrypt for password hashing.
+*   **Infrastructure & Hosting:** AWS (EC2, S3 for KYC image storage, CloudWatch for logs) or Google Cloud Platform. Dockerized containers for microservices.
+*   **Printing:** Bluetooth ESC/POS protocol handling via mobile native modules.
 
 ---
 
-## 3. System Architecture
+### 4. Database Architecture & Schema implementation
+The system utilizes a NoSQL schema optimized for read-heavy operations on customer data and write-heavy operations on transactions and audit logs.
 
-The system follows a standard Client-Server architecture utilizing a RESTful API.
+**Core Collections (referencing PRD v6.0 JSON Design):**
+1.  **`developers`**: Super Admin credentials and roles.
+2.  **`banks`**: Financial institution profiles, compliance statuses, and software license tracking.
+3.  **`agents`**: Field operative data, KYC links, and cash-in-hand thresholds.
+4.  **`schemes`**: Financial products (MBS, Loans) and JSON-based receipt layouts.
+5.  **`customers`**: End-user KYC, Geo-location (GeoJSON), and demographics.
+6.  **`customer_schemes`**: Linkage bridging customers to multiple active schemes.
+7.  **`transactions`**: Immutable ledger for deposits, withdrawals, and cancellations.
+8.  **`audit_logs`**: System-wide state change tracking for compliance.
 
-### 3.1 High-Level Architecture Diagram
-*(Conceptual)*
-*   **Clients:** Web Browser (Admin), Mobile App (Agent) -> communicate via HTTPS -> **API Gateway / Load Balancer** -> **Node.js/Express Backend** -> communicates via Mongoose -> **MongoDB Database**.
-
-### 3.2 Mobile App (Agent) Specifics
-*   **Offline Capability:** Requires local storage (e.g., AsyncStorage or SQLite) to queue transactions if the network drops, syncing when reconnected. *Note: As per PRD, withdrawals require strict online balance verification, so offline withdrawals may need specific business logic handling (e.g., disabled or highly restricted).*
-*   **Hardware Integration:**
-    *   **Camera:** For capturing customer shop verification photos.
-    *   **GPS:** To capture exact Lat/Long coordinates during onboarding.
-    *   **Bluetooth:** To communicate with external thermal printers for dynamic receipt generation.
-
----
-
-## 4. Backend Architecture & API Design
-
-### 4.1 RESTful API Principles
-*   Base URL: `/api/v1/`
-*   Use standard HTTP methods (`GET`, `POST`, `PUT`, `DELETE`).
-*   Return standard HTTP status codes (200, 201, 400, 401, 403, 404, 500).
-*   All requests/responses should be in `application/json`.
-
-### 4.2 Core Endpoints (Summary)
-*(Refer to `api_endpoints.md` for full details)*
-*   `/auth/*`: Login, password reset workflows.
-*   `/customers/*`: Onboarding, fetching customer details.
-*   `/transactions/*`: Recording deposits/withdrawals, requesting cancellations, admin reviews.
-*   `/receipts/*`: Fetching dynamic scheme configurations.
-
-### 4.3 Database Interactions (Mongoose)
-*   Use Mongoose ODM for schema validation, strict typing (within JS limits), and middleware hooks (e.g., updating timestamps `modified_at` on save).
-*   Implement transaction handling (MongoDB Transactions) for critical operations (e.g., recording a withdrawal and updating the customer balance simultaneously) to ensure atomicity.
+*Data Integrity Note: While MongoDB is schemaless, Mongoose (or similar ODM) strict schemas MUST be enforced at the application level to maintain referential integrity (using ObjectIds).*
 
 ---
 
-## 5. Security & Compliance
+### 5. Security & Authentication (RBAC)
+#### 5.1 Unified Login & Routing
+*   A single `/api/v1/auth/login` endpoint accepts `email` and `password`.
+*   The backend verifies credentials and evaluates the user's collection type (Developer, Bank, or Agent).
+*   Returns a signed JWT containing `userId`, `role`, and `bankId` (if applicable).
+*   The client application decodes the JWT and redirects the user to their respective dashboard.
 
-### 5.1 Authentication & Authorization
-*   **JWT:** Issued upon successful login, containing user role and ID. Must be included in the `Authorization: Bearer <token>` header of subsequent requests.
-*   **Role-Based Access Control (RBAC):** Middleware in Express to protect routes (e.g., only `admin` can hit `/transactions/*/review`).
-*   **Password Hashing:** Use `bcryptjs` to hash passwords before storing them in the database. Never store plain-text passwords.
+#### 5.2 License & Compliance Enforcement
+*   **Middleware:** A global API middleware intercepts all requests from Bank Admins and Agents. It checks the `license_expiry` and `account_status` of the associated `bank_id`.
+*   **Automated CRON Jobs:** A daily backend CRON job evaluates `license_expiry` and `grace_period_end`. It automatically updates `account_status` to 'Suspended' and fires email triggers to the Developer and Bank Admin if limits are exceeded.
 
-### 5.2 Data Protection
-*   **In Transit:** All API traffic must be over HTTPS/TLS.
-*   **At Rest:** Utilize MongoDB Atlas encryption at rest.
-
-### 5.3 Agent Risk Management (Business Logic Security)
-*   **Cash-in-Hand Limits:** Backend middleware must intercept transaction requests and verify the agent's current held cash against their `cah_holding_limit`. If exceeded, reject the transaction with a specific error code.
-*   **First Login Reset:** Backend must enforce the `password_reset_flag` before allowing access to operational endpoints.
-
----
-
-## 6. Deployment & DevOps Strategy
-
-### 6.1 Environments
-*   **Development:** Local machines, local MongoDB.
-*   **Staging:** Cloud-hosted environment mimicking production for QA testing.
-*   **Production:** Highly available, scalable cloud infrastructure.
-
-### 6.2 Hosting Recommendations
-*   **Database:** MongoDB Atlas (Managed service for automated backups, scaling, and security).
-*   **Backend:** AWS (EC2/ECS), Google Cloud Run, or Heroku.
-*   **Web Frontend:** Vercel, Netlify, or AWS S3 + CloudFront.
-
-### 6.3 CI/CD
-*   Implement GitHub Actions or GitLab CI to automate testing (Jest for backend/frontend unit tests) and deployment pipelines.
+#### 5.3 Agent Risk Mitigation
+*   Transactions API validates the agent's current aggregated collections against `cash_holding_limit`. If the transaction pushes the agent over the limit, the API returns a `403 Forbidden` (Lockout) until a settlement is recorded.
 
 ---
 
-## 7. Performance & Scalability Considerations
+### 6. API Endpoints (Core Modules Overview)
 
-*   **Database Indexing:** Crucial for query performance. Implement indexes as defined in `mongodb_schema_design.md` (e.g., spatial index for location, compound indexes for transaction lookups).
-*   **Pagination:** Implement limit/offset or cursor-based pagination on list endpoints (e.g., fetching transaction history) to prevent payload bloat.
-*   **Asset Storage:** Shop photos should be uploaded directly to a CDN or cloud storage (e.g., AWS S3, Cloudinary) and only the URL saved in MongoDB. Do not store Base64 images in the database.
+#### 6.1 Authentication
+*   `POST /auth/login` - Authenticates user and issues JWT.
+*   `POST /auth/reset-password` - Mandatory password change flag handler.
+
+#### 6.2 Developer (Super Admin) API
+*   `POST /developer/banks` - Onboards a new bank.
+*   `PUT /developer/banks/:id/license` - Updates license expiry and grace periods.
+*   `GET /developer/system/audit` - Fetches global audit logs.
+
+#### 6.3 Bank Admin API
+*   `POST /bank/agents` - Creates a new agent profile (requires file upload for KYC).
+*   `POST /bank/schemes` - Configures new financial schemes and dynamic thermal printing JSON payloads.
+*   `PUT /bank/transactions/:id/cancel` - Approves or rejects an agent's pending transaction cancellation.
+
+#### 6.4 Collection Agent (Mobile) API
+*   `POST /agent/customers` - Onboards a new customer (captures Lat/Long and uploads shop/ID photos to S3).
+*   `POST /agent/transactions` - Records a Deposit (D) or Withdrawal (W). Must include pre-transaction balance validation.
+*   `GET /agent/schemes/:id/receipt-config` - Fetches the JSON receipt layout for the thermal printer.
+
+---
+
+### 7. External Integrations & Hardware
+*   **Cloud Storage:** Amazon S3 or GCP Cloud Storage for securely storing `customer_photo_url`, `shop_photo_url`, `agent_photo_url`, and `agent_id_url`. Pre-signed URLs should be used for access.
+*   **Bluetooth Thermal Printing:** The mobile app fetches the `receipt_config.fields` JSON from the backend. The mobile frontend iterates through this JSON array to dynamically construct the ESC/POS string (text alignment, bolding, line breaks) sent to the paired Bluetooth printer.
+
+---
+
+### 8. System-Wide Audit Logging Strategy
+To satisfy PRD v6.0 compliance:
+*   **Database Triggers / Middleware:** Every `POST`, `PUT`, `PATCH`, and `DELETE` operation across all primary collections must trigger an asynchronous write to the `audit_logs` collection.
+*   **Payload structure:** Must explicitly capture `collection_name`, `document_id`, `changed_field`, `previous_value`, `new_value`, and the `updated_by` (extracted from the JWT).
