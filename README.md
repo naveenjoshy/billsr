@@ -1,16 +1,51 @@
-# React + Vite
+# Billsr
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Billsr is organized as a React/Vite web client and a separate Express API. The
+API uses MongoDB through Mongoose.
 
-Currently, two official plugins are available:
+## Project structure
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```text
+.
+├── backend/
+│   ├── config/             # Environment and database setup
+│   ├── controllers/        # HTTP request handlers
+│   ├── middleware/         # Shared Express middleware
+│   ├── routes/             # API route definitions
+│   ├── app.js              # Express application
+│   ├── server.js           # Database connection and HTTP startup
+│   ├── .env.example
+│   └── package.json
+├── docs/                   # Product, technical, and API documentation
+├── frontend/
+│   ├── public/             # Static frontend files
+│   ├── src/                # React application, styles, and assets
+│   ├── index.html
+│   └── package.json
+├── eslint.config.js
+└── vite.config.js
+```
 
-## React Compiler
+## Local development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Install dependencies in both apps:
 
-## Expanding the ESLint configuration
+```sh
+npm --prefix frontend install
+npm --prefix backend install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Copy `backend/.env.example` to `backend/.env` and set `MONGODB_URI` to a running
+MongoDB instance. From the repository root, start the API and frontend in
+separate terminals:
+
+```sh
+npm run dev:api
+npm run dev
+```
+
+The API listens on port `3000` by default. The Vite development server proxies
+`/api` requests to it. The starter endpoint is `GET /api/health`.
+
+Run frontend checks with `npm run lint` and `npm run build`. Start the backend
+for production with `npm --prefix backend start`.

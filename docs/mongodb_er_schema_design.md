@@ -3,7 +3,23 @@
 This document outlines the NoSQL database schema (MongoDB) for the Daily Collection Management System, fully updated with the centralized Developer module, Audit Logs, and Customer-Scheme linkage.
 
 ```json
+
 {
+   "users": [
+    {
+      "_id": "ObjectId",
+      "userID": "String (Unique login identifier or custom alphanumeric code)",
+      "name": "String",
+      "email": "String",
+      "password_hash": "String",
+      "role": "String ('Superadmin', 'Bank', 'Agent')",
+      "is_active": "Boolean",
+      "audit_trail": {
+        "created_at": "ISODate",
+        "modified_at": "ISODate"
+      }
+    }
+  ],
   "developers": [
     {
       "_id": "ObjectId",
@@ -29,11 +45,10 @@ This document outlines the NoSQL database schema (MongoDB) for the Daily Collect
   "banks": [
     {
       "_id": "ObjectId",
+      "user_id": "ObjectId (Ref: users)", 
       "bank_name": "String",
       "address": "String",
-      "email": "String",
       "phone": "String",
-      "password_hash": "String",
       "name_ceo": "String",
       "designation": "String",
       "license_expiry": "ISODate",
@@ -50,14 +65,13 @@ This document outlines the NoSQL database schema (MongoDB) for the Daily Collect
       }
     }
   ],
-  "agents": [
+   "agents": [
     {
       "_id": "ObjectId",
+      "user_id": "ObjectId (Ref: users)", 
       "bank_id": "ObjectId (Ref: banks)",
-      "name": "String",
       "address": "String",
       "phone_no": "String",
-      "email": "String",
       "agent_photo_url": "String",
       "agent_id_url": "String",
       "agent_id_number": "String",
