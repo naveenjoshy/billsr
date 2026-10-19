@@ -10,9 +10,24 @@ function App() {
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    setStatusMessage('Sign-in is not connected yet.')
+    const f = new FormData(event.currentTarget)
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: f.get('email'), password: f.get('password') }),
+    })
+    const data = await res.json()
+    if (!res.ok) return setStatusMessage(data.message)
+    setStatusMessage(`Logged in as ${data.user.name} (${data.user.role})`)
+    // navigate to the dashboard here, e.g. with react-router
+  } catch {
+    setStatusMessage('Server unreachable')
+  }
+    
   }
 
   return (

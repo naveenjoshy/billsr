@@ -3,20 +3,17 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
+import cookieParser from 'cookie-parser'
+import authRoutes from './routes/auth.routes.js'
 import connectDB from './config/db.js';
 
 // 1. Initialize environmental configurations
-dotenv.config();
+dotenv.config({ path: '.env.local' });
 
 // 2. Establish connection to your MongoDB Cluster
 connectDB();
 
 const app = express();
-
-// ==========================================
-// MIDDLEWARE CONFIGURATIONS
-// ==========================================
-
 // Enable Cross-Origin Resource Sharing for your Vite React frontend
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -31,6 +28,9 @@ if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
 // Built-in Request Body Parsers (Transforms inbound JSON stream payloads)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use('/api/auth', authRoutes);
 
 // ==========================================
 // ROUTE REGISTRATION POINT
