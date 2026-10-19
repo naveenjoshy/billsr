@@ -17,10 +17,10 @@ export async function login(req, res) {
 
   const user = await User.findOne({ email: email.trim().toLowerCase() })
   const ok = user && user.is_active && (await bcrypt.compare(password, user.password_hash))
-  if (!ok) return res.status(401).json({ message: 'Invalid email or password' })
+  if (!ok) return res.status(401).json({ message: 'Invalid Email or Password' })
 
   const token = jwt.sign({ sub: user.id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+    expiresIn: process.env.JWT_EXPIRES_IN || '1h',
   })
   res.cookie(COOKIE, token, cookieOpts)
   res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } })
@@ -28,7 +28,7 @@ export async function login(req, res) {
 
 export async function me(req, res) {
   const user = await User.findById(req.auth.sub).select('name email role is_active')
-  if (!user || !user.is_active) return res.status(401).json({ message: 'Unauthorized' })
+  if (!user || !user.is_active) return res.status(401).json({ message: 'Unauthorized Access' })
   res.json({ user })
 }
 

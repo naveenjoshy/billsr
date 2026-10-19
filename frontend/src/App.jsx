@@ -23,6 +23,7 @@ function App() {
     const data = await res.json()
     if (!res.ok) return setStatusMessage(data.message)
     setStatusMessage(`Logged in as ${data.user.name} (${data.user.role})`)
+    console.log("Logged in as", data.user.name, "with role", data.user.role)
     // navigate to the dashboard here, e.g. with react-router
   } catch {
     setStatusMessage('Server unreachable')
@@ -93,8 +94,6 @@ function App() {
           <p>
             &copy; 2025 Billsr Financial Technologies &bull; Daily Collection
             &amp; Pigmy Reconciliation Infrastructure. All rights reserved.
-            Unsanctioned penetration attempts are cataloged and automatically
-            dispatched to cybersecurity authorities.
           </p>
         </footer>
       </div>

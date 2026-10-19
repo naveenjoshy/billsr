@@ -5,9 +5,9 @@ export function requireAuth(req, res, next) {
     req.auth = jwt.verify(req.cookies.token, process.env.JWT_SECRET)
     next()
   } catch {
-    res.status(401).json({ message: 'Unauthorized' })
+    res.status(401).json({ message: 'Unauthorized Access' })
   }
 }
 
 export const requireRole = (...roles) => (req, res, next) =>
-  roles.includes(req.auth?.role) ? next() : res.status(403).json({ message: 'Forbidden' })
+  roles.includes(req.auth?.role) ? next() : res.status(403).json({ message: 'Access Forbidden' })

@@ -30,15 +30,17 @@ The Daily Collection Management System is a comprehensive financial tool designe
 ## 4. Database Design (DBML Format)
 
 ```dbml
-Table tbl_sys_developers {
-  developer_id UUID [pk]
+Table users {
+  user_id UUID [pk]
+  name VARCHAR(100)
   email VARCHAR(100)
   password_hash VARCHAR(255)
   role VARCHAR(50)
+  is_active 
   created_at TIMESTAMP
 }
 
-Table tbl_sys_audit_trail {
+Table audit_log {
   audit_id UUID [pk]
   table_name VARCHAR(100)
   record_id VARCHAR(100)
@@ -50,7 +52,7 @@ Table tbl_sys_audit_trail {
   updated_by UUID
 }
 
-Table tbl_mt_banks {
+Table banks {
   bank_id UUID [pk]
   bank_name VARCHAR(150)
   address TEXT
@@ -69,7 +71,7 @@ Table tbl_mt_banks {
   modified_by UUID
 }
 
-Table tbl_mt_agents {
+Table agents {
   agent_id UUID [pk]
   bank_id UUID [ref: > tbl_mt_banks.bank_id]
   name VARCHAR(100)
@@ -90,7 +92,7 @@ Table tbl_mt_agents {
   modified_by UUID
 }
 
-Table tbl_mt_schemes {
+Table schemes {
   scheme_id UUID [pk]
   bank_id UUID [ref: > tbl_mt_banks.bank_id]
   scheme_name VARCHAR(100)
@@ -103,7 +105,7 @@ Table tbl_mt_schemes {
   modified_by UUID
 }
 
-Table tbl_mt_customer {
+Table customer {
   customer_id INT [pk]
   agent_id UUID [ref: > tbl_mt_agents.agent_id]
   bank_id UUID [ref: > tbl_mt_banks.bank_id]
@@ -123,7 +125,7 @@ Table tbl_mt_customer {
   modified_by UUID
 }
 
-Table tbl_mt_customerscheme {
+Table customerscheme {
   _id INT [pk]
   customer_id INT [ref: > tbl_mt_customer.customer_id]
   scheme_id UUID [ref: > tbl_mt_schemes.scheme_id]
@@ -136,7 +138,7 @@ Table tbl_mt_customerscheme {
   modified_by UUID
 }
 
-Table tbl_cf_receiptconfig {
+Table receiptconfig {
   receipt_id UUID [pk]
   bank_id UUID [ref: > tbl_mt_banks.bank_id]
   scheme_id UUID [ref: > tbl_mt_schemes.scheme_id]
@@ -145,7 +147,7 @@ Table tbl_cf_receiptconfig {
   modified_at TIMESTAMP
 }
 
-Table tbl_tt_transact {
+Table transact {
   transact_id UUID [pk]
   receipt_no VARCHAR(50)
   customer_id INT [ref: > tbl_mt_customer.customer_id]
@@ -161,165 +163,177 @@ Table tbl_tt_transact {
   reviewed_by UUID
   collect_date TIMESTAMP
 }
-```
+
 
 ## 5. Database Design (JSON Format)
 
-```json
 {
-  "developers": [
+  "database_name": "Banking_System",
+  "tables": [
     {
-      "_id": "ObjectId",
-      "email": "String",
-      "password_hash": "String",
-      "role": "String ('Developer')",
-      "audit_trail": { "created_at": "ISODate" }
+      "table_name": "users",
+      "columns": [
+        { "name": "user_id", "type": "UUID", "is_primary_key": true },
+        { "name": "name", "type": "VARCHAR", "length": 100 },
+        { "name": "email", "type": "VARCHAR", "length": 100 },
+        { "name": "password_hash", "type": "VARCHAR", "length": 255 },
+        { "name": "role", "type": "VARCHAR", "length": 50 },
+        { "name": "is_active", "type": "BOOLEAN" },
+        { "name": "created_at", "type": "TIMESTAMP" }
+      ]
+    },
+    {
+      "table_name": "audit_log",
+      "columns": [
+        { "name": "audit_id", "type": "UUID", "is_primary_key": true },
+        { "name": "table_name", "type": "VARCHAR", "length": 100 },
+        { "name": "record_id", "type": "VARCHAR", "length": 100 },
+        { "name": "description", "type": "TEXT" },
+        { "name": "changed_field", "type": "VARCHAR", "length": 100 },
+        { "name": "previous_value", "type": "TEXT" },
+        { "name": "new_value", "type": "TEXT" },
+        { "name": "updated_date", "type": "TIMESTAMP" },
+        { "name": "updated_by", "type": "UUID" }
+      ]
+    },
+    {
+      "table_name": "banks",
+      "columns": [
+        { "name": "bank_id", "type": "UUID", "is_primary_key": true },
+        { "name": "bank_name", "type": "VARCHAR", "length": 150 },
+        { "name": "address", "type": "TEXT" },
+        { "name": "email", "type": "VARCHAR", "length": 100 },
+        { "name": "phone", "type": "VARCHAR", "length": 15 },
+        { "name": "password_hash", "type": "VARCHAR", "length": 255 },
+        { "name": "name_ceo", "type": "VARCHAR", "length": 100 },
+        { "name": "designation", "type": "VARCHAR", "length": 100 },
+        { "name": "license_expiery", "type": "DATE" },
+        { "name": "grace_period_end", "type": "DATE" },
+        { "name": "account_status", "type": "VARCHAR", "length": 20 },
+        { "name": "last_reminder_sent", "type": "DATE" },
+        { "name": "created_at", "type": "TIMESTAMP" },
+        { "name": "created_by", "type": "UUID" },
+        { "name": "modified_at", "type": "TIMESTAMP" },
+        { "name": "modified_by", "type": "UUID" }
+      ]
+    },
+    {
+      "table_name": "agents",
+      "columns": [
+        { "name": "agent_id", "type": "UUID", "is_primary_key": true },
+        { "name": "bank_id", "type": "UUID" },
+        { "name": "name", "type": "VARCHAR", "length": 100 },
+        { "name": "address", "type": "TEXT" },
+        { "name": "phone_no", "type": "VARCHAR", "length": 15 },
+        { "name": "email", "type": "VARCHAR", "length": 100 },
+        { "name": "agent_photo_url", "type": "VARCHAR", "length": 100 },
+        { "name": "agent_id_url", "type": "VARCHAR", "length": 100 },
+        { "name": "agent_id_number", "type": "VARCHAR", "length": 30 },
+        { "name": "agent_id_type", "type": "VARCHAR", "length": 30 },
+        { "name": "password_reset_flag", "type": "BOOLEAN" },
+        { "name": "last_password_change_date", "type": "TIMESTAMP" },
+        { "name": "cah_holding_limit", "type": "DECIMAL", "precision": 10, "scale": 2 },
+        { "name": "cash_holding_days", "type": "INT" },
+        { "name": "created_at", "type": "TIMESTAMP" },
+        { "name": "created_by", "type": "UUID" },
+        { "name": "modified_at", "type": "TIMESTAMP" },
+        { "name": "modified_by", "type": "UUID" }
+      ]
+    },
+    {
+      "table_name": "schemes",
+      "columns": [
+        { "name": "scheme_id", "type": "UUID", "is_primary_key": true },
+        { "name": "bank_id", "type": "UUID" },
+        { "name": "scheme_name", "type": "VARCHAR", "length": 100 },
+        { "name": "scheme_description", "type": "TEXT" },
+        { "name": "status", "type": "CHAR", "length": 1 },
+        { "name": "permitted_operation", "type": "CHAR", "length": 1 },
+        { "name": "created_at", "type": "TIMESTAMP" },
+        { "name": "created_by", "type": "UUID" },
+        { "name": "modified_at", "type": "TIMESTAMP" },
+        { "name": "modified_by", "type": "UUID" }
+      ]
+    },
+    {
+      "table_name": "customer",
+      "columns": [
+        { "name": "customer_id", "type": "INT", "is_primary_key": true },
+        { "name": "agent_id", "type": "UUID" },
+        { "name": "bank_id", "type": "UUID" },
+        { "name": "type", "type": "VARCHAR", "length": 50 },
+        { "name": "name", "type": "VARCHAR", "length": 100 },
+        { "name": "address", "type": "TEXT" },
+        { "name": "customer_photo_url", "type": "VARCHAR", "length": 150 },
+        { "name": "phone", "type": "VARCHAR", "length": 15 },
+        { "name": "email", "type": "VARCHAR", "length": 100 },
+        { "name": "shop_name", "type": "VARCHAR", "length": 150 },
+        { "name": "shop_lat", "type": "DECIMAL", "precision": 10, "scale": 8 },
+        { "name": "shop_long", "type": "DECIMAL", "precision": 11, "scale": 8 },
+        { "name": "shop_photo_url", "type": "TEXT" },
+        { "name": "created_at", "type": "TIMESTAMP" },
+        { "name": "created_by", "type": "UUID" },
+        { "name": "modified_at", "type": "TIMESTAMP" },
+        { "name": "modified_by", "type": "UUID" }
+      ]
+    },
+    {
+      "table_name": "customerscheme",
+      "columns": [
+        { "name": "_id", "type": "INT", "is_primary_key": true },
+        { "name": "customer_id", "type": "INT" },
+        { "name": "scheme_id", "type": "UUID" },
+        { "name": "schem_opening_amount", "type": "DECIMAL", "precision": 10, "scale": 2 },
+        { "name": "monthly_target", "type": "DECIMAL", "precision": 10, "scale": 2 },
+        { "name": "remittance_periodicity", "type": "CHAR", "length": 1 },
+        { "name": "created_at", "type": "TIMESTAMP" },
+        { "name": "created_by", "type": "UUID" },
+        { "name": "modified_at", "type": "TIMESTAMP" },
+        { "name": "modified_by", "type": "UUID" }
+      ]
+    },
+    {
+      "table_name": "receiptconfig",
+      "columns": [
+        { "name": "receipt_id", "type": "UUID", "is_primary_key": true },
+        { "name": "bank_id", "type": "UUID" },
+        { "name": "scheme_id", "type": "UUID" },
+        { "name": "fields", "type": "JSON" },
+        { "name": "created_at", "type": "TIMESTAMP" },
+        { "name": "modified_at", "type": "TIMESTAMP" }
+      ]
+    },
+    {
+      "table_name": "transact",
+      "columns": [
+        { "name": "transact_id", "type": "UUID", "is_primary_key": true },
+        { "name": "receipt_no", "type": "VARCHAR", "length": 50 },
+        { "name": "customer_id", "type": "INT" },
+        { "name": "agent_id", "type": "UUID" },
+        { "name": "scheme_id", "type": "UUID" },
+        { "name": "transact_amt", "type": "DECIMAL", "precision": 10, "scale": 2 },
+        { "name": "transact_type", "type": "CHAR", "length": 1 },
+        { "name": "transaction_status", "type": "CHAR", "length": 1 },
+        { "name": "transact_mode", "type": "CHAR", "length": 1 },
+        { "name": "opening_bal", "type": "DECIMAL", "precision": 10, "scale": 2 },
+        { "name": "new_balance", "type": "DECIMAL", "precision": 10, "scale": 2 },
+        { "name": "cancellation_reason", "type": "TEXT" },
+        { "name": "reviewed_by", "type": "UUID" },
+        { "name": "collect_date", "type": "TIMESTAMP" }
+      ]
     }
   ],
-  "audit_logs": [
-    {
-      "_id": "ObjectId",
-      "collection_name": "String",
-      "document_id": "String",
-      "description": "String",
-      "changed_field": "String",
-      "previous_value": "Mixed",
-      "new_value": "Mixed",
-      "updated_date": "ISODate",
-      "updated_by": "ObjectId"
-    }
-  ],
-  "banks": [
-    {
-      "_id": "ObjectId",
-      "bank_name": "String",
-      "address": "String",
-      "email": "String",
-      "phone": "String",
-      "password_hash": "String",
-      "name_ceo": "String",
-      "designation": "String",
-      "license_expiry": "ISODate",
-      "compliance_status": {
-        "account_status": "String ('Active', 'Grace', 'Suspended')",
-        "grace_period_end": "ISODate",
-        "last_renewal_reminder_sent": "ISODate"
-      },
-      "audit_trail": {
-        "created_at": "ISODate",
-        "created_by": "ObjectId",
-        "modified_at": "ISODate",
-        "modified_by": "ObjectId"
-      }
-    }
-  ],
-  "agents": [
-    {
-      "_id": "ObjectId",
-      "bank_id": "ObjectId (Ref: banks)",
-      "name": "String",
-      "address": "String",
-      "phone_no": "String",
-      "email": "String",
-      "agent_photo_url": "String",
-      "agent_id_url": "String",
-      "agent_id_number": "String",
-      "agent_id_type": "String",
-      "password_reset_flag": "Boolean",
-      "last_password_change_date": "ISODate",
-      "cash_holding_limit": "Decimal128",
-      "cash_holding_days": "NumberInt",
-      "audit_trail": {
-        "created_at": "ISODate",
-        "created_by": "ObjectId",
-        "modified_at": "ISODate",
-        "modified_by": "ObjectId"
-      }
-    }
-  ],
-  "schemes": [
-    {
-      "_id": "ObjectId",
-      "bank_id": "ObjectId (Ref: banks)",
-      "scheme_name": "String",
-      "scheme_description": "String",
-      "status": "String ('A' or 'S')",
-      "permitted_operation": "String ('A' or 'S')",
-      "receipt_config": {
-        "fields": [
-          {
-            "field_name": "String",
-            "data_type": "String",
-            "is_mandatory": "Boolean",
-            "print_order": "NumberInt"
-          }
-        ]
-      }
-    }
-  ],
-  "customers": [
-    {
-      "_id": "ObjectId",
-      "agent_id": "ObjectId (Ref: agents)",
-      "bank_id": "ObjectId (Ref: banks)",
-      "type": "String",
-      "name": "String",
-      "address": "String",
-      "customer_photo_url": "String",
-      "phone": "String",
-      "email": "String",
-      "shop_name": "String",
-      "location": {
-        "type": "Point",
-        "coordinates": [77.5946, 12.9716]
-      },
-      "shop_photo_url": "String",
-      "audit_trail": {
-        "created_at": "ISODate",
-        "created_by": "ObjectId",
-        "modified_at": "ISODate",
-        "modified_by": "ObjectId"
-      }
-    }
-  ],
-  "customer_schemes": [
-    {
-      "_id": "ObjectId",
-      "customer_id": "ObjectId (Ref: customers)",
-      "scheme_id": "ObjectId (Ref: schemes)",
-      "schem_opening_amount": "Decimal128",
-      "monthly_target": "Decimal128",
-      "remittance_periodicity": "String ('D', 'W', 'A', 'M', 'N')",
-      "audit_trail": {
-        "created_at": "ISODate",
-        "created_by": "ObjectId",
-        "modified_at": "ISODate",
-        "modified_by": "ObjectId"
-      }
-    }
-  ],
-  "transactions": [
-    {
-      "_id": "ObjectId",
-      "receipt_no": "String",
-      "bank_id": "ObjectId (Ref: banks)",
-      "customer_id": "ObjectId (Ref: customers)",
-      "agent_id": "ObjectId (Ref: agents)",
-      "scheme_id": "ObjectId (Ref: schemes)",
-      "transact_amt": "Decimal128",
-      "transact_type": "String ('D' or 'W')",
-      "transaction_status": "String ('A', 'C', or 'P')",
-      "transact_mode": "String ('C' or 'T')",
-      "balance_snapshot": {
-        "opening_bal": "Decimal128",
-        "new_balance": "Decimal128"
-      },
-      "cancellation_info": {
-        "cancellation_reason": "String",
-        "reviewed_by": "ObjectId (Ref: banks)"
-      },
-      "collect_date": "ISODate"
-    }
+  "relationships": [
+    { "from_table": "agents", "from_column": "bank_id", "to_table": "banks", "to_column": "bank_id" },
+    { "from_table": "schemes", "from_column": "bank_id", "to_table": "banks", "to_column": "bank_id" },
+    { "from_table": "customer", "from_column": "agent_id", "to_table": "agents", "to_column": "agent_id" },
+    { "from_table": "customer", "from_column": "bank_id", "to_table": "banks", "to_column": "bank_id" },
+    { "from_table": "customerscheme", "from_column": "customer_id", "to_table": "customer", "to_column": "customer_id" },
+    { "from_table": "customerscheme", "from_column": "scheme_id", "to_table": "schemes", "to_column": "scheme_id" },
+    { "from_table": "receiptconfig", "from_column": "bank_id", "to_table": "banks", "to_column": "bank_id" },
+    { "from_table": "receiptconfig", "from_column": "scheme_id", "to_table": "schemes", "to_column": "scheme_id" },
+    { "from_table": "transact", "from_column": "customer_id", "to_table": "customer", "to_column": "customer_id" },
+    { "from_table": "transact", "from_column": "agent_id", "to_table": "agents", "to_column": "agent_id" },
+    { "from_table": "transact", "from_column": "scheme_id", "to_table": "schemes", "to_column": "scheme_id" }
   ]
 }
-```
