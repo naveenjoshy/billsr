@@ -1,4 +1,4 @@
-import { post, request } from './apiClient'
+import { del, post, put, request } from './apiClient'
 
 export const getBankDashboard = (query = {}) => {
   const params = new URLSearchParams()
@@ -33,3 +33,11 @@ export const approveTransaction = (id) =>
 export const getBankAgents = () => request('/api/bank/agents')
 
 export const addAgent = (payload) => post('/api/bank/agents', payload)
+
+export const getBankSchemes = () => request('/api/bank/schemes')
+
+export const createBankScheme = (payload) => post('/api/bank/schemes', payload)
+
+export const updateBankScheme = (id, payload) => put(`/api/bank/schemes/${id}`, payload)
+
+export const deleteBankScheme = (id) => del(`/api/bank/schemes/${id}`)

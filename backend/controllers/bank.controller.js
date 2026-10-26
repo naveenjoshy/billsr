@@ -5,6 +5,7 @@ import { Agent } from '../models/Agent.js'
 import { AuditLog } from '../models/AuditLog.js'
 import { Bank } from '../models/Bank.js'
 import { Customer } from '../models/Customer.js'
+import { CustomerScheme } from '../models/CustomerScheme.js'
 import { Scheme } from '../models/Scheme.js'
 import { Transaction } from '../models/Transaction.js'
 import { User } from '../models/User.js'
@@ -743,5 +744,177 @@ export async function createAgent(req, res) {
     }
     console.error('Create agent error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.CREATE_AGENT_ERROR })
+  }
+}
+
+export async function listSchemes(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const schemes = await Scheme.find({ bank_id: bank._id }).lean()
+
+    const schemeIds = schemes.map((s) => s._id)
+    const [enrolledCounts, txCounts] = await Promise.all([
+      CustomerScheme.aggregate([
+        { $match: { scheme_id: { $in: schemeIds } } },
+        { $group: { _id: '$scheme_id', count: { $sum: 1 } } },
+      ]),
+      Transaction.aggregate([
+        { $match: { scheme_id: { $in: schemeIds }, bank_id: bank._id } },
+        { $group: { _id: '$scheme_id', count: { $sum: 1 } } },
+      ]),
+    ])
+
+    const enrolledMap = Object.fromEntries(enrolledCounts.map((c) => [String(c._id), c.count]))
+    const txMap = Object.fromEntries(txCounts.map((c) => [String(c._id), c.count]))
+
+    const result = schemes.map((s) => ({
+      ...s,
+      _id: String(s._id),
+      enrolledCustomersCount: enrolledMap[String(s._id)] || 0,
+      activeTransactionsCount: txMap[String(s._id)] || 0,
+    }))
+
+    res.json({ schemes: result })
+  } catch (error) {
+    console.error('List schemes error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to load financial schemes.' })
+  }
+}
+
+export async function createScheme(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const {
+      scheme_name,
+      scheme_description,
+      status = 'A',
+      permitted_operation = 'A',
+      receipt_config = { fields: [] },
+    } = req.body
+
+    if (!scheme_name || !scheme_name.trim()) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Scheme name is required.' })
+    }
+
+    const scheme = await Scheme.create({
+      bank_id: bank._id,
+      scheme_name: scheme_name.trim(),
+      scheme_description: scheme_description?.trim() || '',
+      status: ['A', 'S'].includes(status) ? status : 'A',
+      permitted_operation: ['A', 'S'].includes(permitted_operation) ? permitted_operation : 'A',
+      receipt_config: {
+        fields: Array.isArray(receipt_config?.fields) ? receipt_config.fields : [],
+      },
+    })
+
+    await AuditLog.create({
+      collection_name: 'schemes',
+      document_id: scheme._id,
+      action: 'CREATE',
+      description: `New scheme "${scheme.scheme_name}" created by bank administrator`,
+      new_value: scheme.toObject(),
+      updated_by: req.auth.sub,
+    }).catch(() => null)
+
+    res.status(HTTP_STATUS.CREATED).json({
+      message: `Scheme "${scheme.scheme_name}" created successfully.`,
+      scheme: {
+        ...scheme.toObject(),
+        _id: String(scheme._id),
+        enrolledCustomersCount: 0,
+        activeTransactionsCount: 0,
+      },
+    })
+  } catch (error) {
+    console.error('Create scheme error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to create financial scheme.' })
+  }
+}
+
+export async function updateScheme(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid scheme ID.' })
+    }
+
+    const scheme = await Scheme.findOne({ _id: id, bank_id: bank._id })
+    if (!scheme) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Scheme not found.' })
+    }
+
+    const { scheme_name, scheme_description, status, permitted_operation, receipt_config } = req.body
+
+    const prev = scheme.toObject()
+    if (scheme_name !== undefined) scheme.scheme_name = scheme_name.trim()
+    if (scheme_description !== undefined) scheme.scheme_description = scheme_description.trim()
+    if (status !== undefined && ['A', 'S'].includes(status)) scheme.status = status
+    if (permitted_operation !== undefined && ['A', 'S'].includes(permitted_operation)) {
+      scheme.permitted_operation = permitted_operation
+    }
+    if (receipt_config?.fields && Array.isArray(receipt_config.fields)) {
+      scheme.receipt_config = receipt_config
+    }
+
+    await scheme.save()
+
+    await AuditLog.create({
+      collection_name: 'schemes',
+      document_id: scheme._id,
+      action: 'UPDATE',
+      description: `Scheme "${scheme.scheme_name}" updated by bank administrator`,
+      previous_value: prev,
+      new_value: scheme.toObject(),
+      updated_by: req.auth.sub,
+    }).catch(() => null)
+
+    res.json({
+      message: `Scheme "${scheme.scheme_name}" updated successfully.`,
+      scheme: scheme.toObject(),
+    })
+  } catch (error) {
+    console.error('Update scheme error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to update scheme.' })
+  }
+}
+
+export async function deleteScheme(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid scheme ID.' })
+    }
+
+    const scheme = await Scheme.findOne({ _id: id, bank_id: bank._id })
+    if (!scheme) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Scheme not found.' })
+    }
+
+    const name = scheme.scheme_name
+    await Scheme.deleteOne({ _id: id, bank_id: bank._id })
+
+    await AuditLog.create({
+      collection_name: 'schemes',
+      document_id: id,
+      action: 'DELETE',
+      description: `Scheme "${name}" deleted by bank administrator`,
+      previous_value: scheme.toObject(),
+      updated_by: req.auth.sub,
+    }).catch(() => null)
+
+    res.json({ message: `Scheme "${name}" deleted successfully.` })
+  } catch (error) {
+    console.error('Delete scheme error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to delete scheme.' })
   }
 }

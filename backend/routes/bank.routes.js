@@ -4,10 +4,14 @@ import {
   approveTransaction,
   cancelTransaction,
   createAgent,
+  createScheme,
+  deleteScheme,
   getDashboard,
   listAgents,
+  listSchemes,
   listTransactions,
   rejectCancellation,
+  updateScheme,
 } from '../controllers/bank.controller.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 
@@ -21,5 +25,11 @@ router.get('/transactions', listTransactions)
 router.post('/transactions/:id/approve', approveTransaction)
 router.post('/transactions/:id/cancel', cancelTransaction)
 router.post('/transactions/:id/reject-cancellation', rejectCancellation)
+
+// Scheme & Receipt Configuration
+router.get('/schemes', listSchemes)
+router.post('/schemes', createScheme)
+router.put('/schemes/:id', updateScheme)
+router.delete('/schemes/:id', deleteScheme)
 
 export default router

@@ -59,15 +59,16 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
   const [approvingId, setApprovingId] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10))
 
   const loadDashboard = useCallback(async () => {
     try {
-      setDashboard(await getBankDashboard())
+      setDashboard(await getBankDashboard({ date: selectedDate }))
       setDashboardError('')
     } catch (error) {
       setDashboardError(error.message)
     }
-  }, [])
+  }, [selectedDate])
 
   const loadTransactions = useCallback(async () => {
     setTxLoading(true)
@@ -126,9 +127,12 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
       bank={bank}
       designation={dashboard?.user.designation}
       displayName={displayName}
+      onDateChange={setSelectedDate}
       onLoggedOut={onLoggedOut}
       onNavigate={onNavigate}
       onUserUpdated={onUserUpdated}
+      pendingCancellationsCount={kpis?.pendingCount ?? 0}
+      selectedDate={selectedDate}
       user={user}
     >
         <main className="bank-main">
@@ -140,13 +144,35 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
 
           <section className="bank-kpis" aria-label="Key metrics">
             <article className="bank-kpi">
-              <p className="bank-kpi-label">NET COLLECTIONS (TODAY)</p>
+              <p className="bank-kpi-label">NET COLLECTIONS (TOTAL)</p>
               <p className="bank-kpi-value">{kpis ? money(kpis.netCollections) : '—'}</p>
               {kpis && (
                 <ul>
                   <li><span>Deposits</span><b>{money(kpis.deposits)}</b></li>
                   <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.withdrawals)}</b></li>
                   <li className="bank-kpi-foot">{kpis.transactionCount} txns processed</li>
+                </ul>
+              )}
+            </article>
+            <article className="bank-kpi">
+              <p className="bank-kpi-label">CASH COLLECTIONS</p>
+              <p className="bank-kpi-value">{kpis ? money(kpis.cashMode?.net ?? 0) : '—'}</p>
+              {kpis && (
+                <ul>
+                  <li><span>Deposits</span><b>{money(kpis.cashMode?.deposits ?? 0)}</b></li>
+                  <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.cashMode?.withdrawals ?? 0)}</b></li>
+                  <li className="bank-kpi-foot">{kpis.cashMode?.count ?? 0} cash txns</li>
+                </ul>
+              )}
+            </article>
+            <article className="bank-kpi">
+              <p className="bank-kpi-label">TRANSFER COLLECTIONS</p>
+              <p className="bank-kpi-value">{kpis ? money(kpis.transferMode?.net ?? 0) : '—'}</p>
+              {kpis && (
+                <ul>
+                  <li><span>Deposits</span><b>{money(kpis.transferMode?.deposits ?? 0)}</b></li>
+                  <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.transferMode?.withdrawals ?? 0)}</b></li>
+                  <li className="bank-kpi-foot">{kpis.transferMode?.count ?? 0} transfer txns</li>
                 </ul>
               )}
             </article>

@@ -6,6 +6,7 @@ import BankHomePage from './pages/BankHomePage'
 import AgentManagementPage from './pages/AgentManagementPage'
 import AgentHomePage from './pages/AgentHomePage'
 import TransactionLedgerPage from './pages/TransactionLedgerPage'
+import SchemesReceiptsPage from './pages/SchemesReceiptsPage'
 import './App.css'
 
 const HOME_ROLES = ['Superadmin', 'Bank', 'Agent']
@@ -87,6 +88,17 @@ function App() {
       return (
         <TransactionLedgerPage
           activeView={bankView}
+          onNavigate={setBankView}
+          onLoggedOut={handleLoggedOut}
+          onUserUpdated={setCurrentUser}
+          user={currentUser}
+        />
+      )
+    }
+
+    if (bankView === 'schemes') {
+      return (
+        <SchemesReceiptsPage
           onNavigate={setBankView}
           onLoggedOut={handleLoggedOut}
           onUserUpdated={setCurrentUser}

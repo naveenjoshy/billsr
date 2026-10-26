@@ -69,6 +69,7 @@ export default function TransactionLedgerPage({
   const [actionNotice, setActionNotice] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [forensicTxn, setForensicTxn] = useState(null)
+  const [reviewModalTxn, setReviewModalTxn] = useState(null)
   const [copiedId, setCopiedId] = useState(null)
 
   // Load Dashboard metadata for the shell
@@ -268,6 +269,7 @@ export default function TransactionLedgerPage({
       onLoggedOut={onLoggedOut}
       onNavigate={onNavigate}
       onUserUpdated={onUserUpdated}
+      pendingCancellationsCount={pendingCount}
       user={user}
     >
       <div className="ledger-page">
@@ -831,7 +833,7 @@ export default function TransactionLedgerPage({
                               className="btn-table-review"
                               onClick={() => {
                                 setReviewTxn(txn)
-                                window.scrollTo({ top: 380, behavior: 'smooth' })
+                                setReviewModalTxn(txn)
                               }}
                             >
                               Review
@@ -940,6 +942,16 @@ export default function TransactionLedgerPage({
         <TransactionForensicModal
           transaction={forensicTxn}
           onClose={() => setForensicTxn(null)}
+        />
+      )}
+
+      {/* Transaction Review Modal */}
+      {reviewModalTxn && (
+        <TransactionForensicModal
+          transaction={reviewModalTxn}
+          title="Transaction Review"
+          closeLabel="Close Review Pane"
+          onClose={() => setReviewModalTxn(null)}
         />
       )}
     </BankShell>

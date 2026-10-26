@@ -76,3 +76,16 @@ export const patch = (path, body, options = {}) =>
     body: JSON.stringify(body),
     ...options,
   })
+
+export const put = (path, body, options = {}) =>
+  request(path, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+    ...options,
+  })
+
+export const del = (path, options = {}) =>
+  request(path, {
+    method: 'DELETE',
+    ...options,
+  })

@@ -1,6 +1,11 @@
 import './TransactionForensicModal.css'
 
-export default function TransactionForensicModal({ transaction, onClose }) {
+export default function TransactionForensicModal({
+  transaction,
+  onClose,
+  title = 'Transaction Forensic History',
+  closeLabel = 'Close Audit Pane',
+}) {
   if (!transaction) return null
 
   const date = transaction.collectDate ? new Date(transaction.collectDate) : new Date()
@@ -68,13 +73,13 @@ export default function TransactionForensicModal({ transaction, onClose }) {
               <line x1="8" y1="8" x2="14" y2="8" />
               <line x1="8" y1="14" x2="12" y2="14" />
             </svg>
-            <h2 id="forensic-title">Transaction Forensic History</h2>
+            <h2 id="forensic-title">{title}</h2>
           </div>
           <button
             type="button"
             className="forensic-close-btn"
             onClick={onClose}
-            aria-label="Close Forensic History"
+            aria-label={`Close ${title}`}
           >
             ✕
           </button>
@@ -185,7 +190,7 @@ export default function TransactionForensicModal({ transaction, onClose }) {
         {/* Footer */}
         <footer className="forensic-footer">
           <button type="button" className="forensic-close-action" onClick={onClose}>
-            Close Audit Pane
+            {closeLabel}
           </button>
         </footer>
       </div>
