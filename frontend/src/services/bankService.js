@@ -20,11 +20,30 @@ async function request(path, options = {}) {
 
 export const getBankDashboard = () => request('/api/bank/dashboard')
 
-export const getBankTransactions = ({ page = 1, search = '' } = {}) => {
-  const params = new URLSearchParams({ page: String(page) })
-  if (search) params.set('search', search)
-  return request(`/api/bank/transactions?${params}`)
+export const getBankTransactions = (query = {}) => {
+  const params = new URLSearchParams()
+  if (query.page) params.set('page', String(query.page))
+  if (query.pageSize) params.set('pageSize', String(query.pageSize))
+  if (query.search) params.set('search', query.search)
+  if (query.status && query.status !== 'all') params.set('status', query.status)
+  if (query.type && query.type !== 'all') params.set('type', query.type)
+  if (query.mode && query.mode !== 'all') params.set('mode', query.mode)
+  if (query.scheme && query.scheme !== 'all') params.set('scheme', query.scheme)
+  if (query.agent && query.agent !== 'all') params.set('agent', query.agent)
+  if (query.dateRange && query.dateRange !== 'all') params.set('dateRange', query.dateRange)
+  return request(`/api/bank/transactions?${params.toString()}`)
 }
+
+export const cancelBankTransaction = (id, reason) =>
+  request(`/api/bank/transactions/${id}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  })
+
+export const rejectBankCancellation = (id) =>
+  request(`/api/bank/transactions/${id}/reject-cancellation`, {
+    method: 'POST',
+  })
 
 export const approveTransaction = (id) =>
   request(`/api/bank/transactions/${id}/approve`, { method: 'POST' })

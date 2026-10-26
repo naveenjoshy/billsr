@@ -84,11 +84,24 @@
   font-size: 12px;
   padding: 8px;
   text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .bank-nav a.is-active {
   background: #334155;
   color: #fff;
+}
+
+.nav-item-badge {
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  line-height: 1.3;
 }
 
 .bank-sync {

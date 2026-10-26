@@ -1,0 +1,266 @@
+.forensic-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+  animation: forensicFadeIn 0.15s ease-out;
+}
+
+@keyframes forensicFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.forensic-dialog {
+  background: #ffffff;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 10px;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.15),
+    0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: forensicScaleUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes forensicScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Header */
+.forensic-header {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forensic-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.forensic-header-icon {
+  width: 18px;
+  height: 18px;
+  color: #94a3b8;
+}
+
+.forensic-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+}
+
+.forensic-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.forensic-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Body */
+.forensic-body {
+  padding: 24px;
+}
+
+.forensic-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+}
+
+.forensic-txn-id {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+}
+
+.forensic-chain-badge {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #d1fae5;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  letter-spacing: 0.01em;
+}
+
+/* Timeline */
+.forensic-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.forensic-step {
+  display: flex;
+  position: relative;
+  min-height: 68px;
+}
+
+.forensic-step:last-child {
+  min-height: auto;
+}
+
+.forensic-step-indicator {
+  position: relative;
+  width: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 14px;
+}
+
+.forensic-node {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.node-green {
+  background-color: #10b981;
+}
+
+.node-indigo {
+  background-color: #6366f1;
+}
+
+.node-dark {
+  background-color: #0f172a;
+}
+
+.node-red {
+  background-color: #ef4444;
+}
+
+.node-amber {
+  background-color: #f59e0b;
+}
+
+.forensic-line {
+  position: absolute;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background-color: #e2e8f0;
+  z-index: 1;
+}
+
+.forensic-step:last-child .forensic-line {
+  display: none;
+}
+
+.forensic-step-content {
+  padding-bottom: 20px;
+  flex: 1;
+}
+
+.forensic-step:last-child .forensic-step-content {
+  padding-bottom: 0;
+}
+
+.forensic-step-title {
+  margin: 0 0 4px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.forensic-step-title.text-red {
+  color: #dc2626;
+}
+
+.forensic-step-title.text-amber {
+  color: #d97706;
+}
+
+.forensic-step-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.forensic-step-desc strong {
+  color: #1e293b;
+}
+
+.delta-pos {
+  color: #059669;
+}
+
+.delta-neg {
+  color: #dc2626;
+}
+
+/* Footer */
+.forensic-footer {
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.forensic-close-action {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.forensic-close-action:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}

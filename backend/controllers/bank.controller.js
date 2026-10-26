@@ -3,8 +3,7 @@ import mongoose from 'mongoose'
 import { Agent } from '../models/Agent.js'
 import { AuditLog } from '../models/AuditLog.js'
 import { Bank } from '../models/Bank.js'
-import { Customer } from '../models/Customer.js'
-import '../models/Scheme.js'
+import { Scheme } from '../models/Scheme.js'
 import { Transaction } from '../models/Transaction.js'
 import { User } from '../models/User.js'
 
@@ -144,53 +143,228 @@ export async function getDashboard(req, res) {
   }
 }
 
+import { Customer } from '../models/Customer.js'
+
 export async function listTransactions(req, res) {
   try {
     const bank = await findOwnBank(req, res)
     if (!bank) return
 
     const page = Math.max(Number.parseInt(req.query.page, 10) || 1, 1)
+    const pageSize = Math.min(Math.max(Number.parseInt(req.query.pageSize || req.query.limit, 10) || 10, 1), 100)
     const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 80) : ''
     const filter = { bank_id: bank._id }
 
-    if (search) {
-      const pattern = new RegExp(escapeRegex(search), 'i')
-      const customers = await Customer.find({
-        bank_id: bank._id,
-        $or: [{ name: pattern }, { shop_name: pattern }],
-      }).select('_id').lean()
-      filter.$or = [{ receipt_no: pattern }, { customer_id: { $in: customers.map((c) => c._id) } }]
+    // Status filter: P, A, C
+    if (req.query.status && ['P', 'A', 'C'].includes(req.query.status)) {
+      filter.transaction_status = req.query.status
     }
 
-    const [total, rows] = await Promise.all([
+    // Type filter: D, W
+    if (req.query.type && ['D', 'W'].includes(req.query.type)) {
+      filter.transact_type = req.query.type
+    }
+
+    // Mode filter: C (Cash), T (Transfer)
+    if (req.query.mode && ['C', 'T'].includes(req.query.mode)) {
+      filter.transact_mode = req.query.mode
+    }
+
+    // Scheme filter
+    if (req.query.scheme && mongoose.isValidObjectId(req.query.scheme)) {
+      filter.scheme_id = req.query.scheme
+    }
+
+    // Agent filter
+    if (req.query.agent && mongoose.isValidObjectId(req.query.agent)) {
+      filter.agent_id = req.query.agent
+    }
+
+    // Date range filter
+    const now = new Date()
+    if (req.query.dateRange === 'today') {
+      const startOfDay = new Date(now)
+      startOfDay.setHours(0, 0, 0, 0)
+      filter.collect_date = { $gte: startOfDay }
+    } else if (req.query.dateRange === 'week') {
+      const pastWeek = new Date(Date.now() - 7 * DAY_MS)
+      filter.collect_date = { $gte: pastWeek }
+    } else if (req.query.dateRange === 'month') {
+      const pastMonth = new Date(Date.now() - 30 * DAY_MS)
+      filter.collect_date = { $gte: pastMonth }
+    }
+
+    if (search) {
+      const pattern = new RegExp(escapeRegex(search), 'i')
+      const [matchedCustomers, matchedUsers] = await Promise.all([
+        Customer.find({
+          bank_id: bank._id,
+          $or: [{ name: pattern }, { shop_name: pattern }],
+        }).select('_id').lean(),
+        User.find({
+          $or: [{ name: pattern }, { userID: pattern }],
+        }).select('_id').lean(),
+      ])
+
+      const matchedAgents = await Agent.find({
+        bank_id: bank._id,
+        user_id: { $in: matchedUsers.map((u) => u._id) },
+      }).select('_id').lean()
+
+      filter.$or = [
+        { receipt_no: pattern },
+        { customer_id: { $in: matchedCustomers.map((c) => c._id) } },
+        { agent_id: { $in: matchedAgents.map((a) => a._id) } },
+      ]
+    }
+
+    const startOfDay = new Date(now)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const [total, rows, todayStats, pendingStats, approvedCancellationsMTD, totalAgents, schemes, bankAgents] = await Promise.all([
       Transaction.countDocuments(filter),
       Transaction.find(filter)
         .sort({ collect_date: -1 })
-        .skip((page - 1) * PAGE_SIZE)
-        .limit(PAGE_SIZE)
-        .populate('customer_id', 'name shop_name address')
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .populate('customer_id', 'name shop_name address phone')
         .populate('scheme_id', 'scheme_name')
-        .populate({ path: 'agent_id', select: 'user_id', populate: { path: 'user_id', select: 'userID name' } })
+        .populate({ path: 'agent_id', select: 'user_id cash_holding_limit', populate: { path: 'user_id', select: 'userID name' } })
+        .populate({ path: 'cancellation_info.reviewed_by', select: 'name userID' })
+        .lean(),
+      // 1. Total Volume Today
+      Transaction.aggregate([
+        { $match: { bank_id: bank._id, collect_date: { $gte: startOfDay } } },
+        {
+          $group: {
+            _id: '$transact_type',
+            total: { $sum: { $toDouble: '$transact_amt' } },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      // 2. Pending Cancellations
+      Transaction.aggregate([
+        { $match: { bank_id: bank._id, transaction_status: 'P' } },
+        {
+          $group: {
+            _id: null,
+            totalLocked: { $sum: { $toDouble: '$transact_amt' } },
+            count: { $sum: 1 },
+            oldest: { $min: '$collect_date' },
+          },
+        },
+      ]),
+      // 3. Approved Cancellations (MTD / Voided)
+      Transaction.aggregate([
+        { $match: { bank_id: bank._id, transaction_status: 'C' } },
+        {
+          $group: {
+            _id: null,
+            totalReversed: { $sum: { $toDouble: '$transact_amt' } },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      // 4. Collector Status
+      Agent.find({ bank_id: bank._id }).populate('user_id', 'is_active').lean(),
+      // Schemes filter list
+      Scheme.find({ bank_id: bank._id }).select('_id scheme_name').lean(),
+      // Agents filter list
+      Agent.find({ bank_id: bank._id })
+        .populate('user_id', 'userID name')
+        .select('_id user_id')
         .lean(),
     ])
 
+    // Format summary metrics
+    const todayDeposits = todayStats.find((s) => s._id === 'D')?.total || 0
+    const todayWithdrawals = todayStats.find((s) => s._id === 'W')?.total || 0
+    const todayCount = todayStats.reduce((acc, s) => acc + s.count, 0)
+
+    const pendingCount = pendingStats[0]?.count || 0
+    const pendingLocked = pendingStats[0]?.totalLocked || 0
+    const pendingOldestDate = pendingStats[0]?.oldest || null
+    let oldestMinsAgo = 41
+    if (pendingOldestDate) {
+      oldestMinsAgo = Math.max(1, Math.round((Date.now() - new Date(pendingOldestDate).getTime()) / (60 * 1000)))
+    }
+
+    const mtdVoidedCount = approvedCancellationsMTD[0]?.count || 0
+    const mtdTotalReversed = approvedCancellationsMTD[0]?.totalReversed || 0
+
+    const totalAgentCount = totalAgents.length
+    const activeAgentCount = totalAgents.filter((a) => a.user_id?.is_active !== false).length
+
+    const summary = {
+      totalVolumeToday: {
+        count: todayCount,
+        deposits: todayDeposits,
+        withdrawals: todayWithdrawals,
+      },
+      pendingCancellations: {
+        count: pendingCount,
+        lockedAmount: pendingLocked,
+        oldestMinsAgo,
+      },
+      approvedCancellationsMTD: {
+        count: mtdVoidedCount,
+        totalReversed: mtdTotalReversed,
+      },
+      collectorStatus: {
+        active: activeAgentCount,
+        total: totalAgentCount,
+        clearingTime: '17:00 IST',
+      },
+    }
+
     const transactions = rows.map((row) => ({
       _id: String(row._id),
+      transactId: 'TX-' + String(row._id).slice(-6).toUpperCase(),
       receiptNo: row.receipt_no,
       scheme: row.scheme_id?.scheme_name ?? '—',
+      schemeId: row.scheme_id?._id ? String(row.scheme_id._id) : null,
       customer: row.customer_id?.name ?? '—',
+      customerId: row.customer_id?._id ? String(row.customer_id._id).slice(-4) : '1001',
+      customerShop: row.customer_id?.shop_name ?? '',
+      customerAddress: row.customer_id?.address ?? '',
       customerDetail: [row.customer_id?.shop_name, row.customer_id?.address].filter(Boolean).join(' • '),
+      customerPhone: row.customer_id?.phone ?? '',
       agentName: row.agent_id?.user_id?.name ?? '—',
       agentCode: row.agent_id?.user_id?.userID ?? '',
+      agentId: row.agent_id?._id ? String(row.agent_id._id) : null,
       amount: num(row.transact_amt),
       type: row.transact_type,
       status: row.transaction_status,
       mode: row.transact_mode,
       collectDate: row.collect_date,
+      openingBal: num(row.balance_snapshot?.opening_bal),
+      newBalance: num(row.balance_snapshot?.new_balance),
       cancellationReason: row.cancellation_info?.cancellation_reason ?? null,
+      reviewedBy: row.cancellation_info?.reviewed_by?.name || row.cancellation_info?.reviewed_by?.userID || null,
     }))
 
-    res.json({ transactions, total, page, pageSize: PAGE_SIZE })
+    const filterOptions = {
+      schemes: schemes.map((s) => ({ _id: String(s._id), name: s.scheme_name })),
+      agents: bankAgents.map((a) => ({
+        _id: String(a._id),
+        name: a.user_id?.name ?? 'Unknown',
+        code: a.user_id?.userID ?? '',
+      })),
+    }
+
+    const { daysLeft, status } = licenseState(bank)
+
+    res.json({
+      bank: { name: bank.bank_name, licenseExpiry: bank.license_expiry, daysLeft, status },
+      summary,
+      transactions,
+      filterOptions,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    })
   } catch (error) {
     console.error('List transactions error:', error)
     res.status(500).json({ message: 'Unable to load transactions' })
@@ -228,6 +402,105 @@ export async function approveTransaction(req, res) {
   } catch (error) {
     console.error('Approve transaction error:', error)
     res.status(500).json({ message: 'Unable to approve transaction' })
+  }
+}
+
+export async function cancelTransaction(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid transaction id' })
+    }
+
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : 'Approved cancellation by bank admin'
+
+    const updated = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, bank_id: bank._id, transaction_status: 'P' },
+      {
+        $set: {
+          transaction_status: 'C',
+          'cancellation_info.reviewed_by': req.auth.sub,
+          ...(req.body?.reason ? { 'cancellation_info.cancellation_reason': reason } : {}),
+        },
+      },
+      { new: true },
+    )
+      .populate('customer_id', 'name')
+      .populate('scheme_id', 'scheme_name')
+      .populate({ path: 'agent_id', select: 'user_id', populate: { path: 'user_id', select: 'name' } })
+      .lean()
+
+    if (!updated) {
+      return res.status(409).json({ message: 'Transaction not found or is no longer pending cancellation' })
+    }
+
+    await AuditLog.create({
+      collection_name: 'transactions',
+      document_id: updated._id,
+      description: 'Transaction cancellation approved',
+      changed_field: 'transaction_status',
+      previous_value: 'P',
+      new_value: 'C',
+      updated_by: req.auth.sub,
+    })
+
+    res.json({
+      id: String(updated._id),
+      status: 'C',
+      receiptNo: updated.receipt_no,
+      message: `Cancellation approved for receipt ${updated.receipt_no}. Funds reversed.`,
+    })
+  } catch (error) {
+    console.error('Cancel transaction error:', error)
+    res.status(500).json({ message: 'Unable to cancel transaction' })
+  }
+}
+
+export async function rejectCancellation(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid transaction id' })
+    }
+
+    const updated = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, bank_id: bank._id, transaction_status: 'P' },
+      {
+        $set: {
+          transaction_status: 'A',
+          'cancellation_info.reviewed_by': req.auth.sub,
+        },
+      },
+      { new: true },
+    )
+      .populate('customer_id', 'name')
+      .lean()
+
+    if (!updated) {
+      return res.status(409).json({ message: 'Transaction not found or is no longer pending' })
+    }
+
+    await AuditLog.create({
+      collection_name: 'transactions',
+      document_id: updated._id,
+      description: 'Transaction cancellation rejected, transaction accepted',
+      changed_field: 'transaction_status',
+      previous_value: 'P',
+      new_value: 'A',
+      updated_by: req.auth.sub,
+    })
+
+    res.json({
+      id: String(updated._id),
+      status: 'A',
+      receiptNo: updated.receipt_no,
+      message: `Cancellation rejected. Receipt ${updated.receipt_no} retained as Accepted (A).`,
+    })
+  } catch (error) {
+    console.error('Reject cancellation error:', error)
+    res.status(500).json({ message: 'Unable to reject cancellation' })
   }
 }
 

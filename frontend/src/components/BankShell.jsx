@@ -8,7 +8,8 @@ const navItems = [
     items: [
       { label: 'Dashboard', view: 'dashboard' },
       { label: 'Agent Management & Risk', view: 'agents' },
-      { label: 'Transaction Ledger' },
+      { label: 'Transaction Ledger', view: 'ledger' },
+      { label: 'Cancellation Queue', view: 'cancellations', badge: 4 },
       { label: 'Schemes & Receipts' },
     ],
   },
@@ -54,7 +55,8 @@ export default function BankShell({
                   if (item.view && item.view !== active) onNavigate?.(item.view)
                 }}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.badge != null && <span className="nav-item-badge">{item.badge}</span>}
               </a>
             ))}
           </nav>

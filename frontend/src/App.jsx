@@ -5,6 +5,7 @@ import SuperAdminHomePage from './pages/SuperAdminHomePage'
 import BankHomePage from './pages/BankHomePage'
 import AgentManagementPage from './pages/AgentManagementPage'
 import AgentHomePage from './pages/AgentHomePage'
+import TransactionLedgerPage from './pages/TransactionLedgerPage'
 import './App.css'
 
 const HOME_ROLES = ['Superadmin', 'Bank', 'Agent']
@@ -71,9 +72,31 @@ function App() {
   }
 
   if (session?.role === 'Bank') {
-    const BankPage = bankView === 'agents' ? AgentManagementPage : BankHomePage
+    if (bankView === 'agents') {
+      return (
+        <AgentManagementPage
+          onNavigate={setBankView}
+          onLoggedOut={handleLoggedOut}
+          onUserUpdated={setCurrentUser}
+          user={currentUser}
+        />
+      )
+    }
+
+    if (bankView === 'ledger' || bankView === 'cancellations') {
+      return (
+        <TransactionLedgerPage
+          activeView={bankView}
+          onNavigate={setBankView}
+          onLoggedOut={handleLoggedOut}
+          onUserUpdated={setCurrentUser}
+          user={currentUser}
+        />
+      )
+    }
+
     return (
-      <BankPage
+      <BankHomePage
         onNavigate={setBankView}
         onLoggedOut={handleLoggedOut}
         onUserUpdated={setCurrentUser}
