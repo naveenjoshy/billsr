@@ -1,5 +1,5 @@
 {
-  "name": "billsr",
+  "name": "billsr-frontend",
   "version": "0.0.1",
   "private": true,
   "description": "A complete package to manage Daily Collection agents and their collections by banks",

@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "description": "Billsr is organized as a React/Vite web client and a separate Express API. The API uses MongoDB through Mongoose.",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "server": "npm --prefix backend run dev",
     "client": "npm --prefix frontend run dev",
