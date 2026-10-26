@@ -51,6 +51,86 @@
   margin: 0;
 }
 
+.reset-header {
+  background: #eff4ff;
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+
+.reset-header h1 {
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 36px;
+  margin: 0;
+}
+
+.reset-header p {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 22px;
+  margin-top: 8px;
+}
+
+.reset-form .input-wrap-no-icon input {
+  padding-left: 12px;
+}
+
+.login-link-button {
+  align-self: center;
+  background: transparent;
+  border: 0;
+  color: #b22c06;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+  padding: 4px 8px;
+}
+
+.login-link-button:hover {
+  color: #8f2306;
+  text-decoration: underline;
+}
+
+.login-link-button:focus-visible {
+  outline: 2px solid #0f172a;
+  outline-offset: 2px;
+}
+
+.reset-status {
+  color: #475569;
+  font-size: 15px;
+}
+
+.reset-footer {
+  display: flex;
+  flex-direction: column;
+  padding: 0 32px 20px;
+}
+
+.reset-verified-account {
+  color: #475569;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.reset-verified-account strong {
+  color: #0f172a;
+}
+
+.reset-verified-account span {
+  color: #64748b;
+}
+
+.reset-password-hint {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 18px;
+  margin-top: -8px;
+}
+
 .login-form {
   display: flex;
   flex-direction: column;
@@ -191,7 +271,15 @@
     padding: 24px 16px 16px;
   }
 
+  .reset-header {
+    padding: 24px 16px 20px;
+  }
+
   .login-form {
     padding: 24px 20px 28px;
+  }
+
+  .reset-footer {
+    padding: 0 20px 20px;
   }
 }
