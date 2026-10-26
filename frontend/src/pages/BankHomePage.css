@@ -169,7 +169,7 @@
   font-weight: 600;
   gap: 6px;
   cursor: pointer;
-  user-select: none;
+  -webkit-user-select: none;
 }
 
 .bank-date-input {
@@ -199,10 +199,21 @@
   padding: 5px 10px;
 }
 
-.bank-license-active { background: #fefce8; color: #854d0e; }
+.bank-license-active {
+  background: #fefce8;
+  color: #854d0e;
+}
+
 .bank-license-expiring,
-.bank-license-grace { background: #fff7ed; color: #c2410c; }
-.bank-license-suspended { background: #fef2f2; color: #b91c1c; }
+.bank-license-grace {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.bank-license-suspended {
+  background: #fef2f2;
+  color: #b91c1c;
+}
 
 .bank-user {
   display: flex;
@@ -261,7 +272,9 @@
   font-weight: 400;
 }
 
-.bank-kpi-value.is-amber { color: #d97706; }
+.bank-kpi-value.is-amber {
+  color: #d97706;
+}
 
 .bank-kpi ul {
   font-size: 11px;
@@ -276,8 +289,15 @@
   padding: 2px 0;
 }
 
-.bank-kpi-foot { color: #94a3b8; font-size: 10px; justify-content: flex-end !important; }
-.is-negative { color: #dc2626; }
+.bank-kpi-foot {
+  color: #94a3b8;
+  font-size: 10px;
+  justify-content: flex-end !important;
+}
+
+.is-negative {
+  color: #dc2626;
+}
 
 .bank-kpi-alert {
   background: #fef2f2;
@@ -296,7 +316,11 @@
   margin: 0;
 }
 
-.bank-kpi-foot-row a { color: var(--bank-red); font-weight: 600; text-decoration: none; }
+.bank-kpi-foot-row a {
+  color: var(--bank-red);
+  font-weight: 600;
+  text-decoration: none;
+}
 
 .bank-count {
   background: #fee2e2;
@@ -306,10 +330,18 @@
   padding: 1px 7px;
 }
 
-.bank-health-active { color: #059669; }
+.bank-health-active {
+  color: #059669;
+}
+
 .bank-health-expiring,
-.bank-health-grace { color: #d97706; }
-.bank-health-suspended { color: #dc2626; }
+.bank-health-grace {
+  color: #d97706;
+}
+
+.bank-health-suspended {
+  color: #dc2626;
+}
 
 .bank-card {
   background: #fff;
@@ -369,14 +401,37 @@
   padding: 12px;
 }
 
-.bank-risk-row.is-over { background: #fef2f2; }
-.bank-risk-row.is-near { background: #f1f5f9; }
+.bank-risk-row.is-over {
+  background: #fef2f2;
+}
 
-.bank-risk-agent { align-items: center; display: flex; gap: 10px; }
-.bank-risk-agent strong { display: block; font-size: 14px; }
-.bank-risk-agent small { color: #64748b; font-family: monospace; font-size: 10px; }
+.bank-risk-row.is-near {
+  background: #f1f5f9;
+}
 
-.bank-avatar { border-radius: 4px; height: 28px; object-fit: cover; width: 28px; }
+.bank-risk-agent {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.bank-risk-agent strong {
+  display: block;
+  font-size: 14px;
+}
+
+.bank-risk-agent small {
+  color: #64748b;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.bank-avatar {
+  border-radius: 4px;
+  height: 28px;
+  object-fit: cover;
+  width: 28px;
+}
 
 .bank-avatar-fallback {
   align-items: center;
@@ -396,8 +451,14 @@
   justify-content: space-between;
 }
 
-.bank-risk-held { color: #92400e; font-weight: 700; }
-.is-over .bank-risk-held { color: #dc2626; }
+.bank-risk-held {
+  color: #92400e;
+  font-weight: 700;
+}
+
+.is-over .bank-risk-held {
+  color: #dc2626;
+}
 
 .bank-risk-bar {
   background: #dbeafe;
@@ -406,10 +467,19 @@
   overflow: hidden;
 }
 
-.bank-risk-bar span { background: #d97706; display: block; height: 100%; }
-.is-over .bank-risk-bar span { background: #dc2626; }
+.bank-risk-bar span {
+  background: #d97706;
+  display: block;
+  height: 100%;
+}
 
-.bank-table-scroll { overflow-x: auto; }
+.is-over .bank-risk-bar span {
+  background: #dc2626;
+}
+
+.bank-table-scroll {
+  overflow-x: auto;
+}
 
 .bank-table {
   border-collapse: collapse;
@@ -433,10 +503,24 @@
   vertical-align: middle;
 }
 
-.bank-table small { color: #94a3b8; display: block; font-size: 10px; }
-.bank-table .is-right { text-align: right; }
-.bank-mono { font-family: monospace; }
-.bank-amount { font-size: 13px; font-weight: 700; }
+.bank-table small {
+  color: #94a3b8;
+  display: block;
+  font-size: 10px;
+}
+
+.bank-table .is-right {
+  text-align: right;
+}
+
+.bank-mono {
+  font-family: monospace;
+}
+
+.bank-amount {
+  font-size: 13px;
+  font-weight: 700;
+}
 
 .bank-scheme {
   background: #ede9fe;
@@ -447,14 +531,44 @@
   padding: 3px 8px;
 }
 
-.bank-type { border-radius: 3px; font-size: 10px; font-weight: 700; padding: 3px 6px; }
-.bank-type-d { background: #dcfce7; color: #15803d; }
-.bank-type-w { background: #fee2e2; color: #b91c1c; }
+.bank-type {
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 6px;
+}
 
-.bank-status { border-radius: 999px; font-size: 11px; font-weight: 600; padding: 3px 10px; }
-.bank-status-pending { background: #fef9c3; color: #a16207; }
-.bank-status-confirmed { background: #dcfce7; color: #15803d; }
-.bank-status-cancelled { background: #fee2e2; color: #b91c1c; }
+.bank-type-d {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.bank-type-w {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.bank-status {
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+}
+
+.bank-status-pending {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.bank-status-confirmed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.bank-status-cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 
 .bank-approve {
   background: var(--bank-red);
@@ -469,10 +583,20 @@
 }
 
 .bank-approve:disabled,
-.bank-pager button:disabled { cursor: not-allowed; opacity: 0.5; }
+.bank-pager button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 
-.bank-empty { color: #64748b; font-size: 12px; text-align: center; }
-.bank-card > .bank-empty { padding: 12px 0; }
+.bank-empty {
+  color: #64748b;
+  font-size: 12px;
+  text-align: center;
+}
+
+.bank-card>.bank-empty {
+  padding: 12px 0;
+}
 
 .bank-table-footer {
   align-items: center;
@@ -485,8 +609,14 @@
   margin-top: 14px;
 }
 
-.bank-dot { margin: 0 6px; }
-.bank-pager { display: flex; gap: 6px; }
+.bank-dot {
+  margin: 0 6px;
+}
+
+.bank-pager {
+  display: flex;
+  gap: 6px;
+}
 
 .bank-pager button {
   background: #f1f5f9;
@@ -498,9 +628,16 @@
   padding: 5px 10px;
 }
 
-.bank-pager .is-current { background: var(--bank-ink); color: #fff; }
+.bank-pager .is-current {
+  background: var(--bank-ink);
+  color: #fff;
+}
 
-.bank-notice { color: #475569; font-size: 12px; margin: 0 0 10px; }
+.bank-notice {
+  color: #475569;
+  font-size: 12px;
+  margin: 0 0 10px;
+}
 
 .bank-error {
   background: #fef2f2;
@@ -521,11 +658,21 @@
 }
 
 @media (max-width: 1180px) {
-  .bank-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bank-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
-  .bank-shell { grid-template-columns: 1fr; }
-  .bank-sidebar { display: none; }
-  .bank-kpis { grid-template-columns: 1fr; }
+  .bank-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-sidebar {
+    display: none;
+  }
+
+  .bank-kpis {
+    grid-template-columns: 1fr;
+  }
 }
