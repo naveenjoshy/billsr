@@ -1,21 +1,14 @@
-import { Buffer } from 'node:buffer'
 import { Bank } from '../models/Bank.js'
 import { User } from '../models/User.js'
-import { EMAIL, fieldFromSchema, validateSection } from './validate.js'
+import {
+  fieldFromSchema,
+  getUserSpec,
+  PHONE,
+  validatePassword,
+  validateSection,
+} from './validate.js'
 
-const PHONE = /^\+?[0-9][0-9 ()-]{6,19}$/
-const USER_ID = /^[A-Za-z0-9._-]+$/
-
-const userSpec = {
-  userID: fieldFromSchema(User, 'userID', {
-    label: 'User ID', min: 3, max: 40, pattern: USER_ID,
-    message: 'User ID may only contain letters, numbers, dot, dash and underscore',
-  }),
-  name: fieldFromSchema(User, 'name', { label: 'Name', max: 120 }),
-  email: fieldFromSchema(User, 'email', {
-    label: 'Email', max: 254, pattern: EMAIL, message: 'Email is invalid',
-  }),
-}
+const userSpec = getUserSpec(User)
 
 const bankSpec = {
   bank_name: fieldFromSchema(Bank, 'bank_name', { label: 'Bank name', max: 160 }),
@@ -33,14 +26,6 @@ const bankSpec = {
     label: 'Grace period end',
     required: (input) => input?.account_status === 'Grace',
   }),
-}
-
-function validatePassword(password, errors) {
-  if (typeof password !== 'string' || password.length < 8) {
-    errors['user.password'] = 'Password must be at least 8 characters'
-  } else if (Buffer.byteLength(password, 'utf8') > 72) {
-    errors['user.password'] = 'Password must be at most 72 bytes'
-  }
 }
 
 export function validateOnboardBank(req, res, next) {

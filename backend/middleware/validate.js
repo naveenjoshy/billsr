@@ -108,4 +108,29 @@ export function validateSection(input, spec, label) {
   return { errors, output }
 }
 
+export const PHONE = /^\+?[0-9][0-9 ()-]{6,19}$/
+export const USER_ID = /^[A-Za-z0-9._-]+$/
+
+export function getUserSpec(User) {
+  return {
+    userID: fieldFromSchema(User, 'userID', {
+      label: 'User ID', min: 3, max: 40, pattern: USER_ID,
+      message: 'User ID may only contain letters, numbers, dot, dash and underscore',
+    }),
+    name: fieldFromSchema(User, 'name', { label: 'Name', max: 120 }),
+    email: fieldFromSchema(User, 'email', {
+      label: 'Email', max: 254, pattern: EMAIL, message: 'Email is invalid',
+    }),
+  }
+}
+
+export function validatePassword(password, errors) {
+  if (typeof password !== 'string' || password.length < 8) {
+    errors['user.password'] = 'Password must be at least 8 characters'
+  } else if (Buffer.byteLength(password, 'utf8') > 72) {
+    errors['user.password'] = 'Password must be at most 72 bytes'
+  }
+}
+
 export { EMAIL, fieldFromSchema }
+

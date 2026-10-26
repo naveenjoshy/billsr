@@ -1,18 +1,27 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { Buffer } from 'node:buffer'
+import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { User } from '../models/User.js'
-import { Buffer } from 'node:buffer'
 import { EMAIL, fieldFromSchema, validateSection } from '../middleware/validate.js'
 
-const COOKIE = 'token'
-const cookieOpts = {
+const ACCESS_COOKIE = 'accessToken'
+const REFRESH_COOKIE = 'refreshToken'
+const LEGACY_COOKIE = 'token'
+
+const ACCESS_EXPIRY_MS = 15 * 60 * 1000 // 15 mins
+const REFRESH_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
+
+const cookieBaseOpts = {
   httpOnly: true,
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 24 * 60 * 60 * 1000,
+  path: '/',
 }
-const RESET_IDENTITY_ERROR = 'Email ID or user ID is incorrect.'
+
+const getRefreshSecret = () =>
+  process.env.JWT_REFRESH_SECRET || `${process.env.JWT_SECRET}_refresh`
 
 async function findActiveUserByResetIdentity(email, userID) {
   return User.findOne({
@@ -44,19 +53,51 @@ async function findActiveUserByResetIdentity(email, userID) {
   })
 }
 
-const PENDING_MAX_AGE = 15 * 60 * 1000
+function issueTokens(res, user, { pending = false } = {}) {
+  const userId = user._id ? String(user._id) : user.id
+  const accessPayload = {
+    sub: userId,
+    role: user.role,
+    ...(pending ? { pwdPending: true } : {}),
+  }
 
-function issueToken(res, user, { pending = false } = {}) {
-  const token = jwt.sign(
-    { sub: user.id, role: user.role, ...(pending ? { pwdPending: true } : {}) },
-    process.env.JWT_SECRET,
-    { expiresIn: pending ? '15m' : process.env.JWT_EXPIRES_IN || '1h' },
-  )
-  res.cookie(COOKIE, token, pending ? { ...cookieOpts, maxAge: PENDING_MAX_AGE } : cookieOpts)
+  const accessToken = jwt.sign(accessPayload, process.env.JWT_SECRET, {
+    expiresIn: pending ? '15m' : '15m',
+  })
+
+  // Issue refresh token only if user does not require initial password change
+  let refreshToken = null
+  if (!pending) {
+    const refreshPayload = { sub: userId, role: user.role }
+    refreshToken = jwt.sign(refreshPayload, getRefreshSecret(), { expiresIn: '7d' })
+  }
+
+  // Set cookies
+  res.cookie(ACCESS_COOKIE, accessToken, {
+    ...cookieBaseOpts,
+    maxAge: ACCESS_EXPIRY_MS,
+  })
+
+  // Also maintain legacy cookie for smooth transition
+  res.cookie(LEGACY_COOKIE, accessToken, {
+    ...cookieBaseOpts,
+    maxAge: ACCESS_EXPIRY_MS,
+  })
+
+  if (refreshToken) {
+    res.cookie(REFRESH_COOKIE, refreshToken, {
+      ...cookieBaseOpts,
+      maxAge: REFRESH_EXPIRY_MS,
+    })
+  } else {
+    res.clearCookie(REFRESH_COOKIE, cookieBaseOpts)
+  }
+
+  return { accessToken, refreshToken }
 }
 
 const publicUser = (user, extra = {}) => ({
-  id: user.id,
+  id: user._id ? String(user._id) : user.id,
   userID: user.userID,
   name: user.name,
   email: user.email,
@@ -78,43 +119,75 @@ export function passwordStrengthError(password) {
 
 export async function login(req, res) {
   const { email, password } = req.body ?? {}
-  if (typeof email !== 'string' || typeof password !== 'string')
-    return res.status(400).json({ message: 'Email and password are required' })
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.REQUIRED_CREDENTIALS })
+  }
 
   const user = await User.findOne({ email: email.trim().toLowerCase() })
   const ok = user && user.is_active && (await bcrypt.compare(password, user.password_hash))
-  if (!ok) return res.status(401).json({ message: 'Invalid Email or Password' })
+  if (!ok) {
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.INVALID_CREDENTIALS })
+  }
 
   if (!user.first_login_at) {
-    issueToken(res, user, { pending: true })
+    issueTokens(res, user, { pending: true })
     return res.json({ user: publicUser(user, { mustChangePassword: true }) })
   }
 
   user.last_login_at = new Date()
   await user.save()
-  issueToken(res, user)
+  issueTokens(res, user)
   res.json({ user: publicUser(user) })
+}
+
+export async function refreshToken(req, res) {
+  try {
+    const rawRefreshToken = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken
+    if (!rawRefreshToken) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.REFRESH_TOKEN_REQUIRED })
+    }
+
+    let payload
+    try {
+      payload = jwt.verify(rawRefreshToken, getRefreshSecret())
+    } catch {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.REFRESH_TOKEN_INVALID })
+    }
+
+    const user = await User.findById(payload.sub).select('userID name email role is_active')
+    if (!user || !user.is_active) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.UNAUTHORIZED_ACCESS })
+    }
+
+    issueTokens(res, user)
+    res.json({ ok: true, user: publicUser(user) })
+  } catch (error) {
+    console.error('Refresh token error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.GENERAL.SERVER_ERROR })
+  }
 }
 
 export async function setFirstPassword(req, res) {
   try {
     const { newPassword, confirmPassword } = req.body ?? {}
     if (typeof newPassword !== 'string' || typeof confirmPassword !== 'string') {
-      return res.status(400).json({ message: 'New password and confirmation are required.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'New password and confirmation are required.' })
     }
     if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: 'Passwords do not match.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Passwords do not match.' })
     }
     const weakness = passwordStrengthError(newPassword)
-    if (weakness) return res.status(400).json({ message: weakness })
+    if (weakness) return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: weakness })
 
     const user = await User.findById(req.auth.sub)
-    if (!user || !user.is_active) return res.status(401).json({ message: 'Unauthorized Access' })
+    if (!user || !user.is_active) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.UNAUTHORIZED_ACCESS })
+    }
     if (user.first_login_at) {
-      return res.status(409).json({ message: 'Your password has already been set. Please sign in.' })
+      return res.status(HTTP_STATUS.CONFLICT).json({ message: 'Your password has already been set. Please sign in.' })
     }
     if (await bcrypt.compare(newPassword, user.password_hash)) {
-      return res.status(400).json({ message: 'New password must be different from the temporary password.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'New password must be different from the temporary password.' })
     }
 
     const now = new Date()
@@ -131,17 +204,19 @@ export async function setFirstPassword(req, res) {
       )
     }
 
-    issueToken(res, user)
+    issueTokens(res, user)
     res.json({ user: publicUser(user) })
   } catch (error) {
     console.error('Set first password error:', error)
-    res.status(500).json({ message: 'Unable to set the password' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.GENERAL.SERVER_ERROR })
   }
 }
 
 export async function me(req, res) {
   const user = await User.findById(req.auth.sub).select('userID name email role is_active')
-  if (!user || !user.is_active) return res.status(401).json({ message: 'Unauthorized Access' })
+  if (!user || !user.is_active) {
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.UNAUTHORIZED_ACCESS })
+  }
   res.json({
     user: publicUser(user, req.auth.pwdPending ? { mustChangePassword: true } : {}),
   })
@@ -155,15 +230,15 @@ export async function verifyPasswordReset(req, res) {
     !email.trim() ||
     !userID.trim()
   ) {
-    return res.status(400).json({ message: 'Email ID and user ID are required.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email ID and user ID are required.' })
   }
 
   const user = await findActiveUserByResetIdentity(email, userID)
   if (!user) {
-    return res.status(400).json({ message: RESET_IDENTITY_ERROR })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.RESET_IDENTITY_ERROR })
   }
 
-  return res.status(200).json({ message: 'Account details verified.' })
+  return res.status(HTTP_STATUS.OK).json({ message: MESSAGES.AUTH.PASSWORD_RESET_VERIFIED })
 }
 
 export async function resetPassword(req, res) {
@@ -174,33 +249,33 @@ export async function resetPassword(req, res) {
     !email.trim() ||
     !userID.trim()
   ) {
-    return res.status(400).json({ message: 'Email ID and user ID are required.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email ID and user ID are required.' })
   }
 
   if (typeof newPassword !== 'string' || typeof confirmPassword !== 'string') {
-    return res.status(400).json({ message: 'New password and confirmation are required.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'New password and confirmation are required.' })
   }
 
   if (newPassword !== confirmPassword) {
-    return res.status(400).json({ message: 'Passwords do not match.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Passwords do not match.' })
   }
 
   if (newPassword.length < 8 || Buffer.byteLength(newPassword, 'utf8') > 72) {
-    return res.status(400).json({
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
       message: 'Password must be at least 8 characters and no more than 72 UTF-8 bytes.',
     })
   }
 
   const user = await findActiveUserByResetIdentity(email, userID)
   if (!user) {
-    return res.status(400).json({ message: RESET_IDENTITY_ERROR })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.RESET_IDENTITY_ERROR })
   }
 
   user.password_hash = await bcrypt.hash(newPassword, 12)
   user.set('audit_trail.modified_at', new Date())
   await user.save()
 
-  return res.status(200).json({ message: 'Password reset successfully.' })
+  return res.status(HTTP_STATUS.OK).json({ message: MESSAGES.AUTH.PASSWORD_RESET_SUCCESS })
 }
 
 const profileSpec = {
@@ -215,11 +290,13 @@ export async function updateProfile(req, res) {
     const { currentPassword, ...rest } = req.body ?? {}
     const { errors, output } = validateSection(rest, profileSpec, 'profile')
     if (Object.keys(errors).length) {
-      return res.status(400).json({ message: 'Please correct the highlighted fields', errors })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.GENERAL.VALIDATION_ERROR, errors })
     }
 
     const user = await User.findById(req.auth.sub)
-    if (!user || !user.is_active) return res.status(401).json({ message: 'Unauthorized Access' })
+    if (!user || !user.is_active) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.UNAUTHORIZED_ACCESS })
+    }
 
     const emailChanged = output.email !== user.email
     if (emailChanged) {
@@ -227,16 +304,16 @@ export async function updateProfile(req, res) {
         typeof currentPassword === 'string' &&
         (await bcrypt.compare(currentPassword, user.password_hash))
       if (!valid) {
-        return res.status(400).json({
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
           message: 'Current password is required to change your email',
           errors: { 'profile.currentPassword': 'Current password is incorrect' },
         })
       }
       const clash = await User.findOne({ email: output.email, _id: { $ne: user._id } }).lean()
       if (clash) {
-        return res.status(409).json({
-          message: 'Email is already in use',
-          errors: { 'profile.email': 'Email is already in use' },
+        return res.status(HTTP_STATUS.CONFLICT).json({
+          message: MESSAGES.BANK.EMAIL_IN_USE,
+          errors: { 'profile.email': MESSAGES.BANK.EMAIL_IN_USE },
         })
       }
     }
@@ -248,11 +325,13 @@ export async function updateProfile(req, res) {
     res.json({ user: { id: user.id, userID: user.userID, name: user.name, email: user.email, role: user.role } })
   } catch (error) {
     console.error('Update profile error:', error)
-    res.status(500).json({ message: 'Unable to update profile' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.GENERAL.SERVER_ERROR })
   }
 }
 
 export function logout(req, res) {
-  res.clearCookie(COOKIE, { ...cookieOpts, maxAge: undefined })
-  res.status(204).end()
+  res.clearCookie(ACCESS_COOKIE, cookieBaseOpts)
+  res.clearCookie(REFRESH_COOKIE, cookieBaseOpts)
+  res.clearCookie(LEGACY_COOKIE, cookieBaseOpts)
+  res.status(HTTP_STATUS.NO_CONTENT).end()
 }

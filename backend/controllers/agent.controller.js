@@ -1,3 +1,4 @@
+import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { Bank } from '../models/Bank.js'
 import { Customer } from '../models/Customer.js'
@@ -12,7 +13,7 @@ const sumBy = (rows, type) => rows.filter((row) => row.transact_type === type).r
 
 export async function getAgentHome(req, res) {
   const agent = await Agent.findOne({ user_id: req.auth.sub }).lean()
-  if (!agent) return res.status(404).json({ message: 'No agent profile is linked to this account' })
+  if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
 
   const [user, bank] = await Promise.all([
     User.findById(req.auth.sub).select('userID name').lean(),

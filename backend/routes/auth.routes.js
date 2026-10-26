@@ -4,6 +4,7 @@ import {
   login,
   logout,
   me,
+  refreshToken,
   resetPassword,
   setFirstPassword,
   updateProfile,
@@ -21,6 +22,7 @@ const passwordResetLimiter = rateLimit({
 })
 
 router.post('/login', login)
+router.post('/refresh', refreshToken)
 router.post('/password-reset/verify', passwordResetLimiter, verifyPasswordReset)
 router.post('/password-reset', passwordResetLimiter, resetPassword)
 router.post('/logout', logout)

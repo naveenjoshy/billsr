@@ -315,7 +315,7 @@ async function seed() {
         transact_mode: 'C',
         balance_snapshot: { opening_bal: 13200.0, new_balance: 14200.0 },
         cancellation_info: {
-          cancellation_reason: 'Voided by Admin. Wrong customer scheme code tagged.',
+          cancellation_reason: 'Cancelled by Admin. Wrong customer scheme code tagged.',
         },
         collect_date: todayAt(8, 30),
       },

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import BankShell from '../components/BankShell'
 import TransactionForensicModal from '../components/TransactionForensicModal'
+import { money } from '../components/bankShellUtils'
 import {
   cancelBankTransaction,
   getBankDashboard,
@@ -8,14 +9,6 @@ import {
   rejectBankCancellation,
 } from '../services/bankService'
 import './TransactionLedgerPage.css'
-
-const money = (value) => {
-  const num = Number(value) || 0
-  return num.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  })
-}
 
 const formatDate = (isoString) => {
   if (!isoString) return '—'
@@ -444,7 +437,7 @@ export default function TransactionLedgerPage({
                 </svg>
               </div>
               <div className="metric-val-row">
-                <span className="metric-primary-val">{summary.approvedCancellationsMTD?.count || 18} Voided Receipts</span>
+                <span className="metric-primary-val">{summary.approvedCancellationsMTD?.count || 18} Cancelled Receipts</span>
               </div>
               <span className="metric-subtext">
                 {money(summary.approvedCancellationsMTD?.totalReversed || 12400)} Reversed to accounts
@@ -760,9 +753,8 @@ export default function TransactionLedgerPage({
                     return (
                       <tr
                         key={txn._id}
-                        className={`ledger-row ${isCancelled ? 'row-cancelled' : ''} ${
-                          isPending ? 'row-pending' : ''
-                        }`}
+                        className={`ledger-row ${isCancelled ? 'row-cancelled' : ''} ${isPending ? 'row-pending' : ''
+                          }`}
                       >
                         {/* 1. Transact ID & Receipt */}
                         <td className="cell-id">

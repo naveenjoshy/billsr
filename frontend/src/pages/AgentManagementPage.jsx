@@ -1,19 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddAgentModal from '../components/AddAgentModal'
 import BankShell from '../components/BankShell'
+import { dateText, initials, money } from '../components/bankShellUtils'
 import { getBankAgents } from '../services/bankService'
 import './AgentManagementPage.css'
 
 const PAGE_SIZE = 5
-
-const money = (value) =>
-  value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
-
-const initials = (name = '') =>
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
-
-const dateText = (value) =>
-  new Date(value).toLocaleDateString('en-CA', { timeZone: 'UTC' })
 
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`
 

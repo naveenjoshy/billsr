@@ -1,24 +1,11 @@
-async function request(path, options = {}) {
-  let response
-  try {
-    response = await fetch(path, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      ...options,
-    })
-  } catch {
-    throw new Error('Server unreachable')
-  }
-  const data = await response.json().catch(() => null)
-  if (!response.ok) {
-    const error = new Error(data?.message || 'Request failed')
-    error.fieldErrors = data?.errors ?? {}
-    throw error
-  }
-  return data
-}
+import { post, request } from './apiClient'
 
-export const getBankDashboard = () => request('/api/bank/dashboard')
+export const getBankDashboard = (query = {}) => {
+  const params = new URLSearchParams()
+  if (query.date) params.set('date', query.date)
+  const qs = params.toString()
+  return request(`/api/bank/dashboard${qs ? `?${qs}` : ''}`)
+}
 
 export const getBankTransactions = (query = {}) => {
   const params = new URLSearchParams()
@@ -35,20 +22,14 @@ export const getBankTransactions = (query = {}) => {
 }
 
 export const cancelBankTransaction = (id, reason) =>
-  request(`/api/bank/transactions/${id}/cancel`, {
-    method: 'POST',
-    body: JSON.stringify({ reason }),
-  })
+  post(`/api/bank/transactions/${id}/cancel`, { reason })
 
 export const rejectBankCancellation = (id) =>
-  request(`/api/bank/transactions/${id}/reject-cancellation`, {
-    method: 'POST',
-  })
+  post(`/api/bank/transactions/${id}/reject-cancellation`, {})
 
 export const approveTransaction = (id) =>
-  request(`/api/bank/transactions/${id}/approve`, { method: 'POST' })
+  post(`/api/bank/transactions/${id}/approve`, {})
 
 export const getBankAgents = () => request('/api/bank/agents')
 
-export const addAgent = (payload) =>
-  request('/api/bank/agents', { method: 'POST', body: JSON.stringify(payload) })
+export const addAgent = (payload) => post('/api/bank/agents', payload)

@@ -1,8 +1,10 @@
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
+import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { AuditLog } from '../models/AuditLog.js'
 import { Bank } from '../models/Bank.js'
+import { Customer } from '../models/Customer.js'
 import { Scheme } from '../models/Scheme.js'
 import { Transaction } from '../models/Transaction.js'
 import { User } from '../models/User.js'
@@ -15,7 +17,7 @@ const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 async function findOwnBank(req, res) {
   const bank = await Bank.findOne({ user_id: req.auth.sub }).lean()
-  if (!bank) res.status(404).json({ message: 'No bank is linked to this account' })
+  if (!bank) res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.NO_BANK_LINKED })
   return bank
 }
 
@@ -80,18 +82,53 @@ export async function getDashboard(req, res) {
     const bank = await findOwnBank(req, res)
     if (!bank) return
 
-    const startOfDay = new Date()
+    const baseDate = req.query.date ? new Date(req.query.date) : new Date()
+    const targetDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate
+    const startOfDay = new Date(targetDate)
     startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date(targetDate)
+    endOfDay.setHours(23, 59, 59, 999)
 
-    const [today, pending, holdings, owner] = await Promise.all([
+    const [today, todayModes, pending, holdings, owner] = await Promise.all([
       Transaction.aggregate([
-        { $match: { bank_id: bank._id, collect_date: { $gte: startOfDay }, transaction_status: { $ne: 'C' } } },
+        {
+          $match: {
+            bank_id: bank._id,
+            collect_date: { $gte: startOfDay, $lte: endOfDay },
+            transaction_status: { $ne: 'C' },
+          },
+        },
         {
           $group: {
             _id: '$transact_type',
             total: { $sum: { $toDouble: '$transact_amt' } },
             count: { $sum: 1 },
             agents: { $addToSet: '$agent_id' },
+          },
+        },
+      ]),
+      Transaction.aggregate([
+        {
+          $match: {
+            bank_id: bank._id,
+            collect_date: { $gte: startOfDay, $lte: endOfDay },
+            transaction_status: { $ne: 'C' },
+          },
+        },
+        {
+          $group: {
+            _id: '$transact_mode',
+            totalDeposits: {
+              $sum: {
+                $cond: [{ $eq: ['$transact_type', 'D'] }, { $toDouble: '$transact_amt' }, 0],
+              },
+            },
+            totalWithdrawals: {
+              $sum: {
+                $cond: [{ $eq: ['$transact_type', 'W'] }, { $toDouble: '$transact_amt' }, 0],
+              },
+            },
+            count: { $sum: 1 },
           },
         },
       ]),
@@ -110,6 +147,12 @@ export async function getDashboard(req, res) {
     const overLimit = holdings.filter((agent) => agent.limit > 0 && agent.held > agent.limit)
     const { daysLeft, status } = licenseState(bank)
 
+    const byMode = Object.fromEntries(todayModes.map((row) => [row._id, row]))
+    const cashDeposits = byMode.C?.totalDeposits ?? 0
+    const cashWithdrawals = byMode.C?.totalWithdrawals ?? 0
+    const transferDeposits = byMode.T?.totalDeposits ?? 0
+    const transferWithdrawals = byMode.T?.totalWithdrawals ?? 0
+
     res.json({
       user: { name: owner?.name ?? '', designation: bank.designation ?? null },
       bank: {
@@ -124,6 +167,18 @@ export async function getDashboard(req, res) {
         deposits,
         withdrawals,
         transactionCount: (byType.D?.count ?? 0) + (byType.W?.count ?? 0),
+        cashMode: {
+          net: cashDeposits - cashWithdrawals,
+          deposits: cashDeposits,
+          withdrawals: cashWithdrawals,
+          count: byMode.C?.count ?? 0,
+        },
+        transferMode: {
+          net: transferDeposits - transferWithdrawals,
+          deposits: transferDeposits,
+          withdrawals: transferWithdrawals,
+          count: byMode.T?.count ?? 0,
+        },
         totalAgents: holdings.length,
         agentsOnDuty: activeToday.size,
         cashInField: holdings.reduce((sum, agent) => sum + agent.held, 0),
@@ -139,11 +194,9 @@ export async function getDashboard(req, res) {
     })
   } catch (error) {
     console.error('Bank dashboard error:', error)
-    res.status(500).json({ message: 'Unable to load dashboard' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.DASHBOARD_ERROR })
   }
 }
-
-import { Customer } from '../models/Customer.js'
 
 export async function listTransactions(req, res) {
   try {
@@ -180,10 +233,18 @@ export async function listTransactions(req, res) {
       filter.agent_id = req.query.agent
     }
 
-    // Date range filter
-    const now = new Date()
-    if (req.query.dateRange === 'today') {
-      const startOfDay = new Date(now)
+    // Date filter: specific date or range
+    if (req.query.date) {
+      const selectedDate = new Date(req.query.date)
+      if (!Number.isNaN(selectedDate.getTime())) {
+        const startOfDay = new Date(selectedDate)
+        startOfDay.setHours(0, 0, 0, 0)
+        const endOfDay = new Date(selectedDate)
+        endOfDay.setHours(23, 59, 59, 999)
+        filter.collect_date = { $gte: startOfDay, $lte: endOfDay }
+      }
+    } else if (req.query.dateRange === 'today') {
+      const startOfDay = new Date()
       startOfDay.setHours(0, 0, 0, 0)
       filter.collect_date = { $gte: startOfDay }
     } else if (req.query.dateRange === 'week') {
@@ -367,7 +428,7 @@ export async function listTransactions(req, res) {
     })
   } catch (error) {
     console.error('List transactions error:', error)
-    res.status(500).json({ message: 'Unable to load transactions' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.TRANSACTION.LOAD_FAILED })
   }
 }
 
@@ -376,7 +437,7 @@ export async function approveTransaction(req, res) {
     const bank = await findOwnBank(req, res)
     if (!bank) return
     if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid transaction id' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.TRANSACTION.INVALID_ID })
     }
 
     // Atomic status guard so a transaction can only be approved once.
@@ -386,7 +447,7 @@ export async function approveTransaction(req, res) {
       { new: true },
     ).lean()
     if (!updated) {
-      return res.status(409).json({ message: 'Transaction not found or no longer pending' })
+      return res.status(HTTP_STATUS.CONFLICT).json({ message: MESSAGES.TRANSACTION.NOT_FOUND_OR_NOT_PENDING })
     }
 
     await AuditLog.create({
@@ -401,7 +462,7 @@ export async function approveTransaction(req, res) {
     res.json({ id: String(updated._id), status: 'A' })
   } catch (error) {
     console.error('Approve transaction error:', error)
-    res.status(500).json({ message: 'Unable to approve transaction' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.TRANSACTION.APPROVE_FAILED })
   }
 }
 
@@ -410,7 +471,7 @@ export async function cancelTransaction(req, res) {
     const bank = await findOwnBank(req, res)
     if (!bank) return
     if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid transaction id' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.TRANSACTION.INVALID_ID })
     }
 
     const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : 'Approved cancellation by bank admin'
@@ -432,7 +493,7 @@ export async function cancelTransaction(req, res) {
       .lean()
 
     if (!updated) {
-      return res.status(409).json({ message: 'Transaction not found or is no longer pending cancellation' })
+      return res.status(HTTP_STATUS.CONFLICT).json({ message: MESSAGES.TRANSACTION.NOT_FOUND_OR_CANCELLED })
     }
 
     await AuditLog.create({
@@ -453,7 +514,7 @@ export async function cancelTransaction(req, res) {
     })
   } catch (error) {
     console.error('Cancel transaction error:', error)
-    res.status(500).json({ message: 'Unable to cancel transaction' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.TRANSACTION.CANCEL_FAILED })
   }
 }
 
@@ -462,7 +523,7 @@ export async function rejectCancellation(req, res) {
     const bank = await findOwnBank(req, res)
     if (!bank) return
     if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid transaction id' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.TRANSACTION.INVALID_ID })
     }
 
     const updated = await Transaction.findOneAndUpdate(
@@ -479,7 +540,7 @@ export async function rejectCancellation(req, res) {
       .lean()
 
     if (!updated) {
-      return res.status(409).json({ message: 'Transaction not found or is no longer pending' })
+      return res.status(HTTP_STATUS.CONFLICT).json({ message: MESSAGES.TRANSACTION.NOT_FOUND_OR_NOT_PENDING })
     }
 
     await AuditLog.create({
@@ -500,7 +561,7 @@ export async function rejectCancellation(req, res) {
     })
   } catch (error) {
     console.error('Reject cancellation error:', error)
-    res.status(500).json({ message: 'Unable to reject cancellation' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.TRANSACTION.REJECT_FAILED })
   }
 }
 
@@ -617,7 +678,7 @@ export async function listAgents(req, res) {
     })
   } catch (error) {
     console.error('Bank agents error:', error)
-    res.status(500).json({ message: 'Unable to load agents' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.AGENTS_ERROR })
   }
 }
 
@@ -637,7 +698,7 @@ export async function createAgent(req, res) {
     if (clash) {
       const field = clash.email?.toLowerCase() === userInput.email ? 'email' : 'userID'
       const label = field === 'email' ? 'Email' : 'User ID'
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         message: `${label} is already in use`,
         errors: { [`user.${field}`]: `${label} is already in use` },
       })
@@ -668,19 +729,19 @@ export async function createAgent(req, res) {
       updated_by: actor,
     })
 
-    res.status(201).json({ agent: { _id: String(agent._id), userID: user.userID, name: user.name } })
+    res.status(HTTP_STATUS.CREATED).json({ agent: { _id: String(agent._id), userID: user.userID, name: user.name } })
   } catch (error) {
     // Without a transaction, remove the login record so no orphan user remains.
     if (user) await User.deleteOne({ _id: user._id }).catch(() => {})
     if (error?.code === 11000) {
       const field = Object.keys(error.keyPattern ?? {})[0]
       const labels = { userID: 'User ID', email: 'Email' }
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         message: `${labels[field] ?? 'A value'} is already in use`,
         errors: field in labels ? { [`user.${field}`]: `${labels[field]} is already in use` } : undefined,
       })
     }
     console.error('Create agent error:', error)
-    res.status(500).json({ message: 'Unable to add agent' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.CREATE_AGENT_ERROR })
   }
 }

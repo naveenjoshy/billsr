@@ -1,23 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import './BankHomePage.css'
 import BankShell from '../components/BankShell'
-import { dateText, licenseLabels } from '../components/bankShellUtils'
+import { dateText, initials, licenseLabels, money } from '../components/bankShellUtils'
 import {
   approveTransaction,
   getBankDashboard,
   getBankTransactions,
 } from '../services/bankService'
-
-const money = (value) => {
-  const formatted = Math.abs(value).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  })
-  return value < 0 ? `-${formatted}` : formatted
-}
-
-const initials = (name = '') =>
-  name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 
 const statusMeta = {
   P: { label: 'Pending', tone: 'pending' },
