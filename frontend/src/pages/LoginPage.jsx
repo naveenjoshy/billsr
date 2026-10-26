@@ -29,8 +29,8 @@ export default function LoginPage({ onAuthenticated, accessMessage = '', pending
         setFirstLoginUser(user);
         return;
       }
-      if (user.role !== 'Superadmin' && user.role !== 'Bank') {
-        setStatusMessage('This console is only available to Superadmin and Bank accounts.');
+      if (!['Superadmin', 'Bank', 'Agent'].includes(user.role)) {
+        setStatusMessage('This account role cannot sign in here.');
         return;
       }
       onAuthenticated(user);
@@ -48,8 +48,8 @@ export default function LoginPage({ onAuthenticated, accessMessage = '', pending
   const completeFirstLogin = async (newPassword, confirmPassword) => {
     const user = await setFirstPassword(newPassword, confirmPassword);
     setFirstLoginUser(null);
-    if (user.role !== 'Superadmin' && user.role !== 'Bank') {
-      setStatusMessage('Password updated. This console is only available to Superadmin and Bank accounts.');
+    if (!['Superadmin', 'Bank', 'Agent'].includes(user.role)) {
+      setStatusMessage('Password updated. This account role cannot sign in here.');
       return;
     }
     onAuthenticated(user);

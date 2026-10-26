@@ -1,0 +1,330 @@
+/* Agent home: reuses the .bank-* shell (sidebar, topbar, chips) so it matches the rest of the app. */
+.ah-page .ah-main {
+  gap: 16px;
+}
+
+.ah-page h2,
+.ah-page strong {
+  font-family: inherit;
+}
+
+.ah-limit-ok { background: #ecfdf5; color: #047857; }
+.ah-limit-warning { background: #fff7ed; color: #c2410c; }
+.ah-limit-breach { background: #fef2f2; color: #b91c1c; }
+
+.ah-state,
+.ah-empty {
+  color: #64748b;
+  font-size: 13px;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.ah-card,
+.ah-ops,
+.ah-queue {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+  padding: 14px;
+}
+
+.ah-hold {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ah-hold-head,
+.ah-sec-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.ah-hold-head h2,
+.ah-sec-head h2 {
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  gap: 6px;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.ah-shield { color: var(--bank-red); display: inline-flex; }
+
+.ah-day {
+  background: #fefce8;
+  border-radius: 4px;
+  color: #854d0e;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.ah-hold-figures {
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ah-hold-figures span,
+.ah-kpi > span:not(.ah-kpi-icon) {
+  color: #64748b;
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.ah-hold-figures strong { font-size: 22px; }
+.ah-hold-figures b { color: #475569; font-size: 15px; }
+.ah-right { text-align: right; }
+
+.ah-bar {
+  background: #e2e8f0;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.ah-bar div { background: #d97706; border-radius: 999px; height: 100%; }
+.ah-bar.is-ok div { background: #10b981; }
+.ah-bar.is-breach div { background: #dc2626; }
+
+.ah-hold-foot {
+  color: #475569;
+  display: flex;
+  font-size: 12px;
+  justify-content: space-between;
+}
+
+.ah-util { font-weight: 600; }
+.ah-util.is-ok { color: #047857; }
+.ah-util.is-warning { color: #c2410c; }
+.ah-util.is-breach { color: #b91c1c; }
+
+.ah-kpis {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ah-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ah-kpi strong { font-size: 20px; }
+
+.ah-kpi-icon {
+  border-radius: 6px;
+  display: grid;
+  height: 26px;
+  place-items: center;
+  width: 26px;
+}
+
+.ah-kpi-icon.is-green { background: #ecfdf5; color: #047857; }
+.ah-kpi-icon.is-red { background: #fef2f2; color: #b91c1c; }
+.ah-kpi-icon.is-indigo { background: #f1f5f9; color: #182232; }
+.is-pos { color: #047857; }
+.is-neg { color: #b91c1c; }
+
+.ah-sec-head { margin-bottom: 12px; }
+.ah-sec-head > span,
+.ah-sec-head p { color: #64748b; font-size: 11px; margin: 2px 0 0; }
+
+.ah-tiles {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.ah-tile {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--bank-ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: 600 11px Inter, system-ui, sans-serif;
+  gap: 6px;
+  padding: 0;
+}
+
+.ah-tile-icon {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  max-width: 56px;
+  place-items: center;
+  width: 100%;
+}
+
+.ah-tile-icon.is-orange { background: var(--bank-red); }
+.ah-tile-icon.is-green { background: #047857; }
+.ah-tile-icon.is-red { background: #7f1d1d; }
+.ah-tile-icon.is-dark { background: var(--bank-navy); }
+
+.ah-map {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--bank-red);
+  cursor: pointer;
+  display: inline-flex;
+  font: 600 12px Inter, system-ui, sans-serif;
+  gap: 4px;
+}
+
+.ah-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ah-row {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.ah-row-icon {
+  background: #ecfdf5;
+  border-radius: 6px;
+  color: #047857;
+  display: grid;
+  flex: none;
+  height: 36px;
+  place-items: center;
+  width: 36px;
+}
+
+.ah-row-icon.is-withdraw { background: #fff7ed; color: #c2410c; }
+.ah-row-main { flex: 1; min-width: 0; }
+
+.ah-row-title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ah-row-title strong { font-size: 13px; }
+
+.ah-tag {
+  background: #f1f5f9;
+  border-radius: 3px;
+  color: #475569;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  padding: 1px 5px;
+  text-transform: uppercase;
+}
+
+.ah-row-sub { color: #64748b; font-size: 11px; }
+
+.ah-row-side {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ah-row-side strong { font-size: 13px; }
+.ah-row-side small { color: #94a3b8; font-size: 10px; }
+
+.ah-pill {
+  align-items: center;
+  border-radius: 4px;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 600;
+  gap: 3px;
+  padding: 2px 6px;
+}
+
+.ah-pill-done { background: #ecfdf5; color: #047857; }
+.ah-pill-pending { background: #fefce8; color: #854d0e; }
+.ah-pill-cancelled { background: #fef2f2; color: #b91c1c; }
+
+.ah-bottom {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .ah-page .ah-main {
+    grid-template-areas:
+      'hold ops'
+      'kpis kpis'
+      'queue queue';
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    align-items: start;
+  }
+
+  .ah-hold { grid-area: hold; }
+  .ah-ops { grid-area: ops; }
+  .ah-kpis { grid-area: kpis; }
+  .ah-queue { grid-area: queue; }
+  .ah-state { grid-column: 1 / -1; }
+  .ah-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Mobile: sidebar becomes a bottom tab bar */
+@media (max-width: 899px) {
+  .bank-shell.ah-page {
+    display: block;
+    padding-bottom: 64px;
+  }
+
+  .ah-page .bank-sidebar {
+    background: var(--bank-navy);
+    bottom: 0;
+    flex-direction: row;
+    gap: 0;
+    left: 0;
+    min-height: 0;
+    padding: 0;
+    position: fixed;
+    right: 0;
+    top: auto;
+    z-index: 30;
+  }
+
+  .ah-page .bank-brand,
+  .ah-page .bank-sync,
+  .ah-page .bank-nav p { display: none; }
+
+  .ah-page .bank-nav {
+    display: grid;
+    flex: 1;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .ah-page .bank-nav a {
+    border-radius: 0;
+    padding: 20px 4px;
+    text-align: center;
+  }
+
+  .ah-page .bank-nav a.is-active { background: var(--bank-red); }
+  .ah-page .bank-topbar { height: auto; min-height: 56px; padding: 8px 12px; }
+  .ah-page .bank-main { padding: 12px 12px 24px; }
+  .ah-kpi strong { font-size: 15px; }
+}

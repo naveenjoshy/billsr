@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser'
 import authRoutes from './routes/auth.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import bankRoutes from './routes/bank.routes.js'
+import agentRoutes from './routes/agent.routes.js'
 import connectDB from './config/db.js';
 
 // 1. Initialize environmental configurations
@@ -35,6 +36,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bank', bankRoutes);
+app.use('/api/agent', agentRoutes);
 
 // ==========================================
 // ROUTE REGISTRATION POINT

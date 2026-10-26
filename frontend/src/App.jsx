@@ -4,9 +4,10 @@ import LoginPage from './pages/LoginPage'
 import SuperAdminHomePage from './pages/SuperAdminHomePage'
 import BankHomePage from './pages/BankHomePage'
 import AgentManagementPage from './pages/AgentManagementPage'
+import AgentHomePage from './pages/AgentHomePage'
 import './App.css'
 
-const HOME_ROLES = ['Superadmin', 'Bank']
+const HOME_ROLES = ['Superadmin', 'Bank', 'Agent']
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
@@ -22,7 +23,7 @@ function App() {
         if (!isMounted) return
         setCurrentUser(user)
         if (user && !HOME_ROLES.includes(user.role)) {
-          setAccessMessage('This console is only available to Superadmin and Bank accounts.')
+          setAccessMessage('This account role cannot sign in here.')
         }
       })
       .catch((error) => {
@@ -74,6 +75,16 @@ function App() {
     return (
       <BankPage
         onNavigate={setBankView}
+        onLoggedOut={handleLoggedOut}
+        onUserUpdated={setCurrentUser}
+        user={currentUser}
+      />
+    )
+  }
+
+  if (session?.role === 'Agent') {
+    return (
+      <AgentHomePage
         onLoggedOut={handleLoggedOut}
         onUserUpdated={setCurrentUser}
         user={currentUser}
