@@ -53,8 +53,20 @@ function coerce(name, field, raw) {
       if (typeof raw !== 'boolean') throw new Error(`${name} must be true or false`)
       return raw
     case 'Number':
+    case 'Decimal128': {
       if (typeof raw !== 'number' || !Number.isFinite(raw)) throw new Error(`${name} must be a number`)
+      if (field.integer && !Number.isInteger(raw)) throw new Error(`${name} must be a whole number`)
+      if (field.type === 'Decimal128' && Math.round(raw * 100) / 100 !== raw) {
+        throw new Error(`${name} may have at most 2 decimal places`)
+      }
+      if (field.minValue !== undefined && raw < field.minValue) {
+        throw new Error(`${name} must be at least ${field.minValue}`)
+      }
+      if (field.maxValue !== undefined && raw > field.maxValue) {
+        throw new Error(`${name} must be at most ${field.maxValue}`)
+      }
       return raw
+    }
     default:
       throw new Error(`Unsupported field type for ${name}`)
   }

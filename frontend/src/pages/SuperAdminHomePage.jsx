@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './SuperAdminHomePage.css'
+import UserMenu from '../components/UserMenu'
 import OnboardBankModal from '../components/OnboardBankModal'
 import { extendBankLicense, getBanks, setBankSuspension } from '../services/adminService'
 import onboardIcon from '../assets/super-admin/onboard.svg'
@@ -104,7 +105,7 @@ function SummaryCard({ label, value, suffix, detail, tone, image }) {
   )
 }
 
-export default function SuperAdminHomePage() {
+export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut }) {
   const [banks, setBanks] = useState([])
   const [summary, setSummary] = useState({ total: 0, active: 0, expiring: 0, grace: 0, suspended: 0 })
   const [loadState, setLoadState] = useState('loading')
@@ -309,10 +310,14 @@ export default function SuperAdminHomePage() {
             <img src={notificationIcon} alt="" />
             <i />
           </button>
-          <div className="admin-user">
-            <strong>Master Administrative</strong>
-            <span>Root Governance</span>
-          </div>
+          <UserMenu
+            className="admin-user-menu"
+            onLoggedOut={onLoggedOut}
+            onUserUpdated={onUserUpdated}
+            subtitle="Root Governance"
+            title={user?.name || 'Master Administrative'}
+            user={user ?? {}}
+          />
         </div>
       </header>
 

@@ -119,3 +119,49 @@ export async function resetPassword(email, userID, newPassword, confirmPassword)
     confirmPassword,
   });
 }
+
+export async function logoutUser() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch {
+    throw new Error('Server unreachable');
+  }
+}
+
+export async function updateProfile(payload) {
+  let response;
+  try {
+    response = await fetch('/api/auth/profile', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error('Server unreachable');
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = new Error(data?.message || 'Request failed');
+    error.fieldErrors = data?.errors ?? {};
+    throw error;
+  }
+  return data.user;
+}
+
+export async function setFirstPassword(newPassword, confirmPassword) {
+  let response;
+  try {
+    response = await fetch('/api/auth/first-login-password', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPassword, confirmPassword }),
+    });
+  } catch {
+    throw new Error('Server unreachable');
+  }
+  const data = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(data?.message || 'Unable to set the password.');
+  return data.user;
+}

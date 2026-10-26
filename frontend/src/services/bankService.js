@@ -10,7 +10,11 @@ async function request(path, options = {}) {
     throw new Error('Server unreachable')
   }
   const data = await response.json().catch(() => null)
-  if (!response.ok) throw new Error(data?.message || 'Request failed')
+  if (!response.ok) {
+    const error = new Error(data?.message || 'Request failed')
+    error.fieldErrors = data?.errors ?? {}
+    throw error
+  }
   return data
 }
 
@@ -24,3 +28,8 @@ export const getBankTransactions = ({ page = 1, search = '' } = {}) => {
 
 export const approveTransaction = (id) =>
   request(`/api/bank/transactions/${id}/approve`, { method: 'POST' })
+
+export const getBankAgents = () => request('/api/bank/agents')
+
+export const addAgent = (payload) =>
+  request('/api/bank/agents', { method: 'POST', body: JSON.stringify(payload) })

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import './BankHomePage.css'
+import BankShell from '../components/BankShell'
+import { dateText, licenseLabels } from '../components/bankShellUtils'
 import {
   approveTransaction,
   getBankDashboard,
@@ -14,9 +16,6 @@ const money = (value) => {
   return value < 0 ? `-${formatted}` : formatted
 }
 
-const dateText = (value) =>
-  new Date(value).toLocaleDateString('en-CA', { timeZone: 'UTC' })
-
 const initials = (name = '') =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 
@@ -25,18 +24,6 @@ const statusMeta = {
   A: { label: 'Confirmed', tone: 'confirmed' },
   C: { label: 'Cancelled', tone: 'cancelled' },
 }
-
-const licenseLabels = {
-  active: 'License Active',
-  expiring: 'License Expiring',
-  grace: 'In Grace Period',
-  suspended: 'License Suspended',
-}
-
-const navItems = [
-  { group: 'DAILY OPERATIONS', items: ['Dashboard', 'Agent Management & Risk', 'Transaction Ledger', 'Schemes & Receipts'] },
-  { group: 'GOVERNANCE', items: ['Compliance & Params', 'Settings & License'] },
-]
 
 function Avatar({ name, photoUrl }) {
   return photoUrl ? (
@@ -72,7 +59,7 @@ function RiskRow({ agent }) {
   )
 }
 
-export default function BankHomePage({ user }) {
+export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavigate }) {
   const [dashboard, setDashboard] = useState(null)
   const [dashboardError, setDashboardError] = useState('')
   const [txState, setTxState] = useState({ transactions: [], total: 0, pageSize: 5 })
@@ -145,48 +132,16 @@ export default function BankHomePage({ user }) {
   const pendingTx = txState.transactions.filter((tx) => tx.status === 'P').length
 
   return (
-    <div className="bank-shell">
-      <aside className="bank-sidebar">
-        <div className="bank-brand">
-          <span className="bank-brand-mark">B</span>
-          <span className="bank-brand-name">
-            <strong>Billsr</strong>
-            <small>ADMIN CORE</small>
-          </span>
-          <span className="bank-version">v3.0</span>
-        </div>
-        {navItems.map((section) => (
-          <nav className="bank-nav" key={section.group} aria-label={section.group}>
-            <p>{section.group}</p>
-            {section.items.map((item) => (
-              <a className={item === 'Dashboard' ? 'is-active' : ''} href="#top" key={item}>
-                {item}
-              </a>
-            ))}
-          </nav>
-        ))}
-        <div className="bank-sync">
-          <span>AGENT SYNC <i /> Live</span>
-          <code>Bank Core Unified</code>
-        </div>
-      </aside>
-
-      <div className="bank-content" id="top">
-        <header className="bank-topbar">
-          <div className="bank-topbar-left">
-            <span className="bank-chip">{bank?.name ?? 'Loading…'}</span>
-            {bank && (
-              <span className={`bank-license bank-license-${bank.status}`}>
-                {licenseLabels[bank.status]}: Expires {dateText(bank.licenseExpiry)} ({Math.max(bank.daysLeft, 0)} Days)
-              </span>
-            )}
-          </div>
-          <div className="bank-user">
-            <strong>{bank?.name}</strong>
-            <span>{dashboard?.user.designation || displayName}</span>
-          </div>
-        </header>
-
+    <BankShell
+      active="dashboard"
+      bank={bank}
+      designation={dashboard?.user.designation}
+      displayName={displayName}
+      onLoggedOut={onLoggedOut}
+      onNavigate={onNavigate}
+      onUserUpdated={onUserUpdated}
+      user={user}
+    >
         <main className="bank-main">
           {dashboardError && (
             <p className="bank-error" role="alert">
@@ -364,7 +319,6 @@ export default function BankHomePage({ user }) {
             </div>
           </section>
         </main>
-      </div>
-    </div>
+    </BankShell>
   )
 }

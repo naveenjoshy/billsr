@@ -1,11 +1,14 @@
 import { Router } from 'express'
-import { approveTransaction, getDashboard, listTransactions } from '../controllers/bank.controller.js'
+import { validateAddAgent } from '../middleware/add-agent.validator.js'
+import { approveTransaction, createAgent, getDashboard, listAgents, listTransactions } from '../controllers/bank.controller.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 
 const router = Router()
 
 router.use(requireAuth, requireRole('Bank'))
 router.get('/dashboard', getDashboard)
+router.get('/agents', listAgents)
+router.post('/agents', validateAddAgent, createAgent)
 router.get('/transactions', listTransactions)
 router.post('/transactions/:id/approve', approveTransaction)
 

@@ -5,9 +5,11 @@ import {
   logout,
   me,
   resetPassword,
+  setFirstPassword,
+  updateProfile,
   verifyPasswordReset,
 } from '../controllers/auth.controller.js'
-import { requireAuth } from '../middleware/auth.js'
+import { requireAuth, requireAuthAllowPending } from '../middleware/auth.js'
 
 const router = Router()
 const passwordResetLimiter = rateLimit({
@@ -22,5 +24,7 @@ router.post('/login', login)
 router.post('/password-reset/verify', passwordResetLimiter, verifyPasswordReset)
 router.post('/password-reset', passwordResetLimiter, resetPassword)
 router.post('/logout', logout)
-router.get('/me', requireAuth, me)
+router.get('/me', requireAuthAllowPending, me)
+router.post('/first-login-password', requireAuthAllowPending, setFirstPassword)
+router.patch('/profile', requireAuth, updateProfile)
 export default router

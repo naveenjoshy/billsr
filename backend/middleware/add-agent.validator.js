@@ -1,0 +1,68 @@
+import { Buffer } from 'node:buffer'
+import { Agent } from '../models/Agent.js'
+import { User } from '../models/User.js'
+import { EMAIL, fieldFromSchema, validateSection } from './validate.js'
+
+const PHONE = /^\+?[0-9][0-9 ()-]{6,19}$/
+const USER_ID = /^[A-Za-z0-9._-]+$/
+const HTTP_URL = /^https?:\/\/[^\s]+$/i
+
+const userSpec = {
+  userID: fieldFromSchema(User, 'userID', {
+    label: 'User ID', min: 3, max: 40, pattern: USER_ID,
+    message: 'User ID may only contain letters, numbers, dot, dash and underscore',
+  }),
+  name: fieldFromSchema(User, 'name', { label: 'Name', max: 120 }),
+  email: fieldFromSchema(User, 'email', {
+    label: 'Email', max: 254, pattern: EMAIL, message: 'Email is invalid',
+  }),
+}
+
+const urlOverrides = (label) => ({
+  label, required: false, max: 500, pattern: HTTP_URL, message: `${label} must be an http(s) link`,
+})
+
+// bank_id and user_id are never accepted from the client; they are set by the server.
+const agentSpec = {
+  address: fieldFromSchema(Agent, 'address', { label: 'Address', max: 300 }),
+  phone_no: fieldFromSchema(Agent, 'phone_no', {
+    label: 'Phone', pattern: PHONE, message: 'Phone must be 7–20 digits (may start with +)',
+  }),
+  agent_id_type: fieldFromSchema(Agent, 'agent_id_type', { label: 'ID type', required: false, max: 60 }),
+  agent_id_number: fieldFromSchema(Agent, 'agent_id_number', { label: 'ID number', required: false, max: 60 }),
+  agent_photo_url: fieldFromSchema(Agent, 'agent_photo_url', urlOverrides('Photo link')),
+  agent_id_url: fieldFromSchema(Agent, 'agent_id_url', urlOverrides('ID document link')),
+  cash_holding_limit: fieldFromSchema(Agent, 'cash_holding_limit', {
+    label: 'Cash holding limit', minValue: 0.01, maxValue: 100000000,
+  }),
+  cash_holding_days: fieldFromSchema(Agent, 'cash_holding_days', {
+    label: 'Cash holding days', integer: true, minValue: 1, maxValue: 365,
+  }),
+}
+
+export function validateAddAgent(req, res, next) {
+  const body = req.body ?? {}
+  const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
+  // The password is validated separately so it is never altered by text sanitizing.
+  const { password, ...userRest } = isObject(body.user) ? body.user : { user: body.user }
+
+  const user = validateSection(userRest, userSpec, 'user')
+  const agent = validateSection(body.agent, agentSpec, 'agent')
+  const errors = { ...user.errors, ...agent.errors }
+
+  for (const key of Object.keys(body)) {
+    if (key !== 'user' && key !== 'agent') errors[key] = 'Unexpected field'
+  }
+  if (typeof password !== 'string' || password.length < 8) {
+    errors['user.password'] = 'Password must be at least 8 characters'
+  } else if (Buffer.byteLength(password, 'utf8') > 72) {
+    errors['user.password'] = 'Password must be at most 72 bytes'
+  }
+
+  if (Object.keys(errors).length) {
+    return res.status(400).json({ message: 'Please correct the highlighted fields', errors })
+  }
+
+  req.newAgent = { user: { ...user.output, password }, agent: agent.output }
+  next()
+}

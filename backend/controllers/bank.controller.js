@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
 import { Agent } from '../models/Agent.js'
 import { AuditLog } from '../models/AuditLog.js'
@@ -227,5 +228,186 @@ export async function approveTransaction(req, res) {
   } catch (error) {
     console.error('Approve transaction error:', error)
     res.status(500).json({ message: 'Unable to approve transaction' })
+  }
+}
+
+const APPROACH_THRESHOLD = 0.85
+
+export async function listAgents(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const agents = await Agent.find({ bank_id: bank._id })
+      .populate('user_id', 'userID name email is_active')
+      .sort({ 'audit_trail.created_at': 1 })
+      .lean()
+
+    const rows = await Promise.all(
+      agents.map(async (agent) => {
+        const since = new Date(Date.now() - Math.max(agent.cash_holding_days, 1) * DAY_MS)
+        const base = { agent_id: agent._id, bank_id: bank._id, transaction_status: { $ne: 'C' } }
+        const [cash, today, totalReceipts, customers, recent] = await Promise.all([
+          Transaction.aggregate([
+            { $match: { ...base, transact_mode: 'C', collect_date: { $gte: since } } },
+            {
+              $group: {
+                _id: null,
+                held: {
+                  $sum: {
+                    $cond: [
+                      { $eq: ['$transact_type', 'D'] },
+                      { $toDouble: '$transact_amt' },
+                      { $multiply: [-1, { $toDouble: '$transact_amt' }] },
+                    ],
+                  },
+                },
+                since: { $min: '$collect_date' },
+              },
+            },
+          ]),
+          Transaction.aggregate([
+            { $match: { ...base, collect_date: { $gte: startOfDay } } },
+            { $group: { _id: '$transact_type', count: { $sum: 1 } } },
+          ]),
+          Transaction.countDocuments(base),
+          Customer.countDocuments({ agent_id: agent._id }),
+          Transaction.find({ agent_id: agent._id, bank_id: bank._id })
+            .sort({ collect_date: -1 })
+            .limit(4)
+            .populate('customer_id', 'name')
+            .lean(),
+        ])
+
+        const limit = num(agent.cash_holding_limit)
+        const held = Math.max(cash[0]?.held ?? 0, 0)
+        const durationDays =
+          held > 0 && cash[0]?.since ? Math.floor((Date.now() - new Date(cash[0].since).getTime()) / DAY_MS) : 0
+        const ratio = limit > 0 ? held / limit : 0
+        const breached = ratio > 1 || (held > 0 && durationDays > agent.cash_holding_days)
+        const todayBy = Object.fromEntries(today.map((row) => [row._id, row.count]))
+
+        return {
+          _id: String(agent._id),
+          agentCode: agent.user_id?.userID ?? String(agent._id).slice(-6).toUpperCase(),
+          name: agent.user_id?.name ?? 'Unknown agent',
+          email: agent.user_id?.email ?? null,
+          isActive: agent.user_id?.is_active !== false,
+          phone: agent.phone_no,
+          address: agent.address,
+          photoUrl: agent.agent_photo_url ?? null,
+          limit,
+          holdingDays: agent.cash_holding_days,
+          held,
+          excess: Math.max(held - limit, 0),
+          ratio,
+          durationDays,
+          risk: breached ? 'breach' : ratio >= APPROACH_THRESHOLD ? 'warning' : 'safe',
+          todayDeposits: todayBy.D ?? 0,
+          todayWithdrawals: todayBy.W ?? 0,
+          totalReceipts,
+          customers,
+          passwordResetPending: agent.password_reset_flag === true,
+          lastPasswordChange: agent.last_password_change_date ?? null,
+          recent: recent.map((tx) => ({
+            _id: String(tx._id),
+            receiptNo: tx.receipt_no,
+            type: tx.transact_type,
+            status: tx.transaction_status,
+            amount: num(tx.transact_amt),
+            customer: tx.customer_id?.name ?? 'Unknown customer',
+            date: tx.collect_date,
+          })),
+        }
+      }),
+    )
+
+    const { daysLeft, status } = licenseState(bank)
+    const limits = rows.map((agent) => agent.limit)
+    res.json({
+      bank: { name: bank.bank_name, licenseExpiry: bank.license_expiry, daysLeft, status },
+      summary: {
+        totalAgents: rows.length,
+        verifiedAgents: rows.filter((agent) => !agent.passwordResetPending).length,
+        cashInField: rows.reduce((sum, agent) => sum + agent.held, 0),
+        dailyTarget: limits.reduce((sum, value) => sum + value, 0),
+        breachCount: rows.filter((agent) => agent.risk === 'breach').length,
+        approachingCount: rows.filter((agent) => agent.risk === 'warning').length,
+        maxLimit: Math.max(0, ...limits),
+        minLimit: limits.length ? Math.min(...limits) : 0,
+        maxHoldingDays: Math.max(0, ...rows.map((agent) => agent.holdingDays)),
+      },
+      agents: rows,
+    })
+  } catch (error) {
+    console.error('Bank agents error:', error)
+    res.status(500).json({ message: 'Unable to load agents' })
+  }
+}
+
+export async function createAgent(req, res) {
+  const { user: userInput, agent: agentInput } = req.newAgent
+  const actor = req.auth.sub
+  let user
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const clash = await User.findOne({
+      $or: [{ email: userInput.email }, { userID: userInput.userID }],
+    })
+      .collation({ locale: 'en', strength: 2 })
+      .lean()
+    if (clash) {
+      const field = clash.email?.toLowerCase() === userInput.email ? 'email' : 'userID'
+      const label = field === 'email' ? 'Email' : 'User ID'
+      return res.status(409).json({
+        message: `${label} is already in use`,
+        errors: { [`user.${field}`]: `${label} is already in use` },
+      })
+    }
+
+    user = await User.create({
+      userID: userInput.userID,
+      name: userInput.name,
+      email: userInput.email,
+      password_hash: await bcrypt.hash(userInput.password, 12),
+      role: 'Agent',
+    })
+
+    const agent = await Agent.create({
+      ...agentInput,
+      user_id: user._id,
+      bank_id: bank._id,
+      password_reset_flag: true,
+      audit_trail: { created_by: actor, modified_by: actor },
+    })
+
+    await AuditLog.create({
+      collection_name: 'agents',
+      document_id: agent._id,
+      description: 'Agent added',
+      changed_field: 'agent',
+      new_value: { userID: user.userID, bank_id: String(bank._id) },
+      updated_by: actor,
+    })
+
+    res.status(201).json({ agent: { _id: String(agent._id), userID: user.userID, name: user.name } })
+  } catch (error) {
+    // Without a transaction, remove the login record so no orphan user remains.
+    if (user) await User.deleteOne({ _id: user._id }).catch(() => {})
+    if (error?.code === 11000) {
+      const field = Object.keys(error.keyPattern ?? {})[0]
+      const labels = { userID: 'User ID', email: 'Email' }
+      return res.status(409).json({
+        message: `${labels[field] ?? 'A value'} is already in use`,
+        errors: field in labels ? { [`user.${field}`]: `${labels[field]} is already in use` } : undefined,
+      })
+    }
+    console.error('Create agent error:', error)
+    res.status(500).json({ message: 'Unable to add agent' })
   }
 }
