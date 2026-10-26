@@ -429,6 +429,10 @@
   align-items: start;
   display: grid;
   gap: 20px;
+  grid-template-columns: 1fr;
+}
+
+.admin-workspace.has-authority {
   grid-template-columns: minmax(0, 8fr) minmax(250px, 4fr);
 }
 
@@ -771,12 +775,48 @@
   min-width: 28px;
 }
 
+@keyframes adminAuthorityEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .admin-authority-card {
+  animation: adminAuthorityEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%);
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+}
+
+.admin-authority-close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  height: 24px;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 6px;
+  padding: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  width: 24px;
+}
+
+.admin-authority-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
 }
 
 .admin-authority-heading {
@@ -1003,7 +1043,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .admin-workspace {
+  .admin-workspace,
+  .admin-workspace.has-authority {
     grid-template-columns: minmax(0, 1fr);
   }
 

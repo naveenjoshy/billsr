@@ -126,7 +126,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
     setBanks(data.banks)
     setSummary(data.summary)
     setSelectedBankId((current) =>
-      data.banks.some((bank) => bank._id === current) ? current : data.banks[0]?._id ?? null,
+      data.banks.some((bank) => bank._id === current) ? current : null,
     )
   }, [])
 
@@ -187,10 +187,12 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
     }
   }
 
-  const chooseBank = (bank) => {
-    setSelectedBankId(bank._id)
+  const chooseBank = (bank, forceSelect = false) => {
+    setSelectedBankId((current) => (!forceSelect && current === bank._id ? null : bank._id))
     setCustomDateOpen(false)
+    setCustomDate('')
     setNotice('')
+    setJustification('')
   }
 
   const runUpdate = async (action, successMessage) => {
@@ -375,7 +377,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
           />
         </section>
 
-        <section className="admin-workspace" id="banks">
+        <section className={`admin-workspace ${selectedBank ? 'has-authority' : ''}`} id="banks">
           <div className="admin-registry-card" id="registry">
             <div className="admin-table-toolbar">
               <div className="admin-filter-tabs" role="tablist" aria-label="Filter banks">
@@ -445,7 +447,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
                             className={`admin-row-action ${bank.status === 'grace' || bank.status === 'expiring' ? 'admin-row-action-primary' : ''}`}
                             onClick={(event) => {
                               event.stopPropagation()
-                              chooseBank(bank)
+                              chooseBank(bank, true)
                               setNotice(`${statusActions[bank.status]} selected for ${bank.name}.`)
                             }}
                             type="button"
@@ -460,7 +462,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
                               className="admin-icon-button admin-lock-action"
                               onClick={(event) => {
                                 event.stopPropagation()
-                                chooseBank(bank)
+                                chooseBank(bank, true)
                                 setNotice(`${bank.name} is in a grace period.`)
                               }}
                               type="button"
@@ -474,7 +476,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
                               className="admin-icon-button"
                               onClick={(event) => {
                                 event.stopPropagation()
-                                chooseBank(bank)
+                                chooseBank(bank, true)
                                 toggleSuspension(bank)
                               }}
                               type="button"
@@ -487,7 +489,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
                             className="admin-icon-button"
                             onClick={(event) => {
                               event.stopPropagation()
-                              chooseBank(bank)
+                              chooseBank(bank, true)
                             }}
                             type="button"
                             aria-label={`More actions for ${bank.name}`}
@@ -549,96 +551,100 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
             </div>
           </div>
 
-          <aside className="admin-authority-card" aria-labelledby="authority-title">
-            <div className="admin-authority-heading">
-              <img src={authorityIcon} alt="" />
-              <div>
-                <h2 id="authority-title">License Authority</h2>
-                <p>Master Override Panel</p>
-              </div>
-              {selectedBank && <code>{selectedBank.code}</code>}
-            </div>
-
-            {!selectedBank ? (
-              <p className="admin-notice">Select a bank to manage its license.</p>
-            ) : (
-            <>
-            <div className="admin-entity-summary">
-              <div className="admin-entity-name-row">
-                <strong>{selectedBank.name}</strong>
-                {selectedBank.status === 'grace' && (
-                  <span className="admin-expiry-warning">
-                    Exp: {formatDate(selectedBank.licenseExpiry)}
-                  </span>
-                )}
-              </div>
-              <p>Agents: <strong>{selectedBank.agentCount} Registered</strong></p>
-            </div>
-
-            <div className="admin-extension-controls">
-              <label className="admin-control-label">Grant Grace Extension</label>
-              <div className="admin-extension-options" role="group" aria-label="Extension duration">
-                {[7, 14, 30].map((days) => (
-                  <button
-                    aria-pressed={extensionDays === days}
-                    className={extensionDays === days ? 'is-selected' : ''}
-                    key={days}
-                    onClick={() => {
-                      setExtensionDays(days)
-                      setCustomDateOpen(false)
-                    }}
-                    type="button"
-                  >
-                    +{days} Days
-                  </button>
-                ))}
-              </div>
-
-              <label className="admin-control-label" htmlFor="justification">
-                Mandatory Justification Log
-              </label>
-              <input
-                className="admin-justification-input"
-                id="justification"
-                value={justification}
-                onChange={(event) => setJustification(event.target.value)}
-              />
-              {customDateOpen && (
-                <label className="admin-custom-date">
-                  <span>Choose a new expiry date</span>
-                  <input
-                    type="date"
-                    value={customDate}
-                    onChange={(event) => setCustomDate(event.target.value)}
-                  />
-                </label>
-              )}
-            </div>
-
-            <div className="admin-authority-actions">
-              <button className="admin-primary-button admin-confirm-button" disabled={busy} onClick={confirmExtension} type="button">
-                <img src={confirmIcon} alt="" />
-                <span>Confirm &amp; Extend (+{extensionDays} Days)</span>
-              </button>
-              <div className="admin-secondary-actions">
-                <button className="admin-suspend-button" disabled={busy} onClick={() => toggleSuspension()} type="button">
-                  <img src={suspendIcon} alt="" />
-                  <span>{selectedBank.status === 'suspended' ? 'Reactivate License' : 'Suspend License'}</span>
-                </button>
+          {selectedBank && (
+            <aside className="admin-authority-card" aria-labelledby="authority-title">
+              <div className="admin-authority-heading">
+                <img src={authorityIcon} alt="" />
+                <div>
+                  <h2 id="authority-title">License Authority</h2>
+                  <p>Master Override Panel</p>
+                </div>
+                <code>{selectedBank.code}</code>
                 <button
-                  className={`admin-custom-date-button ${customDateOpen ? 'is-selected' : ''}`}
-                  onClick={() => setCustomDateOpen((isOpen) => !isOpen)}
+                  aria-label="Close license authority panel"
+                  className="admin-authority-close"
+                  onClick={() => setSelectedBankId(null)}
                   type="button"
                 >
-                  <img src={calendarIcon} alt="" />
-                  <span>Custom Date</span>
+                  ✕
                 </button>
               </div>
-              {notice && <p className="admin-notice" role="status">{notice}</p>}
-            </div>
-            </>
-            )}
-          </aside>
+
+              <div className="admin-entity-summary">
+                <div className="admin-entity-name-row">
+                  <strong>{selectedBank.name}</strong>
+                  {selectedBank.status === 'grace' && (
+                    <span className="admin-expiry-warning">
+                      Exp: {formatDate(selectedBank.licenseExpiry)}
+                    </span>
+                  )}
+                </div>
+                <p>Agents: <strong>{selectedBank.agentCount} Registered</strong></p>
+              </div>
+
+              <div className="admin-extension-controls">
+                <label className="admin-control-label">Grant Grace Extension</label>
+                <div className="admin-extension-options" role="group" aria-label="Extension duration">
+                  {[7, 14, 30].map((days) => (
+                    <button
+                      aria-pressed={extensionDays === days}
+                      className={extensionDays === days ? 'is-selected' : ''}
+                      key={days}
+                      onClick={() => {
+                        setExtensionDays(days)
+                        setCustomDateOpen(false)
+                      }}
+                      type="button"
+                    >
+                      +{days} Days
+                    </button>
+                  ))}
+                </div>
+
+                <label className="admin-control-label" htmlFor="justification">
+                  Mandatory Justification Log
+                </label>
+                <input
+                  className="admin-justification-input"
+                  id="justification"
+                  value={justification}
+                  onChange={(event) => setJustification(event.target.value)}
+                />
+                {customDateOpen && (
+                  <label className="admin-custom-date">
+                    <span>Choose a new expiry date</span>
+                    <input
+                      type="date"
+                      value={customDate}
+                      onChange={(event) => setCustomDate(event.target.value)}
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="admin-authority-actions">
+                <button className="admin-primary-button admin-confirm-button" disabled={busy} onClick={confirmExtension} type="button">
+                  <img src={confirmIcon} alt="" />
+                  <span>Confirm &amp; Extend (+{extensionDays} Days)</span>
+                </button>
+                <div className="admin-secondary-actions">
+                  <button className="admin-suspend-button" disabled={busy} onClick={() => toggleSuspension()} type="button">
+                    <img src={suspendIcon} alt="" />
+                    <span>{selectedBank.status === 'suspended' ? 'Reactivate License' : 'Suspend License'}</span>
+                  </button>
+                  <button
+                    className={`admin-custom-date-button ${customDateOpen ? 'is-selected' : ''}`}
+                    onClick={() => setCustomDateOpen((isOpen) => !isOpen)}
+                    type="button"
+                  >
+                    <img src={calendarIcon} alt="" />
+                    <span>Custom Date</span>
+                  </button>
+                </div>
+                {notice && <p className="admin-notice" role="status">{notice}</p>}
+              </div>
+            </aside>
+          )}
         </section>
       </main>
       {onboardOpen && (
