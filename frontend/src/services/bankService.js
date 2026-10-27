@@ -34,6 +34,8 @@ export const getBankAgents = () => request('/api/bank/agents')
 
 export const addAgent = (payload) => post('/api/bank/agents', payload)
 
+export const updateAgentLimit = (id, payload) => put(`/api/bank/agents/${id}/limit`, payload)
+
 export const getBankSchemes = () => request('/api/bank/schemes')
 
 export const createBankScheme = (payload) => post('/api/bank/schemes', payload)

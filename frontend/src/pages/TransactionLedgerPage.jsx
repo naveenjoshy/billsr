@@ -262,7 +262,7 @@ export default function TransactionLedgerPage({
 
   return (
     <BankShell
-      active={activeView === 'cancellations' ? 'cancellations' : 'ledger'}
+      active="cancellations"
       bank={dashboard?.bank}
       designation={dashboard?.user?.designation}
       displayName={user?.name || dashboard?.user?.name}
@@ -278,7 +278,7 @@ export default function TransactionLedgerPage({
           <div className="ledger-breadcrumb">
             <span className="crumb-category">TREASURY & FIELD OPERATIONS</span>
             <span className="crumb-divider">•</span>
-            <span className="crumb-table">tbl_tt_transact_v3</span>
+            <span className="crumb-table">tbl_tt_transact</span>
             <span className="crumb-divider">•</span>
             <span className="crumb-sync">
               <span className="sync-dot" />
@@ -290,7 +290,7 @@ export default function TransactionLedgerPage({
         {/* Action Bar / Title and Controls */}
         <div className="ledger-header">
           <div className="ledger-title-group">
-            <h1 className="ledger-title">Central Transaction Ledger & Cancellation Audit Trail</h1>
+            <h1 className="ledger-title">Transaction & Cancellation Audit Trail</h1>
           </div>
 
           <div className="ledger-actions-bar">

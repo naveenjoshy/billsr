@@ -197,7 +197,15 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
               <p className="bank-kpi-value is-amber">{kpis ? money(kpis.pendingAmount) : '—'}</p>
               <p className="bank-kpi-foot-row">
                 <span>Awaiting Approval</span>
-                <a href="#approvals">Review Queue →</a>
+                <a
+                  href="#cancellations"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onNavigate?.('cancellations')
+                  }}
+                >
+                  Transaction &amp; Cancellation Queue →
+                </a>
               </p>
             </article>
             <article className="bank-kpi">

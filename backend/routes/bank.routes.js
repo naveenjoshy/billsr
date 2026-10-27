@@ -11,6 +11,7 @@ import {
   listSchemes,
   listTransactions,
   rejectCancellation,
+  updateAgentLimit,
   updateScheme,
 } from '../controllers/bank.controller.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
@@ -21,6 +22,7 @@ router.use(requireAuth, requireRole('Bank'))
 router.get('/dashboard', getDashboard)
 router.get('/agents', listAgents)
 router.post('/agents', validateAddAgent, createAgent)
+router.put('/agents/:id/limit', updateAgentLimit)
 router.get('/transactions', listTransactions)
 router.post('/transactions/:id/approve', approveTransaction)
 router.post('/transactions/:id/cancel', cancelTransaction)

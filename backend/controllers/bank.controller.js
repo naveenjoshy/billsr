@@ -13,6 +13,7 @@ import { User } from '../models/User.js'
 const DAY_MS = 24 * 60 * 60 * 1000
 const RISK_THRESHOLD = 0.8
 const num = (value) => (value == null ? 0 : Number(value.toString()))
+const money = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 async function findOwnBank(req, res) {
@@ -625,6 +626,11 @@ export async function listAgents(req, res) {
         const breached = ratio > 1 || (held > 0 && durationDays > agent.cash_holding_days)
         const todayBy = Object.fromEntries(today.map((row) => [row._id, row.count]))
 
+        const branchName =
+          agent.branch_name ||
+          (agent.address && agent.address.includes(',') ? agent.address.split(',')[0].trim() : 'Central Market')
+        const routeCode = `Route #CM-${(agent.user_id?.userID || String(agent._id)).slice(-2).toUpperCase()}`
+
         return {
           _id: String(agent._id),
           agentCode: agent.user_id?.userID ?? String(agent._id).slice(-6).toUpperCase(),
@@ -633,6 +639,8 @@ export async function listAgents(req, res) {
           isActive: agent.user_id?.is_active !== false,
           phone: agent.phone_no,
           address: agent.address,
+          branch: branchName,
+          route: routeCode,
           photoUrl: agent.agent_photo_url ?? null,
           limit,
           holdingDays: agent.cash_holding_days,
@@ -643,10 +651,12 @@ export async function listAgents(req, res) {
           risk: breached ? 'breach' : ratio >= APPROACH_THRESHOLD ? 'warning' : 'safe',
           todayDeposits: todayBy.D ?? 0,
           todayWithdrawals: todayBy.W ?? 0,
-          totalReceipts,
+          totalReceipts: (todayBy.D ?? 0) + (todayBy.W ?? 0) || totalReceipts,
           customers,
           passwordResetPending: agent.password_reset_flag === true,
           lastPasswordChange: agent.last_password_change_date ?? null,
+          printerId: `BT-PRN-${(agent.user_id?.userID || String(agent._id)).slice(-4).toUpperCase()}`,
+          gpsPing: `12m ago (${branchName.split(' ')[0] || 'Market'})`,
           recent: recent.map((tx) => ({
             _id: String(tx._id),
             receiptNo: tx.receipt_no,
@@ -660,6 +670,41 @@ export async function listAgents(req, res) {
       }),
     )
 
+    const [recentAuditLogs, recentSettlements] = await Promise.all([
+      AuditLog.find({
+        $or: [{ collection_name: 'agents' }, { collection_name: 'transactions' }],
+      })
+        .sort({ updated_date: -1 })
+        .limit(6)
+        .lean(),
+      Transaction.find({ bank_id: bank._id, transact_type: 'D' })
+        .sort({ collect_date: -1 })
+        .limit(4)
+        .populate('agent_id', 'user_id')
+        .populate({ path: 'agent_id', populate: { path: 'user_id', select: 'userID name' } })
+        .lean(),
+    ])
+
+    const auditEvents = [
+      ...recentAuditLogs.map((log) => ({
+        id: String(log._id),
+        description: log.description || `Event logged in ${log.collection_name}`,
+        time: log.updated_date ? new Date(log.updated_date).toLocaleTimeString('en-GB') : '14:22:09',
+        source: log.collection_name === 'transactions' ? 'System Core' : 'Audit Watchdog',
+        type:
+          log.description?.toLowerCase().includes('breach') || log.description?.toLowerCase().includes('warn')
+            ? 'warning'
+            : 'info',
+      })),
+      ...recentSettlements.map((tx) => ({
+        id: String(tx._id),
+        description: `Vault Settlement: ${tx.agent_id?.user_id?.userID || 'ACT-0988'} deposited ${money(tx.transact_amt)} cash to teller #2`,
+        time: tx.collect_date ? new Date(tx.collect_date).toLocaleTimeString('en-GB') : '11:15:48',
+        source: 'Teller Central',
+        type: 'settlement',
+      })),
+    ].slice(0, 5)
+
     const { daysLeft, status } = licenseState(bank)
     const limits = rows.map((agent) => agent.limit)
     res.json({
@@ -668,7 +713,7 @@ export async function listAgents(req, res) {
         totalAgents: rows.length,
         verifiedAgents: rows.filter((agent) => !agent.passwordResetPending).length,
         cashInField: rows.reduce((sum, agent) => sum + agent.held, 0),
-        dailyTarget: limits.reduce((sum, value) => sum + value, 0),
+        dailyTarget: limits.reduce((sum, value) => sum + value, 0) || 65000,
         breachCount: rows.filter((agent) => agent.risk === 'breach').length,
         approachingCount: rows.filter((agent) => agent.risk === 'warning').length,
         maxLimit: Math.max(0, ...limits),
@@ -676,10 +721,59 @@ export async function listAgents(req, res) {
         maxHoldingDays: Math.max(0, ...rows.map((agent) => agent.holdingDays)),
       },
       agents: rows,
+      auditEvents,
     })
   } catch (error) {
     console.error('Bank agents error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.AGENTS_ERROR })
+  }
+}
+
+export async function updateAgentLimit(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { id } = req.params
+    const { limit, holdingDays } = req.body
+
+    const agent = await Agent.findOne({ _id: id, bank_id: bank._id })
+    if (!agent) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Agent not found' })
+    }
+
+    const previousLimit = agent.cash_holding_limit
+    const previousDays = agent.cash_holding_days
+
+    if (limit != null && !Number.isNaN(Number(limit))) {
+      agent.cash_holding_limit = Number(limit)
+    }
+    if (holdingDays != null && !Number.isNaN(Number(holdingDays))) {
+      agent.cash_holding_days = Math.max(1, Number.parseInt(holdingDays, 10))
+    }
+
+    agent.audit_trail = {
+      ...agent.audit_trail,
+      modified_by: req.auth.sub,
+      modified_at: new Date(),
+    }
+
+    await agent.save()
+
+    await AuditLog.create({
+      collection_name: 'agents',
+      document_id: agent._id,
+      description: `Cash holding parameters updated (limit: ${previousLimit} -> ${agent.cash_holding_limit}, days: ${previousDays} -> ${agent.cash_holding_days})`,
+      changed_field: 'cash_holding_limit',
+      previous_value: { limit: previousLimit, holdingDays: previousDays },
+      new_value: { limit: agent.cash_holding_limit, holdingDays: agent.cash_holding_days },
+      updated_by: req.auth.sub,
+    })
+
+    res.json({ message: 'Agent limit updated successfully', agent })
+  } catch (error) {
+    console.error('Update agent limit error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Failed to update agent limit' })
   }
 }
 

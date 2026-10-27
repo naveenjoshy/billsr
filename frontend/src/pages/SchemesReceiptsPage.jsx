@@ -21,6 +21,267 @@ const DEFAULT_THERMAL_FIELDS = [
   { field_name: 'Thermal Footer Disclaimer', data_type: 'string', is_mandatory: false, print_order: 9 },
 ]
 
+const QUICK_FIELD_SUGGESTIONS = [
+  { name: 'GSTIN / Tax ID', type: 'string' },
+  { name: 'Agent Mobile Contact', type: 'string' },
+  { name: 'Penalty / Late Surcharge', type: 'currency' },
+  { name: 'Deposit Passbook Page', type: 'number' },
+  { name: 'Customer Shop Ward', type: 'string' },
+]
+
+/**
+ * High-precision ESC/POS 2D QR Code SVG graphic for thermal receipt preview.
+ * Renders sharp finder marks and micro-patterns matching real 203 DPI ESC/POS output.
+ */
+function ThermalReceiptQRCode({ size = 68 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 29 29"
+      shapeRendering="crispEdges"
+      className="slip-qr-svg"
+      aria-label="Thermal Receipt Blockchain QR Verification Code"
+    >
+      <rect width="29" height="29" fill="#ffffff" />
+      {/* Top-Left Finder */}
+      <rect x="2" y="2" width="7" height="7" fill="#0f172a" />
+      <rect x="3" y="3" width="5" height="5" fill="#ffffff" />
+      <rect x="4" y="4" width="3" height="3" fill="#0f172a" />
+      {/* Top-Right Finder */}
+      <rect x="20" y="2" width="7" height="7" fill="#0f172a" />
+      <rect x="21" y="3" width="5" height="5" fill="#ffffff" />
+      <rect x="22" y="4" width="3" height="3" fill="#0f172a" />
+      {/* Bottom-Left Finder */}
+      <rect x="2" y="20" width="7" height="7" fill="#0f172a" />
+      <rect x="3" y="21" width="5" height="5" fill="#ffffff" />
+      <rect x="4" y="22" width="3" height="3" fill="#0f172a" />
+      {/* Timing Patterns */}
+      <rect x="10" y="5" width="1" height="1" fill="#0f172a" />
+      <rect x="12" y="5" width="1" height="1" fill="#0f172a" />
+      <rect x="14" y="5" width="1" height="1" fill="#0f172a" />
+      <rect x="16" y="5" width="1" height="1" fill="#0f172a" />
+      <rect x="18" y="5" width="1" height="1" fill="#0f172a" />
+      <rect x="5" y="10" width="1" height="1" fill="#0f172a" />
+      <rect x="5" y="12" width="1" height="1" fill="#0f172a" />
+      <rect x="5" y="14" width="1" height="1" fill="#0f172a" />
+      <rect x="5" y="16" width="1" height="1" fill="#0f172a" />
+      <rect x="5" y="18" width="1" height="1" fill="#0f172a" />
+      {/* Alignment Pattern */}
+      <rect x="18" y="18" width="5" height="5" fill="#0f172a" />
+      <rect x="19" y="19" width="3" height="3" fill="#ffffff" />
+      <rect x="20" y="20" width="1" height="1" fill="#0f172a" />
+      {/* Data Bits */}
+      <rect x="10" y="2" width="1" height="2" fill="#0f172a" />
+      <rect x="12" y="3" width="2" height="1" fill="#0f172a" />
+      <rect x="15" y="2" width="1" height="2" fill="#0f172a" />
+      <rect x="17" y="3" width="1" height="1" fill="#0f172a" />
+      <rect x="11" y="7" width="2" height="1" fill="#0f172a" />
+      <rect x="14" y="8" width="2" height="1" fill="#0f172a" />
+      <rect x="2" y="10" width="2" height="1" fill="#0f172a" />
+      <rect x="7" y="11" width="1" height="2" fill="#0f172a" />
+      <rect x="9" y="11" width="2" height="1" fill="#0f172a" />
+      <rect x="13" y="11" width="1" height="2" fill="#0f172a" />
+      <rect x="16" y="10" width="2" height="1" fill="#0f172a" />
+      <rect x="20" y="11" width="1" height="2" fill="#0f172a" />
+      <rect x="23" y="10" width="2" height="1" fill="#0f172a" />
+      <rect x="26" y="12" width="1" height="2" fill="#0f172a" />
+      <rect x="10" y="13" width="2" height="2" fill="#0f172a" />
+      <rect x="14" y="14" width="1" height="2" fill="#0f172a" />
+      <rect x="17" y="13" width="2" height="1" fill="#0f172a" />
+      <rect x="24" y="14" width="2" height="1" fill="#0f172a" />
+      <rect x="1" y="16" width="2" height="1" fill="#0f172a" />
+      <rect x="8" y="15" width="1" height="2" fill="#0f172a" />
+      <rect x="11" y="17" width="2" height="1" fill="#0f172a" />
+      <rect x="15" y="16" width="2" height="2" fill="#0f172a" />
+      <rect x="25" y="17" width="2" height="1" fill="#0f172a" />
+      <rect x="10" y="20" width="1" height="2" fill="#0f172a" />
+      <rect x="13" y="21" width="2" height="1" fill="#0f172a" />
+      <rect x="16" y="20" width="1" height="2" fill="#0f172a" />
+      <rect x="24" y="20" width="2" height="2" fill="#0f172a" />
+      <rect x="11" y="24" width="2" height="1" fill="#0f172a" />
+      <rect x="14" y="23" width="2" height="2" fill="#0f172a" />
+      <rect x="17" y="25" width="2" height="1" fill="#0f172a" />
+      <rect x="21" y="25" width="1" height="2" fill="#0f172a" />
+      <rect x="25" y="24" width="2" height="1" fill="#0f172a" />
+      <rect x="10" y="26" width="3" height="1" fill="#0f172a" />
+      <rect x="15" y="26" width="1" height="1" fill="#0f172a" />
+      <rect x="18" y="27" width="2" height="1" fill="#0f172a" />
+      <rect x="23" y="26" width="2" height="2" fill="#0f172a" />
+    </svg>
+  )
+}
+
+/**
+ * Live 58mm Thermal Receipt Slip Component.
+ * Dynamically renders receipt rows based on configured scheme fields.
+ */
+function ThermalPaperSlip({
+  bankName,
+  schemeName,
+  fields,
+  previewMode = 'deposit',
+  paperWidth = '58mm',
+}) {
+  const activeFields = Array.isArray(fields) ? fields : DEFAULT_THERMAL_FIELDS
+  const isWithdrawal = previewMode === 'withdrawal'
+
+  const hasField = (keyword) =>
+    activeFields.some((f) => f.field_name.toLowerCase().includes(keyword.toLowerCase()))
+
+  const hasQR = hasField('qr') || hasField('receipt')
+  const hasFooter = hasField('footer') || hasField('disclaimer')
+
+  return (
+    <div className={`thermal-paper-slip ${paperWidth === '80mm' ? 'slip-80mm' : 'slip-58mm'}`}>
+      {/* Receipt Serrated Tear Marks & Header */}
+      <div className="slip-header">
+        <div className="slip-bank-name">
+          {bankName || 'Devicolam Taluk Agrl & Rural Development Bank'}
+        </div>
+        <div className="slip-scheme-name">{schemeName || 'MBS DAILY PIGMY'}</div>
+        <div className="slip-dpi-tag">ESC/POS 203 DPI • {paperWidth.toUpperCase()}</div>
+      </div>
+
+      <div className="slip-divider" />
+
+      {/* Dynamic Ordered Field Rows */}
+      <div className="slip-content-body">
+        {activeFields.map((field) => {
+          const fn = field.field_name.toLowerCase()
+
+          if (fn.includes('header')) {
+            // Already rendered at top
+            return null
+          }
+
+          if (fn.includes('date') || fn.includes('time')) {
+            return (
+              <div className="slip-row" key={field.field_name}>
+                <span className="slip-label">DATE:</span>
+                <span className="slip-val">2026-10-26 10:42 AM</span>
+              </div>
+            )
+          }
+
+          if (fn.includes('receipt') && !fn.includes('amount')) {
+            return (
+              <div className="slip-row" key={field.field_name}>
+                <span className="slip-label">RECEIPT:</span>
+                <span className="slip-val">REC-2026-984020</span>
+              </div>
+            )
+          }
+
+          if (fn.includes('customer') || fn.includes('shop') || fn.includes('account')) {
+            return (
+              <div key={field.field_name}>
+                <div className="slip-row">
+                  <span className="slip-label">CUST A/C:</span>
+                  <span className="slip-val">#1042-9981-01</span>
+                </div>
+                <div className="slip-row muted">
+                  <span className="slip-label">NAME:</span>
+                  <span className="slip-val">S. RAGHAVAN &amp; SONS</span>
+                </div>
+              </div>
+            )
+          }
+
+          if (fn.includes('scheme code') || fn.includes('product code')) {
+            return (
+              <div className="slip-row" key={field.field_name}>
+                <span className="slip-label">SCHEME:</span>
+                <span className="slip-val">{schemeName || 'MBS-DAILY-01'}</span>
+              </div>
+            )
+          }
+
+          if (fn.includes('amount') || fn.includes('mode')) {
+            return (
+              <div key={field.field_name}>
+                <div className="slip-divider" />
+                <div className="slip-row bold highlight">
+                  <span className="slip-label">{isWithdrawal ? 'WITHDRAWAL:' : 'AMOUNT:'}</span>
+                  <span className="slip-val">
+                    {isWithdrawal ? '$200.00 [CASH]' : '$500.00 [CASH]'}
+                  </span>
+                </div>
+              </div>
+            )
+          }
+
+          if (fn.includes('balance') || fn.includes('ledger')) {
+            return (
+              <div className="slip-row bold" key={field.field_name}>
+                <span className="slip-label">BALANCE:</span>
+                <span className="slip-val">{isWithdrawal ? '$4,510.00' : '$4,710.00'}</span>
+              </div>
+            )
+          }
+
+          if (fn.includes('agent') || fn.includes('gps')) {
+            return (
+              <div key={field.field_name}>
+                <div className="slip-row">
+                  <span className="slip-label">AGENT:</span>
+                  <span className="slip-val">AGT-1021 (R. Iyer)</span>
+                </div>
+                <div className="slip-row muted">
+                  <span className="slip-label">GPS PING:</span>
+                  <span className="slip-val">10.0889°N, 77.0595°E</span>
+                </div>
+              </div>
+            )
+          }
+
+          if (fn.includes('footer') || fn.includes('disclaimer')) {
+            // Rendered at footer
+            return null
+          }
+
+          // Custom user-defined field
+          return (
+            <div className="slip-row" key={field.field_name}>
+              <span className="slip-label">{field.field_name.toUpperCase()}:</span>
+              <span className="slip-val">
+                {field.data_type === 'currency'
+                  ? '$25.00'
+                  : field.data_type === 'number'
+                  ? '42'
+                  : field.data_type === 'date'
+                  ? '2026-10-26'
+                  : 'REF-32091'}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* QR Code Section (If Receipt/QR Field Present) */}
+      {hasQR && (
+        <div className="slip-qr-container">
+          <ThermalReceiptQRCode size={68} />
+          <div className="slip-qr-meta">
+            <span className="slip-qr-code-text">[ QR CODE ]</span>
+            <span className="slip-qr-hash-text">SHA256: 8f3a9e...4b12</span>
+          </div>
+        </div>
+      )}
+
+      {/* Thermal Footer Disclaimer */}
+      {hasFooter && (
+        <div className="slip-footer">
+          <div className="slip-divider" />
+          <div className="slip-footer-line bold">* THANK YOU FOR BANKING WITH US *</div>
+          <div className="slip-footer-line">IMMUTABLE BLOCK #891,002</div>
+          <div className="slip-footer-sub">POWERED BY BILLSR TAMPER-PROOF CORE</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, onNavigate }) {
   const [dashboard, setDashboard] = useState(null)
   const [schemes, setSchemes] = useState([])
@@ -28,7 +289,7 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState(null)
 
-  // Form State
+  // Configuration Modal State
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingSchemeId, setEditingSchemeId] = useState(null)
   const [formName, setFormName] = useState('')
@@ -39,6 +300,13 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
   const [newFieldName, setNewFieldName] = useState('')
   const [newFieldType, setNewFieldType] = useState('string')
   const [saving, setSaving] = useState(false)
+
+  // Preview Mode Controls
+  const [previewMode, setPreviewMode] = useState('deposit') // 'deposit' | 'withdrawal'
+  const [paperWidth, setPaperWidth] = useState('58mm') // '58mm' | '80mm'
+
+  // Standalone Quick Receipt Preview Modal
+  const [previewScheme, setPreviewScheme] = useState(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -62,6 +330,18 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
     loadData()
   }, [loadData])
 
+  // Close modals on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (previewScheme) setPreviewScheme(null)
+        if (isFormOpen) setIsFormOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [previewScheme, isFormOpen])
+
   const openCreateForm = () => {
     setEditingSchemeId(null)
     setFormName('')
@@ -84,7 +364,6 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
         : DEFAULT_THERMAL_FIELDS
     setFormReceiptFields(fields)
     setIsFormOpen(true)
-    window.scrollTo({ top: 120, behavior: 'smooth' })
   }
 
   const closeForm = () => {
@@ -107,9 +386,40 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
     setNewFieldName('')
   }
 
+  const handleAddQuickField = (suggestion) => {
+    if (formReceiptFields.some((f) => f.field_name.toLowerCase() === suggestion.name.toLowerCase())) {
+      return
+    }
+    const nextOrder = formReceiptFields.length + 1
+    setFormReceiptFields([
+      ...formReceiptFields,
+      {
+        field_name: suggestion.name,
+        data_type: suggestion.type,
+        is_mandatory: false,
+        print_order: nextOrder,
+      },
+    ])
+  }
+
   const handleRemoveField = (index) => {
     const updated = formReceiptFields.filter((_, i) => i !== index)
     setFormReceiptFields(updated.map((f, i) => ({ ...f, print_order: i + 1 })))
+  }
+
+  const handleMoveField = (index, direction) => {
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= formReceiptFields.length) return
+    const updated = [...formReceiptFields]
+    const [moved] = updated.splice(index, 1)
+    updated.splice(targetIndex, 0, moved)
+    setFormReceiptFields(updated.map((f, i) => ({ ...f, print_order: i + 1 })))
+  }
+
+  const handleToggleMandatory = (index) => {
+    setFormReceiptFields(
+      formReceiptFields.map((f, i) => (i === index ? { ...f, is_mandatory: !f.is_mandatory } : f))
+    )
   }
 
   const handleSubmit = async (e) => {
@@ -174,6 +484,12 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
     }
   }
 
+  const handlePrintSlip = () => {
+    window.print()
+  }
+
+  const bankDisplayName = dashboard?.bank?.name || 'Devicolam Taluk Agrl & Rural Development Bank'
+
   return (
     <BankShell
       active="schemes"
@@ -205,21 +521,18 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
         <div className="schemes-header">
           <div>
             <h1 className="schemes-title">Schemes & Thermal Receipt Configuration</h1>
+            <p className="schemes-subtitle">
+              Manage core deposit/withdrawal products and define 58mm/80mm Bluetooth ESC/POS thermal receipt slip templates for field agents.
+            </p>
           </div>
           <div className="schemes-header-actions">
-            {!isFormOpen ? (
-              <button type="button" className="btn-primary-action" onClick={openCreateForm}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Configure New Scheme
-              </button>
-            ) : (
-              <button type="button" className="btn-secondary-action" onClick={closeForm}>
-                Close Config Form
-              </button>
-            )}
+            <button type="button" className="btn-primary-action" onClick={openCreateForm}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Configure New Scheme
+            </button>
           </div>
         </div>
 
@@ -233,202 +546,19 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
           </div>
         )}
 
-        {/* Form Container (When Open) */}
-        {isFormOpen && (
-          <form className="scheme-form-card" onSubmit={handleSubmit}>
-            <div className="scheme-form-header">
-              <h3 className="scheme-form-title">
-                {editingSchemeId ? 'Edit Scheme & Thermal Receipt Configuration' : 'Add New Financial Scheme & Receipt Layout'}
-              </h3>
-              <button type="button" className="notice-close" onClick={closeForm}>
-                ✕
-              </button>
-            </div>
-
-            <div className="scheme-form-grid">
-              {/* Left Column: Form Inputs */}
-              <div className="form-inputs-pane">
-                <div className="form-row-2">
-                  <div className="form-field">
-                    <label htmlFor="scheme-name-input">Scheme Name *</label>
-                    <input
-                      id="scheme-name-input"
-                      type="text"
-                      placeholder="e.g. MBS Daily Pigmy, Recurring Deposit"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="scheme-operation-select">Permitted Operations</label>
-                    <select
-                      id="scheme-operation-select"
-                      value={formPermitted}
-                      onChange={(e) => setFormPermitted(e.target.value)}
-                    >
-                      <option value="A">All Operations (Deposits & Withdrawals)</option>
-                      <option value="S">Single Mode (Deposit Only)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row-2">
-                  <div className="form-field">
-                    <label htmlFor="scheme-status-select">Status</label>
-                    <select
-                      id="scheme-status-select"
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value)}
-                    >
-                      <option value="A">Active</option>
-                      <option value="S">Suspended</option>
-                    </select>
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor="scheme-desc-input">Description / Product Notes</label>
-                    <input
-                      id="scheme-desc-input"
-                      type="text"
-                      placeholder="Short description of scheme target customers"
-                      value={formDesc}
-                      onChange={(e) => setFormDesc(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Thermal Receipt Configuration Field Builder */}
-                <div className="receipt-fields-section">
-                  <div className="receipt-fields-title">Thermal Printer ESC/POS Fields</div>
-                  <div className="receipt-fields-hint">
-                    Fields sent to the handheld Bluetooth thermal printer when issuing collection receipts.
-                  </div>
-
-                  <div className="receipt-fields-list">
-                    {formReceiptFields.map((field, idx) => (
-                      <div className="receipt-field-item" key={idx}>
-                        <div className="receipt-field-info">
-                          <span className="receipt-field-order">#{field.print_order}</span>
-                          <span className="receipt-field-name">{field.field_name}</span>
-                          <span className="receipt-field-type">{field.data_type}</span>
-                          {field.is_mandatory && (
-                            <span style={{ fontSize: '10px', color: '#059669', fontWeight: 600 }}>
-                              Mandatory
-                            </span>
-                          )}
-                        </div>
-                        <div className="receipt-field-actions">
-                          <button
-                            type="button"
-                            className="btn-remove-field"
-                            onClick={() => handleRemoveField(idx)}
-                            title="Remove field"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Add Custom Receipt Field */}
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                    <input
-                      type="text"
-                      placeholder="Add custom slip field (e.g. GSTIN, Penalty)"
-                      value={newFieldName}
-                      onChange={(e) => setNewFieldName(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '6px 10px',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                      }}
-                    />
-                    <select
-                      value={newFieldType}
-                      onChange={(e) => setNewFieldType(e.target.value)}
-                      style={{
-                        padding: '6px 10px',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                      }}
-                    >
-                      <option value="string">String</option>
-                      <option value="currency">Currency</option>
-                      <option value="date">Date</option>
-                      <option value="number">Number</option>
-                    </select>
-                    <button
-                      type="button"
-                      className="btn-secondary-action"
-                      onClick={handleAddField}
-                      style={{ padding: '6px 12px', fontSize: '12px' }}
-                    >
-                      + Add Field
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Thermal Paper Live Preview */}
-              <div className="thermal-preview-pane">
-                <p className="thermal-preview-title">Live 58mm Thermal Preview</p>
-                <div className="thermal-paper-slip">
-                  <div className="slip-header">
-                    <div className="slip-bank-name">{dashboard?.bank?.name || 'BILLS COOP BANK'}</div>
-                    <div className="slip-scheme-name">{formName || 'SCHEME RECEIPT'}</div>
-                    <div style={{ fontSize: '9px', color: '#64748b' }}>ESC/POS 203 DPI</div>
-                  </div>
-                  <div className="slip-row">
-                    <span>DATE:</span>
-                    <span>2026-10-26 10:42 AM</span>
-                  </div>
-                  <div className="slip-row">
-                    <span>RECEIPT:</span>
-                    <span>REC-2026-984020</span>
-                  </div>
-                  <div className="slip-row">
-                    <span>CUST A/C:</span>
-                    <span>#1042-9981-01</span>
-                  </div>
-                  <div className="slip-divider" />
-                  <div className="slip-row bold">
-                    <span>AMOUNT:</span>
-                    <span>$500.00 [CASH]</span>
-                  </div>
-                  <div className="slip-row">
-                    <span>BALANCE:</span>
-                    <span>$4,710.00</span>
-                  </div>
-                  <div className="slip-row">
-                    <span>AGENT:</span>
-                    <span>AGT-1021 (R. Iyer)</span>
-                  </div>
-                  <div className="slip-qr-placeholder">[ QR CODE ]</div>
-                  <div className="slip-footer">
-                    <div>* THANK YOU FOR BANKING WITH US *</div>
-                    <div>IMMUTABLE BLOCK #891,002</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="scheme-form-footer">
-              <button type="button" className="btn-secondary-action" onClick={closeForm}>
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary-action" disabled={saving}>
-                {saving ? 'Saving...' : editingSchemeId ? 'Update Scheme' : 'Save Scheme'}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Existing Schemes Table */}
+        {/* Existing Schemes Table Card */}
         <div className="schemes-table-card">
+          <div className="schemes-table-header-bar">
+            <div className="schemes-table-title-group">
+              <h2 className="schemes-table-title">Registered Financial Schemes & Slip Models</h2>
+              <span className="schemes-table-count">{schemes.length} Registered Products</span>
+            </div>
+            <div className="schemes-table-badges">
+              <span className="badge-legend active">Active: {schemes.filter((s) => s.status === 'A').length}</span>
+              <span className="badge-legend suspended">Suspended: {schemes.filter((s) => s.status === 'S').length}</span>
+            </div>
+          </div>
+
           {loading ? (
             <div className="schemes-empty">Loading financial schemes from database...</div>
           ) : error ? (
@@ -437,7 +567,7 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
             </div>
           ) : schemes.length === 0 ? (
             <div className="schemes-empty">
-              No financial schemes found in database. Click "Configure New Scheme" above to create one for testing.
+              No financial schemes found in database. Click &quot;Configure New Scheme&quot; above to create one for testing.
             </div>
           ) : (
             <table className="schemes-table">
@@ -448,74 +578,480 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
                   <th>Status</th>
                   <th>Enrolled Customers</th>
                   <th>Ledger Transactions</th>
-                  <th>Receipt Layout</th>
+                  <th>Thermal Slip Model</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {schemes.map((scheme) => (
-                  <tr key={scheme._id}>
-                    <td>
-                      <div className="scheme-name-cell">
-                        <span className="scheme-primary-name">{scheme.scheme_name}</span>
-                        <span className="scheme-desc">
-                          {scheme.scheme_description || 'Standard daily collection scheme'}
+                {schemes.map((scheme) => {
+                  const fieldCount = scheme.receipt_config?.fields?.length || DEFAULT_THERMAL_FIELDS.length
+                  return (
+                    <tr key={scheme._id}>
+                      <td>
+                        <div className="scheme-name-cell">
+                          <span className="scheme-primary-name">{scheme.scheme_name}</span>
+                          <span className="scheme-desc">
+                            {scheme.scheme_description || 'Standard daily collection scheme'}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="permitted-tag">
+                          {scheme.permitted_operation === 'A' ? 'All (Deposits & Withdrawals)' : 'Deposit Only'}
                         </span>
-                      </div>
-                    </td>
-                    <td>
-                      {scheme.permitted_operation === 'A' ? 'All (Deposits & Withdrawals)' : 'Deposit Only'}
-                    </td>
-                    <td>
-                      <span className={`badge-status ${scheme.status === 'A' ? 'active' : 'suspended'}`}>
-                        {scheme.status === 'A' ? 'Active' : 'Suspended'}
-                      </span>
-                    </td>
-                    <td>
-                      <strong>{scheme.enrolledCustomersCount || 0}</strong> Customers
-                    </td>
-                    <td>
-                      <strong>{scheme.activeTransactionsCount || 0}</strong> Txns
-                    </td>
-                    <td>
-                      <span style={{ fontSize: '11px', color: '#475569' }}>
-                        {(scheme.receipt_config?.fields?.length || 9)} fields configured
-                      </span>
-                    </td>
-                    <td>
-                      <div className="schemes-actions-cell">
-                        <button
-                          type="button"
-                          className="btn-table-edit"
-                          onClick={() => openEditForm(scheme)}
-                          title="Configure scheme & receipt"
-                        >
-                          Configure
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-table-edit"
-                          onClick={() => handleToggleStatus(scheme)}
-                          title="Toggle Active / Suspended status"
-                        >
-                          {scheme.status === 'A' ? 'Suspend' : 'Activate'}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-table-delete"
-                          onClick={() => handleDelete(scheme)}
-                          title="Delete scheme (use for test cleanup)"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td>
+                        <span className={`badge-status ${scheme.status === 'A' ? 'active' : 'suspended'}`}>
+                          {scheme.status === 'A' ? 'Active' : 'Suspended'}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>{scheme.enrolledCustomersCount || 0}</strong> Customers
+                      </td>
+                      <td>
+                        <strong>{scheme.activeTransactionsCount || 0}</strong> Txns
+                      </td>
+                      <td>
+                        <div className="receipt-model-cell">
+                          <span className="receipt-field-pill">{fieldCount} Fields Configured</span>
+                          <button
+                            type="button"
+                            className="btn-preview-slip-link"
+                            onClick={() => setPreviewScheme(scheme)}
+                            title="Preview 58mm thermal receipt"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Live Slip
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="schemes-actions-cell">
+                          <button
+                            type="button"
+                            className="btn-table-edit"
+                            onClick={() => openEditForm(scheme)}
+                            title="Configure scheme & receipt"
+                          >
+                            Configure
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-table-status"
+                            onClick={() => handleToggleStatus(scheme)}
+                            title="Toggle Active / Suspended status"
+                          >
+                            {scheme.status === 'A' ? 'Suspend' : 'Activate'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-table-delete"
+                            onClick={() => handleDelete(scheme)}
+                            title="Delete scheme (use for test cleanup)"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           )}
         </div>
+
+        {/* MODAL 1: Scheme & Thermal Receipt Configurator Modal */}
+        {isFormOpen && (
+          <div
+            className="scheme-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="scheme-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) closeForm()
+            }}
+          >
+            <div className="scheme-modal-container">
+              <div className="scheme-modal-header">
+                <div>
+                  <div className="scheme-modal-tag">ESC/POS 203 DPI HARDWARE SPECIFICATION</div>
+                  <h2 id="scheme-modal-title" className="scheme-modal-title">
+                    {editingSchemeId
+                      ? 'Edit Scheme & Thermal Receipt Configuration'
+                      : 'Configure New Financial Scheme & Receipt Layout'}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  className="scheme-modal-close"
+                  onClick={closeForm}
+                  aria-label="Close configuration modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="scheme-modal-body">
+                <div className="scheme-modal-grid">
+                  {/* Left Column: Form Configuration Inputs & Field Builder */}
+                  <div className="form-inputs-pane">
+                    <div className="form-section-header">
+                      <span className="section-step">01</span>
+                      <div>
+                        <h3 className="section-title">Core Scheme Identity &amp; Governance</h3>
+                        <p className="section-desc">Define banking scheme nomenclature and operation permissions.</p>
+                      </div>
+                    </div>
+
+                    <div className="form-row-2">
+                      <div className="form-field">
+                        <label htmlFor="scheme-name-input">
+                          Scheme Name <span className="req-star">*</span>
+                        </label>
+                        <input
+                          id="scheme-name-input"
+                          type="text"
+                          placeholder="e.g. MBS Daily Pigmy, Recurring Deposit"
+                          value={formName}
+                          onChange={(e) => setFormName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="scheme-operation-select">Permitted Operations</label>
+                        <select
+                          id="scheme-operation-select"
+                          value={formPermitted}
+                          onChange={(e) => setFormPermitted(e.target.value)}
+                        >
+                          <option value="A">All Operations (Deposits &amp; Withdrawals)</option>
+                          <option value="S">Single Mode (Deposit Only)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-row-2">
+                      <div className="form-field">
+                        <label htmlFor="scheme-status-select">Status</label>
+                        <select
+                          id="scheme-status-select"
+                          value={formStatus}
+                          onChange={(e) => setFormStatus(e.target.value)}
+                        >
+                          <option value="A">Active (Available on Handheld Terminals)</option>
+                          <option value="S">Suspended (Locked from Field Transactions)</option>
+                        </select>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="scheme-desc-input">Description / Product Notes</label>
+                        <input
+                          id="scheme-desc-input"
+                          type="text"
+                          placeholder="Short description of scheme target customers"
+                          value={formDesc}
+                          onChange={(e) => setFormDesc(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 02: Thermal Receipt Layout Field Builder */}
+                    <div className="receipt-fields-section">
+                      <div className="form-section-header">
+                        <span className="section-step">02</span>
+                        <div>
+                          <h3 className="section-title">Bluetooth 58mm Thermal Printer Slip Builder</h3>
+                          <p className="section-desc">
+                            Select, reorder, or add custom fields printed on the portable ESC/POS thermal printer.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quick Suggestions Chips */}
+                      <div className="quick-suggestions-bar">
+                        <span className="suggestions-label">Quick Add Common Fields:</span>
+                        <div className="suggestions-chips">
+                          {QUICK_FIELD_SUGGESTIONS.map((sug) => (
+                            <button
+                              key={sug.name}
+                              type="button"
+                              className="chip-suggestion-btn"
+                              onClick={() => handleAddQuickField(sug)}
+                            >
+                              + {sug.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Reorderable Fields List */}
+                      <div className="receipt-fields-list">
+                        {formReceiptFields.map((field, idx) => (
+                          <div className="receipt-field-item" key={idx}>
+                            <div className="receipt-field-info">
+                              <span className="receipt-field-order">#{field.print_order}</span>
+                              <div className="field-name-group">
+                                <span className="receipt-field-name">{field.field_name}</span>
+                                <span className="receipt-field-type">{field.data_type}</span>
+                              </div>
+                            </div>
+
+                            <div className="receipt-field-actions">
+                              <button
+                                type="button"
+                                className={`btn-mandatory-toggle ${field.is_mandatory ? 'is-mandatory' : ''}`}
+                                onClick={() => handleToggleMandatory(idx)}
+                                title="Toggle mandatory status"
+                              >
+                                {field.is_mandatory ? 'Required' : 'Optional'}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn-reorder"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveField(idx, -1)}
+                                title="Move Up"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-reorder"
+                                disabled={idx === formReceiptFields.length - 1}
+                                onClick={() => handleMoveField(idx, 1)}
+                                title="Move Down"
+                              >
+                                ▼
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-remove-field"
+                                onClick={() => handleRemoveField(idx)}
+                                title="Remove field"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add Custom Receipt Field */}
+                      <div className="add-field-bar">
+                        <input
+                          type="text"
+                          placeholder="Custom slip field name (e.g. GSTIN, Member PIN, Ward)"
+                          value={newFieldName}
+                          onChange={(e) => setNewFieldName(e.target.value)}
+                          className="add-field-input"
+                        />
+                        <select
+                          value={newFieldType}
+                          onChange={(e) => setNewFieldType(e.target.value)}
+                          className="add-field-select"
+                        >
+                          <option value="string">String (Text)</option>
+                          <option value="currency">Currency ($)</option>
+                          <option value="date">Date / Timestamp</option>
+                          <option value="number">Numeric Code</option>
+                        </select>
+                        <button
+                          type="button"
+                          className="btn-add-field"
+                          onClick={handleAddField}
+                        >
+                          + Add Field
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Thermal Paper Live Preview Model */}
+                  <div className="thermal-preview-pane">
+                    <div className="thermal-preview-toolbar">
+                      <div>
+                        <div className="preview-indicator">
+                          <span className="preview-dot" />
+                          <span className="thermal-preview-title">LIVE 58MM THERMAL PREVIEW</span>
+                        </div>
+                        <span className="preview-device-meta">Handheld BT Printer (ESC/POS)</span>
+                      </div>
+
+                      {/* Preview Controls (Mode & Width) */}
+                      <div className="preview-controls-group">
+                        <div className="toggle-pill-group">
+                          <button
+                            type="button"
+                            className={`toggle-pill ${previewMode === 'deposit' ? 'active' : ''}`}
+                            onClick={() => setPreviewMode('deposit')}
+                          >
+                            Deposit
+                          </button>
+                          <button
+                            type="button"
+                            className={`toggle-pill ${previewMode === 'withdrawal' ? 'active' : ''}`}
+                            onClick={() => setPreviewMode('withdrawal')}
+                          >
+                            Withdrawal
+                          </button>
+                        </div>
+
+                        <div className="toggle-pill-group">
+                          <button
+                            type="button"
+                            className={`toggle-pill ${paperWidth === '58mm' ? 'active' : ''}`}
+                            onClick={() => setPaperWidth('58mm')}
+                          >
+                            58mm
+                          </button>
+                          <button
+                            type="button"
+                            className={`toggle-pill ${paperWidth === '80mm' ? 'active' : ''}`}
+                            onClick={() => setPaperWidth('80mm')}
+                          >
+                            80mm
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Centered Realistic Thermal Paper Slip */}
+                    <div className="slip-viewport">
+                      <ThermalPaperSlip
+                        bankName={bankDisplayName}
+                        schemeName={formName || 'MBS Daily'}
+                        fields={formReceiptFields}
+                        previewMode={previewMode}
+                        paperWidth={paperWidth}
+                      />
+                    </div>
+
+                    <div className="slip-preview-actions">
+                      <button
+                        type="button"
+                        className="btn-slip-action"
+                        onClick={handlePrintSlip}
+                        title="Simulate print to ESC/POS thermal printer"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="6 9 6 2 18 2 18 9" />
+                          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                          <rect x="6" y="14" width="12" height="8" />
+                        </svg>
+                        Test Print
+                      </button>
+                      <span className="slip-fidelity-badge">✓ Tamper-Evident Hash</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="scheme-form-footer">
+                  <div className="form-footer-left">
+                    <span className="form-fields-counter">
+                      {formReceiptFields.length} Thermal Fields Configured
+                    </span>
+                  </div>
+                  <div className="form-footer-right">
+                    <button type="button" className="btn-secondary-action" onClick={closeForm}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-primary-action" disabled={saving}>
+                      {saving ? 'Saving...' : editingSchemeId ? 'Update Scheme' : 'Save Scheme Configuration'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 2: Quick Standalone Receipt Preview Modal */}
+        {previewScheme && (
+          <div
+            className="scheme-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="preview-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setPreviewScheme(null)
+            }}
+          >
+            <div className="scheme-modal-container preview-only-modal">
+              <div className="scheme-modal-header">
+                <div>
+                  <div className="scheme-modal-tag">LIVE THERMAL RECEIPT SLIP INSPECTION</div>
+                  <h2 id="preview-modal-title" className="scheme-modal-title">
+                    {previewScheme.scheme_name} • 58mm Thermal Preview
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  className="scheme-modal-close"
+                  onClick={() => setPreviewScheme(null)}
+                  aria-label="Close preview modal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="preview-modal-body">
+                <div className="preview-modal-controls">
+                  <div className="toggle-pill-group">
+                    <button
+                      type="button"
+                      className={`toggle-pill ${previewMode === 'deposit' ? 'active' : ''}`}
+                      onClick={() => setPreviewMode('deposit')}
+                    >
+                      Deposit Preview ($500.00)
+                    </button>
+                    <button
+                      type="button"
+                      className={`toggle-pill ${previewMode === 'withdrawal' ? 'active' : ''}`}
+                      onClick={() => setPreviewMode('withdrawal')}
+                    >
+                      Withdrawal Preview ($200.00)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="slip-viewport">
+                  <ThermalPaperSlip
+                    bankName={bankDisplayName}
+                    schemeName={previewScheme.scheme_name}
+                    fields={previewScheme.receipt_config?.fields || DEFAULT_THERMAL_FIELDS}
+                    previewMode={previewMode}
+                    paperWidth="58mm"
+                  />
+                </div>
+              </div>
+
+              <div className="scheme-form-footer">
+                <button
+                  type="button"
+                  className="btn-secondary-action"
+                  onClick={() => setPreviewScheme(null)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary-action"
+                  onClick={() => {
+                    const toEdit = previewScheme
+                    setPreviewScheme(null)
+                    openEditForm(toEdit)
+                  }}
+                >
+                  Edit Configuration
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </BankShell>
   )

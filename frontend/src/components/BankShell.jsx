@@ -22,9 +22,8 @@ export default function BankShell({
       items: [
         { label: 'Dashboard', view: 'dashboard' },
         { label: 'Agent Management & Risk', view: 'agents' },
-        { label: 'Transaction Ledger', view: 'ledger' },
         {
-          label: 'Cancellation Queue',
+          label: 'Transaction and Cancellation',
           view: 'cancellations',
           badge: pendingCancellationsCount != null ? pendingCancellationsCount : undefined,
         },
