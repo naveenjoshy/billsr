@@ -372,11 +372,11 @@ export default function TransactionLedgerPage({
             <div className="metric-content">
               <span className="metric-label">TOTAL VOLUME TODAY</span>
               <div className="metric-val-row">
-                <span className="metric-primary-val">{money(totalVolumeToday.deposits || 164200)}</span>
+                <span className="metric-primary-val">{money(totalVolumeToday.deposits ?? 0)}</span>
                 <span className="metric-type-badge badge-d">D</span>
               </div>
               <span className="metric-subtext">
-                {money(totalVolumeToday.withdrawals || 15280)} W • {(totalVolumeToday.count || 1284).toLocaleString()} Txns
+                {money(totalVolumeToday.withdrawals ?? 0)} W • {(totalVolumeToday.count ?? 0).toLocaleString()} Txns
               </span>
             </div>
             {/* Decorative SVG Sparkline */}
@@ -424,7 +424,7 @@ export default function TransactionLedgerPage({
                 <span className="metric-primary-val text-amber">{pendingCount} Items</span>
               </div>
               <span className="metric-subtext">
-                {money(summary.pendingCancellations?.lockedAmount || 3150)} Locked • Oldest {summary.pendingCancellations?.oldestMinsAgo || 41}m ago
+                {money(summary.pendingCancellations?.lockedAmount ?? 0)} Locked • Oldest {summary.pendingCancellations?.oldestMinsAgo ?? 0}m ago
               </span>
             </div>
           </div>
@@ -439,10 +439,10 @@ export default function TransactionLedgerPage({
                 </svg>
               </div>
               <div className="metric-val-row">
-                <span className="metric-primary-val">{summary.approvedCancellationsMTD?.count || 18} Cancelled Receipts</span>
+                <span className="metric-primary-val">{summary.approvedCancellationsMTD?.count ?? 0} Cancelled Receipts</span>
               </div>
               <span className="metric-subtext">
-                {money(summary.approvedCancellationsMTD?.totalReversed || 12400)} Reversed to accounts
+                {money(summary.approvedCancellationsMTD?.totalReversed ?? 0)} Reversed to accounts
               </span>
             </div>
           </div>
@@ -458,7 +458,7 @@ export default function TransactionLedgerPage({
               </div>
               <div className="metric-val-row">
                 <span className="metric-primary-val">
-                  {summary.collectorStatus?.active || 32}/{summary.collectorStatus?.total || 34} Active Agents
+                  {summary.collectorStatus?.active ?? 0}/{summary.collectorStatus?.total ?? 0} Active Agents
                 </span>
               </div>
               <span className="metric-subtext">
@@ -504,7 +504,7 @@ export default function TransactionLedgerPage({
                 <div className="review-cust-header">
                   <h3 className="review-cust-name">{reviewTxn.customer}</h3>
                   <p className="review-cust-meta">
-                    A/C #{reviewTxn.customerId || '908122-01'} • {reviewTxn.agentName} ({reviewTxn.agentCode || 'AGT-1044'})
+                    A/C #{reviewTxn.customerId || '—'} • {reviewTxn.agentName} ({reviewTxn.agentCode || '—'})
                   </p>
                 </div>
 
@@ -516,8 +516,7 @@ export default function TransactionLedgerPage({
                     OPERATOR JUSTIFICATION
                   </div>
                   <p className="justification-text">
-                    "{reviewTxn.cancellationReason ||
-                      'Customer deposited ₹850 cash, but agent mistakenly inputted 8500 in device before correcting to standard receipt. Physical receipt signed for void.'}"
+                    "{reviewTxn.cancellationReason || 'No justification provided by operator.'}"
                   </p>
                 </div>
               </div>
@@ -761,7 +760,7 @@ export default function TransactionLedgerPage({
                         {/* 1. Transact ID & Receipt */}
                         <td className="cell-id">
                           <div className={`id-primary ${isCancelled ? 'strikethrough' : ''}`}>
-                            {txn.transactId || 'TX-984020'}
+                            {txn.transactId || '—'}
                           </div>
                           <div className="id-receipt-row">
                             <span className="receipt-text">{txn.receiptNo}</span>
@@ -797,7 +796,7 @@ export default function TransactionLedgerPage({
                         <td className="cell-agent">
                           <div className="agent-name">{txn.agentName}</div>
                           <div className="agent-sub">
-                            {txn.agentCode ? `${txn.agentCode} • Device P25` : 'AGT-1044 • Device P25'}
+                            {txn.agentCode ? `${txn.agentCode} • Device P25` : '—'}
                           </div>
                         </td>
 
@@ -833,7 +832,8 @@ export default function TransactionLedgerPage({
                               className="btn-table-review"
                               onClick={() => {
                                 setReviewTxn(txn)
-                                setReviewModalTxn(txn)
+                                const el = document.getElementById('review-card-heading')
+                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
                               }}
                             >
                               Review

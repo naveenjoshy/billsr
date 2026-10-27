@@ -1,3 +1,4 @@
+import { money } from './bankShellUtils'
 import './TransactionForensicModal.css'
 
 export default function TransactionForensicModal({
@@ -38,10 +39,7 @@ export default function TransactionForensicModal({
   })()
 
   const sign = transaction.type === 'W' ? '-' : '+'
-  const formattedDelta = `${sign}$${Number(transaction.amount || 0).toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`
+  const formattedDelta = `${sign}${money(transaction.amount || 0)}`
 
   const isCancelled = transaction.status === 'C'
   const isPending = transaction.status === 'P'
@@ -109,8 +107,8 @@ export default function TransactionForensicModal({
                 <h4 className="forensic-step-title">{time1} - Terminal Transmission</h4>
                 <p className="forensic-step-desc">
                   Captured on handheld Bluebamboo P25 terminal by Agent{' '}
-                  <strong>{transaction.agentName || 'Pooja Hegde'}</strong> (
-                  {transaction.agentCode || 'AGT-1044'}). GPS Tag: 19.0760° N, 72.8777° E.
+                  <strong>{transaction.agentName || 'Assigned Collector'}</strong> (
+                  {transaction.agentCode || '—'}). GPS Tag: 19.0760° N, 72.8777° E.
                 </p>
               </div>
             </div>
@@ -159,8 +157,8 @@ export default function TransactionForensicModal({
                   </h4>
                   <p className="forensic-step-desc">
                     Reversal signed off by Officer{' '}
-                    <strong>{transaction.reviewedBy || 'Admin Core'}</strong>. Reason: "
-                    <em>{transaction.cancellationReason || 'Operator error void requested'}</em>".
+                    <strong>{transaction.reviewedBy || 'Bank Administrator'}</strong>. Reason: "
+                    <em>{transaction.cancellationReason || 'Reversal requested and verified'}</em>".
                     Ledger balance counter-entry posted.
                   </p>
                 </div>
@@ -178,7 +176,7 @@ export default function TransactionForensicModal({
                   </h4>
                   <p className="forensic-step-desc">
                     Operator requested cancellation. Reason: "
-                    <em>{transaction.cancellationReason || 'Device input error'}</em>". Transaction
+                    <em>{transaction.cancellationReason || 'Operator requested cancellation'}</em>". Transaction
                     amount locked pending administrative review.
                   </p>
                 </div>

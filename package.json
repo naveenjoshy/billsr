@@ -13,9 +13,10 @@
     "client": "npm --prefix frontend run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "dev:api": "npm --prefix backend run dev",
+    "seed": "npm --prefix backend run seed",
     "build": "npm --prefix frontend run build",
     "start": "npm --prefix backend start",
-    "lint": "npm --prefix frontend run lint"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

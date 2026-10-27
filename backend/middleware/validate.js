@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
 const MARKUP = /<[^>]*>|[<>]/g
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

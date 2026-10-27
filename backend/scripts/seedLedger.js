@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import bcrypt from 'bcryptjs'
@@ -9,7 +10,12 @@ import { Customer } from '../models/Customer.js'
 import { CustomerScheme } from '../models/CustomerScheme.js'
 import { Transaction } from '../models/Transaction.js'
 
-dotenv.config({ path: 'backend/.env.local' })
+const envPath = fs.existsSync('.env.local')
+  ? '.env.local'
+  : fs.existsSync('backend/.env.local')
+    ? 'backend/.env.local'
+    : '.env'
+dotenv.config({ path: envPath })
 
 async function seed() {
   try {

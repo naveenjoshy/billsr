@@ -2,17 +2,26 @@ let isRefreshing = false
 let refreshSubscribers = []
 
 function onRefreshed() {
-  refreshSubscribers.forEach((cb) => cb())
+  refreshSubscribers.forEach((cb) => cb(null))
+  refreshSubscribers = []
+}
+
+function onRefreshFailed(err) {
+  refreshSubscribers.forEach((cb) => cb(err))
   refreshSubscribers = []
 }
 
 export async function request(path, options = {}) {
   let response
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    }
     response = await fetch(path, {
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
       ...options,
+      headers,
     })
   } catch {
     throw new Error('Server unreachable')
@@ -39,15 +48,19 @@ export async function request(path, options = {}) {
           onRefreshed()
           // Retry original request with newly issued access token
           return request(path, options)
+        } else {
+          onRefreshFailed(new Error('Session expired'))
         }
-      } catch {
+      } catch (err) {
         isRefreshing = false
+        onRefreshFailed(err)
       }
     } else {
       // Return a Promise that resolves when the token has been refreshed
       return new Promise((resolve, reject) => {
-        refreshSubscribers.push(() => {
-          request(path, options).then(resolve).catch(reject)
+        refreshSubscribers.push((err) => {
+          if (err) reject(err)
+          else request(path, options).then(resolve).catch(reject)
         })
       })
     }

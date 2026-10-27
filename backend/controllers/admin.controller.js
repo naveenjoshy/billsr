@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
-import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { AuditLog } from '../models/AuditLog.js'
 import { Bank } from '../models/Bank.js'

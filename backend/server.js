@@ -8,10 +8,16 @@ import authRoutes from './routes/auth.routes.js'
 import adminRoutes from './routes/admin.routes.js'
 import bankRoutes from './routes/bank.routes.js'
 import agentRoutes from './routes/agent.routes.js'
+import fs from 'node:fs';
 import connectDB from './config/db.js';
 
 // 1. Initialize environmental configurations
-dotenv.config({ path: '.env.local' });
+const envPath = fs.existsSync('.env.local')
+  ? '.env.local'
+  : fs.existsSync('backend/.env.local')
+    ? 'backend/.env.local'
+    : '.env';
+dotenv.config({ path: envPath });
 
 // 2. Establish connection to your MongoDB Cluster
 connectDB();
@@ -65,7 +71,7 @@ app.use((req, res, next) => {
 });
 
 // Global Fallback execution crash barrier
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
     message: err.message,

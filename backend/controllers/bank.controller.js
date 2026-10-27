@@ -11,7 +11,6 @@ import { Transaction } from '../models/Transaction.js'
 import { User } from '../models/User.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
-const PAGE_SIZE = 5
 const RISK_THRESHOLD = 0.8
 const num = (value) => (value == null ? 0 : Number(value.toString()))
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -280,8 +279,9 @@ export async function listTransactions(req, res) {
       ]
     }
 
-    const startOfDay = new Date(now)
-    startOfDay.setHours(0, 0, 0, 0)
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const startOfMonth = new Date(todayStart.getFullYear(), todayStart.getMonth(), 1)
 
     const [total, rows, todayStats, pendingStats, approvedCancellationsMTD, totalAgents, schemes, bankAgents] = await Promise.all([
       Transaction.countDocuments(filter),
@@ -294,9 +294,9 @@ export async function listTransactions(req, res) {
         .populate({ path: 'agent_id', select: 'user_id cash_holding_limit', populate: { path: 'user_id', select: 'userID name' } })
         .populate({ path: 'cancellation_info.reviewed_by', select: 'name userID' })
         .lean(),
-      // 1. Total Volume Today
+      // 1. Total Volume Today (excluding cancelled)
       Transaction.aggregate([
-        { $match: { bank_id: bank._id, collect_date: { $gte: startOfDay } } },
+        { $match: { bank_id: bank._id, collect_date: { $gte: todayStart }, transaction_status: { $ne: 'C' } } },
         {
           $group: {
             _id: '$transact_type',
@@ -319,7 +319,7 @@ export async function listTransactions(req, res) {
       ]),
       // 3. Approved Cancellations (MTD / Voided)
       Transaction.aggregate([
-        { $match: { bank_id: bank._id, transaction_status: 'C' } },
+        { $match: { bank_id: bank._id, transaction_status: 'C', collect_date: { $gte: startOfMonth } } },
         {
           $group: {
             _id: null,
@@ -347,7 +347,7 @@ export async function listTransactions(req, res) {
     const pendingCount = pendingStats[0]?.count || 0
     const pendingLocked = pendingStats[0]?.totalLocked || 0
     const pendingOldestDate = pendingStats[0]?.oldest || null
-    let oldestMinsAgo = 41
+    let oldestMinsAgo = 0
     if (pendingOldestDate) {
       oldestMinsAgo = Math.max(1, Math.round((Date.now() - new Date(pendingOldestDate).getTime()) / (60 * 1000)))
     }
@@ -387,7 +387,7 @@ export async function listTransactions(req, res) {
       scheme: row.scheme_id?.scheme_name ?? '—',
       schemeId: row.scheme_id?._id ? String(row.scheme_id._id) : null,
       customer: row.customer_id?.name ?? '—',
-      customerId: row.customer_id?._id ? String(row.customer_id._id).slice(-4) : '1001',
+      customerId: row.customer_id?._id ? String(row.customer_id._id).slice(-4) : '—',
       customerShop: row.customer_id?.shop_name ?? '',
       customerAddress: row.customer_id?.address ?? '',
       customerDetail: [row.customer_id?.shop_name, row.customer_id?.address].filter(Boolean).join(' • '),
@@ -898,6 +898,16 @@ export async function deleteScheme(req, res) {
     const scheme = await Scheme.findOne({ _id: id, bank_id: bank._id })
     if (!scheme) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Scheme not found.' })
+    }
+
+    const [enrolledCount, txCount] = await Promise.all([
+      CustomerScheme.countDocuments({ scheme_id: id }),
+      Transaction.countDocuments({ scheme_id: id }),
+    ])
+    if (enrolledCount > 0 || txCount > 0) {
+      return res.status(HTTP_STATUS.CONFLICT).json({
+        message: `Cannot delete "${scheme.scheme_name}". It is bound to active customer accounts or transactions. Suspend it instead.`,
+      })
     }
 
     const name = scheme.scheme_name
