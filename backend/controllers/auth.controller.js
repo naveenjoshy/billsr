@@ -171,10 +171,10 @@ export async function setFirstPassword(req, res) {
   try {
     const { newPassword, confirmPassword } = req.body ?? {}
     if (typeof newPassword !== 'string' || typeof confirmPassword !== 'string') {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'New password and confirmation are required.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.NEW_PASSWORD_REQUIRED })
     }
     if (newPassword !== confirmPassword) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Passwords do not match.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.PASSWORDS_DO_NOT_MATCH })
     }
     const weakness = passwordStrengthError(newPassword)
     if (weakness) return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: weakness })
@@ -184,10 +184,10 @@ export async function setFirstPassword(req, res) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.UNAUTHORIZED_ACCESS })
     }
     if (user.first_login_at) {
-      return res.status(HTTP_STATUS.CONFLICT).json({ message: 'Your password has already been set. Please sign in.' })
+      return res.status(HTTP_STATUS.CONFLICT).json({ message: MESSAGES.AUTH.PASSWORD_ALREADY_SET })
     }
     if (await bcrypt.compare(newPassword, user.password_hash)) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'New password must be different from the temporary password.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.PASSWORD_DIFF_TEMP })
     }
 
     const now = new Date()
@@ -230,7 +230,7 @@ export async function verifyPasswordReset(req, res) {
     !email.trim() ||
     !userID.trim()
   ) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email ID and user ID are required.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.EMAIL_USER_ID_REQUIRED })
   }
 
   const user = await findActiveUserByResetIdentity(email, userID)
@@ -249,20 +249,20 @@ export async function resetPassword(req, res) {
     !email.trim() ||
     !userID.trim()
   ) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Email ID and user ID are required.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.EMAIL_USER_ID_REQUIRED })
   }
 
   if (typeof newPassword !== 'string' || typeof confirmPassword !== 'string') {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'New password and confirmation are required.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.NEW_PASSWORD_REQUIRED })
   }
 
   if (newPassword !== confirmPassword) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Passwords do not match.' })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.PASSWORDS_DO_NOT_MATCH })
   }
 
   if (newPassword.length < 8 || Buffer.byteLength(newPassword, 'utf8') > 72) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      message: 'Password must be at least 8 characters and no more than 72 UTF-8 bytes.',
+      message: MESSAGES.AUTH.PASSWORD_LENGTH_ERROR,
     })
   }
 

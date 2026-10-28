@@ -30,7 +30,12 @@ export const rejectBankCancellation = (id) =>
 export const approveTransaction = (id) =>
   post(`/api/bank/transactions/${id}/approve`, {})
 
-export const getBankAgents = () => request('/api/bank/agents')
+export const getBankAgents = (query = {}) => {
+  const params = new URLSearchParams()
+  if (query.date) params.set('date', query.date)
+  const qs = params.toString()
+  return request(`/api/bank/agents${qs ? `?${qs}` : ''}`)
+}
 
 export const addAgent = (payload) => post('/api/bank/agents', payload)
 

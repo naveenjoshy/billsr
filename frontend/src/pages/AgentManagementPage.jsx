@@ -80,15 +80,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
   const summary = data?.summary
   const auditEvents = data?.auditEvents ?? []
 
-  // Extract unique branches
-  const branchOptions = useMemo(() => {
-    const set = new Set()
-    for (const a of agents) {
-      if (a.branch) set.add(a.branch)
-    }
-    return Array.from(set)
-  }, [agents])
-
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
     return agents.filter((agent) => {
@@ -147,9 +138,9 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
       a.holdingDays,
       a.risk,
       a.customers,
-      a.todayDeposits,
-      a.todayWithdrawals,
-      a.totalReceipts,
+      a.todayDeposits ?? 0,
+      a.todayWithdrawals ?? 0,
+      a.todayReceipts ?? (a.todayDeposits ?? 0) + (a.todayWithdrawals ?? 0),
     ])
     const csvContent =
       'data:text/csv;charset=utf-8,' +
@@ -225,15 +216,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
         {/* Top Header Row */}
         <header className="am-header-section">
           <div className="am-title-block">
-            <div className="am-tag-group">
-              <span className="am-tag-pill">RISK GOVERNANCE CORE</span>
-              <span className="am-tag-table">• tbl_mt_agents active sync</span>
-            </div>
             <h1 className="am-title">Field Collection Agent Directory &amp; Risk Controls</h1>
-            <p className="am-desc">
-              Enforce systemic cash custody ceilings, supervise unremitted settlement durations,
-              and resolve agent lockout violations in real-time.
-            </p>
           </div>
 
           <div className="am-header-controls">
@@ -265,32 +248,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                   ✕
                 </button>
               )}
-            </div>
-
-            {/* Branch Selector */}
-            <div className="am-branch-dropdown">
-              <svg className="am-branch-svg" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <select
-                aria-label="Filter branch"
-                value={branchFilter}
-                onChange={(e) => {
-                  setBranchFilter(e.target.value)
-                  setPage(1)
-                }}
-              >
-                <option value="all">All Branches</option>
-                {branchOptions.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
             </div>
 
             {/* Export Audit Feed Button */}
@@ -359,7 +316,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
               {money(summary?.maxLimit || 3000)}
               <small className="am-policy-unit">/agent</small>
             </div>
-            <div className="am-policy-sub">Ceiling across all active schemes</div>
           </div>
 
           <div className="am-policy-divider" />
@@ -383,7 +339,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
               {summary?.maxHoldingDays || 2} Days
               <small className="am-policy-unit">max</small>
             </div>
-            <div className="am-policy-sub">Mandatory vault hand-off period</div>
           </div>
 
           <div className="am-policy-divider" />
@@ -397,7 +352,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
             <div className="am-switch-row">
               <div className="am-switch-text-block">
                 <div className="am-switch-title">Warning Trigger</div>
-                <div className="am-policy-sub">Push notification &amp; supervisor alert on breach</div>
               </div>
               <button
                 type="button"
@@ -418,16 +372,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
             <div className="am-kpi-info">
               <span className="am-kpi-label">FIELD AGENTS DEPLOYED</span>
               <strong className="am-kpi-val">{summary?.totalAgents ?? 28}</strong>
-              <div className="am-kpi-sub green-sub">
-                <svg className="kpi-sub-icon" viewBox="0 0 20 20" fill="currentColor">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>{summary?.verifiedAgents ?? 24} sync-verified</span>
-              </div>
             </div>
             <div className="am-kpi-icon-box box-gray">
               <svg viewBox="0 0 20 20" fill="currentColor">
@@ -441,9 +385,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
             <div className="am-kpi-info">
               <span className="am-kpi-label">AGGREGATED CASH IN FIELD</span>
               <strong className="am-kpi-val">{money(summary?.cashInField ?? 41890)}</strong>
-              <div className="am-kpi-sub text-muted">
-                Daily vault target {money(summary?.dailyTarget ?? 65000)}
-              </div>
             </div>
             <div className="am-kpi-icon-box box-blue">
               <svg viewBox="0 0 20 20" fill="currentColor">
@@ -464,16 +405,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
               <strong className="am-kpi-val text-amber">
                 {summary?.breachCount ?? 2} Agents
               </strong>
-              <div className="am-kpi-sub amber-sub">
-                <svg className="kpi-sub-icon" viewBox="0 0 20 20" fill="currentColor">
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>Supervisor warning flagged</span>
-              </div>
             </div>
             <div className="am-kpi-icon-box box-amber">
               <svg viewBox="0 0 20 20" fill="currentColor">
@@ -493,7 +424,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
               <strong className="am-kpi-val text-amber">
                 {summary?.approachingCount ?? 3} Agents
               </strong>
-              <div className="am-kpi-sub text-muted">&gt; 85% cash limit threshold</div>
             </div>
             <div className="am-kpi-icon-box box-amber">
               <svg viewBox="0 0 20 20" fill="currentColor">
@@ -513,9 +443,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
           <section className="am-table-card" aria-labelledby="registry-heading">
             <div className="am-table-head">
               <div className="am-registry-title-wrap">
-                <h2 id="registry-heading" className="am-table-title">
-                  tbl_mt_agents Registry
-                </h2>
                 <span className="am-record-count-badge">
                   {visible.length} of {agents.length} Records
                 </span>
@@ -615,7 +542,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                         <td>
                           <div className="am-branch-cell">
                             <strong className="am-branch-title">{agent.branch || 'Central Market'}</strong>
-                            <span className="am-vendor-count">{agent.customers || 38} Assigned Vendors</span>
+                            <span className="am-vendor-count">{agent.customers ?? 0} Assigned Vendors</span>
                             <span className="am-route-link">{agent.route || 'Route #CM-04'}</span>
                           </div>
                         </td>
@@ -624,12 +551,12 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                         <td>
                           <div className="am-txns-cell">
                             <div className="am-txns-numbers">
-                              <span className="txn-dep">{agent.todayDeposits || 28} Dep</span>
+                              <span className="txn-dep">{agent.todayDeposits ?? 0} Dep</span>
                               <span className="txn-sep">/</span>
-                              <span className="txn-wdl">{agent.todayWithdrawals || 4} Wdl</span>
+                              <span className="txn-wdl">{agent.todayWithdrawals ?? 0} Wdl</span>
                             </div>
                             <span className="am-receipts-total">
-                              {agent.totalReceipts || (agent.todayDeposits || 28) + (agent.todayWithdrawals || 4)} total receipts
+                              {(agent.todayReceipts ?? (agent.todayDeposits ?? 0) + (agent.todayWithdrawals ?? 0))} total receipts
                             </span>
                           </div>
                         </td>
@@ -685,7 +612,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              {agent.durationDays || 2} Days (Breached)
+                              {agent.durationDays ?? 0} {agent.durationDays === 1 ? 'Day' : 'Days'} (Breached)
                             </span>
                           ) : (
                             <span className="duration-pill pill-open">
@@ -696,7 +623,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              {agent.durationDays || 1} Day
+                              {agent.durationDays ?? 0} {agent.durationDays === 1 ? 'Day' : 'Days'}
                             </span>
                           )}
                         </td>
@@ -747,7 +674,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
             {/* Table Footer with Paging */}
             <div className="am-table-footer">
               <span className="am-footer-records-text">
-                Showing {from} to {to} of {visible.length} agents registered in tbl_mt_agents
+                Showing {from} to {to} of {visible.length} agents registered
               </span>
               <div className="am-pagination-group">
                 <button
@@ -874,14 +801,13 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                   <div className="telemetry-stats-duo">
                     <div className="telemetry-stat-card">
                       <span className="stat-label">Vendors Assigned</span>
-                      <strong className="stat-number">{selected.customers || 38} Vendors</strong>
+                      <strong className="stat-number">{selected.customers ?? 0} Vendors</strong>
                     </div>
                     <div className="telemetry-stat-card">
                       <span className="stat-label">Settlement Lapse</span>
                       <strong
-                        className={`stat-number ${
-                          selected.durationDays > selected.holdingDays ? 'text-lapse-over' : 'text-lapse-ok'
-                        }`}
+                        className={`stat-number ${selected.durationDays > selected.holdingDays ? 'text-lapse-over' : 'text-lapse-ok'
+                          }`}
                       >
                         {selected.durationDays > selected.holdingDays
                           ? `${selected.durationDays - selected.holdingDays} Days Over`
@@ -915,7 +841,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                     <svg viewBox="0 0 20 20" fill="currentColor">
                       <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                     </svg>
-                    View Live Ledger (tbl_tt_transact)
+                    View Live Ledger
                   </button>
 
                   {/* Button 3: Adjust Custom Limit */}

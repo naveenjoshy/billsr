@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs'
 import mongoose from 'mongoose'
+import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { AuditLog } from '../models/AuditLog.js'
 import { Bank } from '../models/Bank.js'
@@ -64,24 +65,24 @@ export async function listBanks(req, res) {
     res.json({ banks: items, summary: buildSummary(items) })
   } catch (error) {
     console.error('List banks error:', error)
-    res.status(500).json({ message: 'Unable to load banks' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.LOAD_FAILED })
   }
 }
 
 async function loadBankForUpdate(req, res) {
   const { id } = req.params
   if (!mongoose.isValidObjectId(id)) {
-    res.status(400).json({ message: 'Invalid bank id' })
+    res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.INVALID_ID })
     return null
   }
   const justification = typeof req.body?.justification === 'string' ? req.body.justification.trim() : ''
   if (!justification) {
-    res.status(400).json({ message: 'A justification is required' })
+    res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.JUSTIFICATION_REQUIRED })
     return null
   }
   const bank = await Bank.findById(id)
   if (!bank) {
-    res.status(404).json({ message: 'Bank not found' })
+    res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.NOT_FOUND })
     return null
   }
   return { bank, justification }
@@ -118,7 +119,7 @@ export async function onboardBank(req, res) {
     if (clash) {
       const field = clash.email?.toLowerCase() === userInput.email ? 'email' : 'userID'
       const label = field === 'email' ? 'Email' : 'User ID'
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         message: `${label} is already in use`,
         errors: { [`user.${field}`]: `${label} is already in use` },
       })
@@ -158,20 +159,20 @@ export async function onboardBank(req, res) {
 
     const agentCounts = await loadAgentCounts()
     await bank.populate('user_id', 'userID')
-    res.status(201).json({ bank: serializeBank(bank.toObject(), agentCounts) })
+    res.status(HTTP_STATUS.CREATED).json({ bank: serializeBank(bank.toObject(), agentCounts) })
   } catch (error) {
     // Without a transaction, remove the login record so no orphan user remains.
     if (user) await User.deleteOne({ _id: user._id }).catch(() => {})
     if (error?.code === 11000) {
       const field = Object.keys(error.keyPattern ?? {})[0]
       const labels = { userID: 'User ID', email: 'Email' }
-      return res.status(409).json({
+      return res.status(HTTP_STATUS.CONFLICT).json({
         message: `${labels[field] ?? 'A value'} is already in use`,
         errors: field in labels ? { [`user.${field}`]: `${labels[field]} is already in use` } : undefined,
       })
     }
     console.error('Onboard bank error:', error)
-    res.status(500).json({ message: 'Unable to onboard bank' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.ONBOARD_FAILED })
   }
 }
 
@@ -182,7 +183,7 @@ export async function extendLicense(req, res) {
     const { bank, justification } = loaded
 
     if (bank.compliance_status.account_status === 'Suspended') {
-      return res.status(409).json({ message: 'Reactivate the suspended license before extending it' })
+      return res.status(HTTP_STATUS.CONFLICT).json({ message: MESSAGES.BANK.SUSPENDED_LICENSE_EXTENSION })
     }
 
     const { days, expiryDate } = req.body ?? {}
@@ -190,12 +191,12 @@ export async function extendLicense(req, res) {
     if (expiryDate) {
       newExpiry = new Date(`${expiryDate}T00:00:00.000Z`)
       if (Number.isNaN(newExpiry.getTime()) || newExpiry <= new Date()) {
-        return res.status(400).json({ message: 'Choose a valid future expiry date' })
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.FUTURE_EXPIRY_REQUIRED })
       }
     } else if (Number.isInteger(days) && days > 0 && days <= MAX_EXTENSION_DAYS) {
       newExpiry = new Date(Math.max(bank.license_expiry.getTime(), Date.now()) + days * DAY_MS)
     } else {
-      return res.status(400).json({ message: 'Provide extension days or a custom expiry date' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.EXTENSION_DAYS_OR_DATE_REQUIRED })
     }
 
     const previousExpiry = bank.license_expiry
@@ -214,7 +215,7 @@ export async function extendLicense(req, res) {
     res.json({ bank: serializeBank(bank.toObject(), agentCounts) })
   } catch (error) {
     console.error('Extend license error:', error)
-    res.status(500).json({ message: 'Unable to extend license' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.EXTEND_LICENSE_FAILED })
   }
 }
 
@@ -225,7 +226,7 @@ export async function setSuspension(req, res) {
     const { bank, justification } = loaded
 
     if (typeof req.body?.suspend !== 'boolean') {
-      return res.status(400).json({ message: 'suspend must be true or false' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.SUSPEND_BOOLEAN_REQUIRED })
     }
     const previousStatus = bank.compliance_status.account_status
     const nextStatus = req.body.suspend ? 'Suspended' : 'Active'
@@ -241,6 +242,6 @@ export async function setSuspension(req, res) {
     res.json({ bank: serializeBank(bank.toObject(), agentCounts) })
   } catch (error) {
     console.error('Set suspension error:', error)
-    res.status(500).json({ message: 'Unable to update license status' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.UPDATE_LICENSE_STATUS_FAILED })
   }
 }

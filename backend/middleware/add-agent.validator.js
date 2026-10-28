@@ -1,3 +1,4 @@
+import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { User } from '../models/User.js'
 import {
@@ -50,7 +51,7 @@ export function validateAddAgent(req, res, next) {
   validatePassword(password, errors)
 
   if (Object.keys(errors).length) {
-    return res.status(400).json({ message: 'Please correct the highlighted fields', errors })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.GENERAL.VALIDATION_ERROR, errors })
   }
 
   req.newAgent = { user: { ...user.output, password }, agent: agent.output }

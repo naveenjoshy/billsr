@@ -12,7 +12,7 @@ import './SchemesReceiptsPage.css'
 const DEFAULT_THERMAL_FIELDS = [
   { field_name: 'Bank Header & Branch', data_type: 'string', is_mandatory: true, print_order: 1 },
   { field_name: 'Transaction Date & Time', data_type: 'date', is_mandatory: true, print_order: 2 },
-  { field_name: 'Receipt No & QR Code', data_type: 'string', is_mandatory: true, print_order: 3 },
+  { field_name: 'Receipt Reference Number', data_type: 'string', is_mandatory: true, print_order: 3 },
   { field_name: 'Customer ID & Shop Name', data_type: 'string', is_mandatory: true, print_order: 4 },
   { field_name: 'Financial Scheme Code', data_type: 'string', is_mandatory: true, print_order: 5 },
   { field_name: 'Transaction Amount & Mode', data_type: 'currency', is_mandatory: true, print_order: 6 },
@@ -28,89 +28,6 @@ const QUICK_FIELD_SUGGESTIONS = [
   { name: 'Deposit Passbook Page', type: 'number' },
   { name: 'Customer Shop Ward', type: 'string' },
 ]
-
-/**
- * High-precision ESC/POS 2D QR Code SVG graphic for thermal receipt preview.
- * Renders sharp finder marks and micro-patterns matching real 203 DPI ESC/POS output.
- */
-function ThermalReceiptQRCode({ size = 68 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 29 29"
-      shapeRendering="crispEdges"
-      className="slip-qr-svg"
-      aria-label="Thermal Receipt Blockchain QR Verification Code"
-    >
-      <rect width="29" height="29" fill="#ffffff" />
-      {/* Top-Left Finder */}
-      <rect x="2" y="2" width="7" height="7" fill="#0f172a" />
-      <rect x="3" y="3" width="5" height="5" fill="#ffffff" />
-      <rect x="4" y="4" width="3" height="3" fill="#0f172a" />
-      {/* Top-Right Finder */}
-      <rect x="20" y="2" width="7" height="7" fill="#0f172a" />
-      <rect x="21" y="3" width="5" height="5" fill="#ffffff" />
-      <rect x="22" y="4" width="3" height="3" fill="#0f172a" />
-      {/* Bottom-Left Finder */}
-      <rect x="2" y="20" width="7" height="7" fill="#0f172a" />
-      <rect x="3" y="21" width="5" height="5" fill="#ffffff" />
-      <rect x="4" y="22" width="3" height="3" fill="#0f172a" />
-      {/* Timing Patterns */}
-      <rect x="10" y="5" width="1" height="1" fill="#0f172a" />
-      <rect x="12" y="5" width="1" height="1" fill="#0f172a" />
-      <rect x="14" y="5" width="1" height="1" fill="#0f172a" />
-      <rect x="16" y="5" width="1" height="1" fill="#0f172a" />
-      <rect x="18" y="5" width="1" height="1" fill="#0f172a" />
-      <rect x="5" y="10" width="1" height="1" fill="#0f172a" />
-      <rect x="5" y="12" width="1" height="1" fill="#0f172a" />
-      <rect x="5" y="14" width="1" height="1" fill="#0f172a" />
-      <rect x="5" y="16" width="1" height="1" fill="#0f172a" />
-      <rect x="5" y="18" width="1" height="1" fill="#0f172a" />
-      {/* Alignment Pattern */}
-      <rect x="18" y="18" width="5" height="5" fill="#0f172a" />
-      <rect x="19" y="19" width="3" height="3" fill="#ffffff" />
-      <rect x="20" y="20" width="1" height="1" fill="#0f172a" />
-      {/* Data Bits */}
-      <rect x="10" y="2" width="1" height="2" fill="#0f172a" />
-      <rect x="12" y="3" width="2" height="1" fill="#0f172a" />
-      <rect x="15" y="2" width="1" height="2" fill="#0f172a" />
-      <rect x="17" y="3" width="1" height="1" fill="#0f172a" />
-      <rect x="11" y="7" width="2" height="1" fill="#0f172a" />
-      <rect x="14" y="8" width="2" height="1" fill="#0f172a" />
-      <rect x="2" y="10" width="2" height="1" fill="#0f172a" />
-      <rect x="7" y="11" width="1" height="2" fill="#0f172a" />
-      <rect x="9" y="11" width="2" height="1" fill="#0f172a" />
-      <rect x="13" y="11" width="1" height="2" fill="#0f172a" />
-      <rect x="16" y="10" width="2" height="1" fill="#0f172a" />
-      <rect x="20" y="11" width="1" height="2" fill="#0f172a" />
-      <rect x="23" y="10" width="2" height="1" fill="#0f172a" />
-      <rect x="26" y="12" width="1" height="2" fill="#0f172a" />
-      <rect x="10" y="13" width="2" height="2" fill="#0f172a" />
-      <rect x="14" y="14" width="1" height="2" fill="#0f172a" />
-      <rect x="17" y="13" width="2" height="1" fill="#0f172a" />
-      <rect x="24" y="14" width="2" height="1" fill="#0f172a" />
-      <rect x="1" y="16" width="2" height="1" fill="#0f172a" />
-      <rect x="8" y="15" width="1" height="2" fill="#0f172a" />
-      <rect x="11" y="17" width="2" height="1" fill="#0f172a" />
-      <rect x="15" y="16" width="2" height="2" fill="#0f172a" />
-      <rect x="25" y="17" width="2" height="1" fill="#0f172a" />
-      <rect x="10" y="20" width="1" height="2" fill="#0f172a" />
-      <rect x="13" y="21" width="2" height="1" fill="#0f172a" />
-      <rect x="16" y="20" width="1" height="2" fill="#0f172a" />
-      <rect x="24" y="20" width="2" height="2" fill="#0f172a" />
-      <rect x="11" y="24" width="2" height="1" fill="#0f172a" />
-      <rect x="14" y="23" width="2" height="2" fill="#0f172a" />
-      <rect x="17" y="25" width="2" height="1" fill="#0f172a" />
-      <rect x="21" y="25" width="1" height="2" fill="#0f172a" />
-      <rect x="25" y="24" width="2" height="1" fill="#0f172a" />
-      <rect x="10" y="26" width="3" height="1" fill="#0f172a" />
-      <rect x="15" y="26" width="1" height="1" fill="#0f172a" />
-      <rect x="18" y="27" width="2" height="1" fill="#0f172a" />
-      <rect x="23" y="26" width="2" height="2" fill="#0f172a" />
-    </svg>
-  )
-}
 
 /**
  * Live 58mm Thermal Receipt Slip Component.
@@ -129,7 +46,6 @@ function ThermalPaperSlip({
   const hasField = (keyword) =>
     activeFields.some((f) => f.field_name.toLowerCase().includes(keyword.toLowerCase()))
 
-  const hasQR = hasField('qr') || hasField('receipt')
   const hasFooter = hasField('footer') || hasField('disclaimer')
 
   return (
@@ -257,17 +173,6 @@ function ThermalPaperSlip({
           )
         })}
       </div>
-
-      {/* QR Code Section (If Receipt/QR Field Present) */}
-      {hasQR && (
-        <div className="slip-qr-container">
-          <ThermalReceiptQRCode size={68} />
-          <div className="slip-qr-meta">
-            <span className="slip-qr-code-text">[ QR CODE ]</span>
-            <span className="slip-qr-hash-text">SHA256: 8f3a9e...4b12</span>
-          </div>
-        </div>
-      )}
 
       {/* Thermal Footer Disclaimer */}
       {hasFooter && (

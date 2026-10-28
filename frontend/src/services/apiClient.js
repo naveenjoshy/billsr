@@ -1,3 +1,5 @@
+import { HTTP_STATUS } from '../constants/httpConstants'
+
 let isRefreshing = false
 let refreshSubscribers = []
 
@@ -29,7 +31,7 @@ export async function request(path, options = {}) {
 
   // Automatic token refresh when 401 Unauthorized occurs on protected API endpoints
   if (
-    response.status === 401 &&
+    response.status === HTTP_STATUS.UNAUTHORIZED &&
     path !== '/api/auth/login' &&
     path !== '/api/auth/refresh' &&
     path !== '/api/auth/me' &&

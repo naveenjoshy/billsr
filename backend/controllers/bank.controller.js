@@ -574,8 +574,37 @@ export async function listAgents(req, res) {
     const bank = await findOwnBank(req, res)
     if (!bank) return
 
-    const startOfDay = new Date()
+    const baseDate = req.query.date ? new Date(req.query.date) : new Date()
+    const targetDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate
+    const startOfDay = new Date(targetDate)
     startOfDay.setHours(0, 0, 0, 0)
+    const endOfDay = new Date(targetDate)
+    endOfDay.setHours(23, 59, 59, 999)
+
+    let activeStart = startOfDay
+    let activeEnd = endOfDay
+
+    // If no specific date was queried and there are no transactions today in the bank,
+    // look for the most recent transaction date so seeded/historical transactions are accurately reflected
+    if (!req.query.date) {
+      const todayCount = await Transaction.countDocuments({
+        bank_id: bank._id,
+        collect_date: { $gte: startOfDay, $lte: endOfDay },
+      })
+      if (todayCount === 0) {
+        const latestTx = await Transaction.findOne({ bank_id: bank._id })
+          .sort({ collect_date: -1 })
+          .select('collect_date')
+          .lean()
+        if (latestTx?.collect_date) {
+          const lDate = new Date(latestTx.collect_date)
+          activeStart = new Date(lDate)
+          activeStart.setHours(0, 0, 0, 0)
+          activeEnd = new Date(lDate)
+          activeEnd.setHours(23, 59, 59, 999)
+        }
+      }
+    }
 
     const agents = await Agent.find({ bank_id: bank._id })
       .populate('user_id', 'userID name email is_active')
@@ -606,7 +635,7 @@ export async function listAgents(req, res) {
             },
           ]),
           Transaction.aggregate([
-            { $match: { ...base, collect_date: { $gte: startOfDay } } },
+            { $match: { ...base, collect_date: { $gte: activeStart, $lte: activeEnd } } },
             { $group: { _id: '$transact_type', count: { $sum: 1 } } },
           ]),
           Transaction.countDocuments(base),
@@ -625,6 +654,9 @@ export async function listAgents(req, res) {
         const ratio = limit > 0 ? held / limit : 0
         const breached = ratio > 1 || (held > 0 && durationDays > agent.cash_holding_days)
         const todayBy = Object.fromEntries(today.map((row) => [row._id, row.count]))
+        const todayDeposits = todayBy.D ?? 0
+        const todayWithdrawals = todayBy.W ?? 0
+        const todayReceipts = todayDeposits + todayWithdrawals
 
         const branchName =
           agent.branch_name ||
@@ -649,9 +681,10 @@ export async function listAgents(req, res) {
           ratio,
           durationDays,
           risk: breached ? 'breach' : ratio >= APPROACH_THRESHOLD ? 'warning' : 'safe',
-          todayDeposits: todayBy.D ?? 0,
-          todayWithdrawals: todayBy.W ?? 0,
-          totalReceipts: (todayBy.D ?? 0) + (todayBy.W ?? 0) || totalReceipts,
+          todayDeposits,
+          todayWithdrawals,
+          todayReceipts,
+          totalReceipts,
           customers,
           passwordResetPending: agent.password_reset_flag === true,
           lastPasswordChange: agent.last_password_change_date ?? null,
@@ -739,7 +772,7 @@ export async function updateAgentLimit(req, res) {
 
     const agent = await Agent.findOne({ _id: id, bank_id: bank._id })
     if (!agent) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Agent not found' })
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.AGENT_NOT_FOUND })
     }
 
     const previousLimit = agent.cash_holding_limit
@@ -770,10 +803,10 @@ export async function updateAgentLimit(req, res) {
       updated_by: req.auth.sub,
     })
 
-    res.json({ message: 'Agent limit updated successfully', agent })
+    res.json({ message: MESSAGES.BANK.AGENT_LIMIT_UPDATE_SUCCESS, agent })
   } catch (error) {
     console.error('Update agent limit error:', error)
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Failed to update agent limit' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.AGENT_LIMIT_UPDATE_FAILED })
   }
 }
 
@@ -873,7 +906,7 @@ export async function listSchemes(req, res) {
     res.json({ schemes: result })
   } catch (error) {
     console.error('List schemes error:', error)
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to load financial schemes.' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.SCHEME.LOAD_FAILED })
   }
 }
 
@@ -891,7 +924,7 @@ export async function createScheme(req, res) {
     } = req.body
 
     if (!scheme_name || !scheme_name.trim()) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Scheme name is required.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.SCHEME.NAME_REQUIRED })
     }
 
     const scheme = await Scheme.create({
@@ -915,7 +948,7 @@ export async function createScheme(req, res) {
     }).catch(() => null)
 
     res.status(HTTP_STATUS.CREATED).json({
-      message: `Scheme "${scheme.scheme_name}" created successfully.`,
+      message: MESSAGES.SCHEME.CREATE_SUCCESS(scheme.scheme_name),
       scheme: {
         ...scheme.toObject(),
         _id: String(scheme._id),
@@ -925,7 +958,7 @@ export async function createScheme(req, res) {
     })
   } catch (error) {
     console.error('Create scheme error:', error)
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to create financial scheme.' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.SCHEME.CREATE_FAILED })
   }
 }
 
@@ -936,12 +969,12 @@ export async function updateScheme(req, res) {
 
     const { id } = req.params
     if (!mongoose.isValidObjectId(id)) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid scheme ID.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.SCHEME.INVALID_ID })
     }
 
     const scheme = await Scheme.findOne({ _id: id, bank_id: bank._id })
     if (!scheme) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Scheme not found.' })
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.SCHEME.NOT_FOUND })
     }
 
     const { scheme_name, scheme_description, status, permitted_operation, receipt_config } = req.body
@@ -970,12 +1003,12 @@ export async function updateScheme(req, res) {
     }).catch(() => null)
 
     res.json({
-      message: `Scheme "${scheme.scheme_name}" updated successfully.`,
+      message: MESSAGES.SCHEME.UPDATE_SUCCESS(scheme.scheme_name),
       scheme: scheme.toObject(),
     })
   } catch (error) {
     console.error('Update scheme error:', error)
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to update scheme.' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.SCHEME.UPDATE_FAILED })
   }
 }
 
@@ -986,12 +1019,12 @@ export async function deleteScheme(req, res) {
 
     const { id } = req.params
     if (!mongoose.isValidObjectId(id)) {
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid scheme ID.' })
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.SCHEME.INVALID_ID })
     }
 
     const scheme = await Scheme.findOne({ _id: id, bank_id: bank._id })
     if (!scheme) {
-      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Scheme not found.' })
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.SCHEME.NOT_FOUND })
     }
 
     const [enrolledCount, txCount] = await Promise.all([
@@ -1000,7 +1033,7 @@ export async function deleteScheme(req, res) {
     ])
     if (enrolledCount > 0 || txCount > 0) {
       return res.status(HTTP_STATUS.CONFLICT).json({
-        message: `Cannot delete "${scheme.scheme_name}". It is bound to active customer accounts or transactions. Suspend it instead.`,
+        message: MESSAGES.SCHEME.IN_USE_CONFLICT(scheme.scheme_name),
       })
     }
 
@@ -1016,9 +1049,9 @@ export async function deleteScheme(req, res) {
       updated_by: req.auth.sub,
     }).catch(() => null)
 
-    res.json({ message: `Scheme "${name}" deleted successfully.` })
+    res.json({ message: MESSAGES.SCHEME.DELETE_SUCCESS(name) })
   } catch (error) {
     console.error('Delete scheme error:', error)
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to delete scheme.' })
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.SCHEME.DELETE_FAILED })
   }
 }

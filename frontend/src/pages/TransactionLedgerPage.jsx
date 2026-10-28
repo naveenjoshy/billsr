@@ -703,12 +703,7 @@ export default function TransactionLedgerPage({
         {/* Ledger Table Section */}
         <section className="ledger-table-card" aria-label="Direct Agent Ledger Stream">
           <div className="table-card-header">
-            <h2 className="table-title">DIRECT AGENT LEDGER STREAM</h2>
-            <div className="table-header-meta">
-              <span className="live-badge">
-                <span className="live-dot" /> 100% Core Synchronized
-              </span>
-            </div>
+            <h2 className="table-title">Transactions</h2>
           </div>
 
           <div className="ledger-table-wrapper">
@@ -846,7 +841,7 @@ export default function TransactionLedgerPage({
                               className="btn-table-reversal"
                               onClick={() => setForensicTxn(txn)}
                             >
-                              Reversal Log
+                              View Log
                             </button>
                           )}
 
@@ -860,7 +855,7 @@ export default function TransactionLedgerPage({
                               <svg viewBox="0 0 20 20" fill="currentColor" className="audit-icon">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                               </svg>
-                              Forensic Log
+                              View Log
                             </button>
                           )}
                         </td>

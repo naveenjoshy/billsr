@@ -1,3 +1,4 @@
+import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Bank } from '../models/Bank.js'
 import { User } from '../models/User.js'
 import {
@@ -55,7 +56,7 @@ export function validateOnboardBank(req, res, next) {
   }
 
   if (Object.keys(errors).length) {
-    return res.status(400).json({ message: 'Please correct the highlighted fields', errors })
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.GENERAL.VALIDATION_ERROR, errors })
   }
 
   req.onboarding = { user: { ...user.output, password }, bank: bank.output }

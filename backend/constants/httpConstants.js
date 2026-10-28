@@ -10,6 +10,7 @@ export const HTTP_STATUS = Object.freeze({
   CONFLICT: 409,
   UNPROCESSABLE_ENTITY: 422,
   INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
 })
 
 export const MESSAGES = Object.freeze({
@@ -29,6 +30,12 @@ export const MESSAGES = Object.freeze({
     PASSWORD_RESET_SUCCESS: 'Password has been reset successfully',
     RESET_IDENTITY_ERROR: 'Email ID or user ID is incorrect.',
     PASSWORD_SET_SUCCESS: 'Password created successfully',
+    NEW_PASSWORD_REQUIRED: 'New password and confirmation are required.',
+    PASSWORDS_DO_NOT_MATCH: 'Passwords do not match.',
+    PASSWORD_ALREADY_SET: 'Your password has already been set. Please sign in.',
+    PASSWORD_DIFF_TEMP: 'New password must be different from the temporary password.',
+    EMAIL_USER_ID_REQUIRED: 'Email ID and user ID are required.',
+    PASSWORD_LENGTH_ERROR: 'Password must be at least 8 characters and no more than 72 UTF-8 bytes.',
   },
   BANK: {
     NOT_FOUND: 'Bank not found',
@@ -40,8 +47,32 @@ export const MESSAGES = Object.freeze({
     DASHBOARD_ERROR: 'Unable to load dashboard',
     AGENTS_ERROR: 'Unable to load agents',
     CREATE_AGENT_ERROR: 'Unable to add agent',
+    AGENT_NOT_FOUND: 'Agent not found',
+    AGENT_LIMIT_UPDATE_SUCCESS: 'Agent limit updated successfully',
+    AGENT_LIMIT_UPDATE_FAILED: 'Failed to update agent limit',
+    ONBOARD_FAILED: 'Unable to onboard bank',
     EMAIL_IN_USE: 'Email is already in use',
     USER_ID_IN_USE: 'User ID is already in use',
+    SUSPENDED_LICENSE_EXTENSION: 'Reactivate the suspended license before extending it',
+    FUTURE_EXPIRY_REQUIRED: 'Choose a valid future expiry date',
+    EXTENSION_DAYS_OR_DATE_REQUIRED: 'Provide extension days or a custom expiry date',
+    EXTEND_LICENSE_FAILED: 'Unable to extend license',
+    SUSPEND_BOOLEAN_REQUIRED: 'suspend must be true or false',
+    UPDATE_LICENSE_STATUS_FAILED: 'Unable to update license status',
+  },
+  SCHEME: {
+    LOAD_FAILED: 'Unable to load financial schemes.',
+    NAME_REQUIRED: 'Scheme name is required.',
+    INVALID_ID: 'Invalid scheme ID.',
+    NOT_FOUND: 'Scheme not found.',
+    CREATE_FAILED: 'Unable to create financial scheme.',
+    UPDATE_FAILED: 'Unable to update scheme.',
+    DELETE_FAILED: 'Unable to delete scheme.',
+    IN_USE_CONFLICT: (name) =>
+      `Cannot delete "${name}". It is bound to active customer accounts or transactions. Suspend it instead.`,
+    CREATE_SUCCESS: (name) => `Scheme "${name}" created successfully.`,
+    UPDATE_SUCCESS: (name) => `Scheme "${name}" updated successfully.`,
+    DELETE_SUCCESS: (name) => `Scheme "${name}" deleted successfully.`,
   },
   TRANSACTION: {
     INVALID_ID: 'Invalid transaction id',
@@ -59,5 +90,6 @@ export const MESSAGES = Object.freeze({
   GENERAL: {
     SERVER_ERROR: 'Internal server error',
     VALIDATION_ERROR: 'Please correct the highlighted fields',
+    NOT_FOUND: 'Resource Not Found',
   },
 })

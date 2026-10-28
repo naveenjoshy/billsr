@@ -10,6 +10,7 @@ import bankRoutes from './routes/bank.routes.js'
 import agentRoutes from './routes/agent.routes.js'
 import fs from 'node:fs';
 import connectDB from './config/db.js';
+import { HTTP_STATUS } from './constants/httpConstants.js';
 
 // 1. Initialize environmental configurations
 const envPath = fs.existsSync('.env.local')
@@ -48,7 +49,7 @@ app.use('/api/agent', agentRoutes);
 // ROUTE REGISTRATION POINT
 // ==========================================
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
+  res.status(HTTP_STATUS.OK).json({ 
     status: 'healthy', 
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
     timestamp: new Date() 
@@ -66,13 +67,13 @@ app.get('/health', (req, res) => {
 // 404 Route handler for unrecognized paths
 app.use((req, res, next) => {
   const error = new Error(`Resource Not Found - ${req.originalUrl}`);
-  res.status(404);
+  res.status(HTTP_STATUS.NOT_FOUND);
   next(error);
 });
 
 // Global Fallback execution crash barrier
 app.use((err, req, res, _next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  const statusCode = res.statusCode === HTTP_STATUS.OK ? HTTP_STATUS.INTERNAL_SERVER_ERROR : res.statusCode;
   res.status(statusCode).json({
     message: err.message,
     stack: process.env.NODE_ENV === 'production' ? null : err.stack,
