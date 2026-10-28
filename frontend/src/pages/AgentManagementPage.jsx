@@ -765,36 +765,6 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                   </div>
                 </div>
 
-                {/* Network & App Health */}
-                <div className="telemetry-section">
-                  <h4 className="telemetry-subheading">NETWORK &amp; APP HEALTH</h4>
-                  <div className="telemetry-health-row">
-                    <span className="health-label">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
-                      </svg>
-                      Thermal BT Printer
-                    </span>
-                    <span className="printer-badge">
-                      <span className="printer-dot" />
-                      {selected.printerId || 'BT-PRN-0941'} (Synced)
-                    </span>
-                  </div>
-                  <div className="telemetry-health-row">
-                    <span className="health-label">
-                      <svg viewBox="0 0 20 20" fill="currentColor">
-                        <path
-                          fillRule="evenodd"
-                          d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      Last Known GPS Ping
-                    </span>
-                    <span className="health-val">{selected.gpsPing || '12m ago (Market Area)'}</span>
-                  </div>
-                </div>
-
                 {/* Field Route Breakdown */}
                 <div className="telemetry-section">
                   <h4 className="telemetry-subheading">FIELD ROUTE BREAKDOWN</h4>
@@ -909,7 +879,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                           </div>
                           <div className="event-content">
                             <p className="event-desc">
-                              Threshold Warning: AGT-1092 breached $3,000 threshold ($4,850 recorded) - Supervisor Alert Sent
+                              Threshold Warning: AGT-1092 breached ₹3,000 threshold (₹4,850 recorded) - Supervisor Alert Sent
                             </p>
                             <span className="event-meta">14:22:09 • System Core</span>
                           </div>
@@ -945,7 +915,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                           </div>
                           <div className="event-content">
                             <p className="event-desc">
-                              Vault Settlement: ACT-0988 deposited $1,980.00 cash to teller #2
+                              Vault Settlement: ACT-0988 deposited ₹1,980.00 cash to teller #2
                             </p>
                             <span className="event-meta">11:15:48 • Teller Central</span>
                           </div>
@@ -994,7 +964,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
               {adjustError && <p className="am-modal-error">{adjustError}</p>}
 
               <div className="am-modal-field">
-                <label htmlFor="adjust-limit">Cash Holding Limit ($)</label>
+                <label htmlFor="adjust-limit">Cash Holding Limit (₹)</label>
                 <input
                   id="adjust-limit"
                   type="number"

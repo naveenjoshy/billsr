@@ -120,7 +120,7 @@ function ThermalPaperSlip({
                 <div className="slip-row bold highlight">
                   <span className="slip-label">{isWithdrawal ? 'WITHDRAWAL:' : 'AMOUNT:'}</span>
                   <span className="slip-val">
-                    {isWithdrawal ? '$200.00 [CASH]' : '$500.00 [CASH]'}
+                    {isWithdrawal ? '₹200.00 [CASH]' : '₹500.00 [CASH]'}
                   </span>
                 </div>
               </div>
@@ -131,7 +131,7 @@ function ThermalPaperSlip({
             return (
               <div className="slip-row bold" key={field.field_name}>
                 <span className="slip-label">BALANCE:</span>
-                <span className="slip-val">{isWithdrawal ? '$4,510.00' : '$4,710.00'}</span>
+                <span className="slip-val">{isWithdrawal ? '₹4,510.00' : '₹4,710.00'}</span>
               </div>
             )
           }
@@ -162,12 +162,12 @@ function ThermalPaperSlip({
               <span className="slip-label">{field.field_name.toUpperCase()}:</span>
               <span className="slip-val">
                 {field.data_type === 'currency'
-                  ? '$25.00'
+                  ? '₹25.00'
                   : field.data_type === 'number'
-                  ? '42'
-                  : field.data_type === 'date'
-                  ? '2026-10-26'
-                  : 'REF-32091'}
+                    ? '42'
+                    : field.data_type === 'date'
+                      ? '2026-10-26'
+                      : 'REF-32091'}
               </span>
             </div>
           )
@@ -760,7 +760,7 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
                           className="add-field-select"
                         >
                           <option value="string">String (Text)</option>
-                          <option value="currency">Currency ($)</option>
+                          <option value="currency">Currency (₹)</option>
                           <option value="date">Date / Timestamp</option>
                           <option value="number">Numeric Code</option>
                         </select>
@@ -781,7 +781,7 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
                       <div>
                         <div className="preview-indicator">
                           <span className="preview-dot" />
-                          <span className="thermal-preview-title">LIVE 58MM THERMAL PREVIEW</span>
+                          <span className="thermal-preview-title">LIVE THERMAL PREVIEW</span>
                         </div>
                         <span className="preview-device-meta">Handheld BT Printer (ESC/POS)</span>
                       </div>
@@ -849,7 +849,6 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
                         </svg>
                         Test Print
                       </button>
-                      <span className="slip-fidelity-badge">✓ Tamper-Evident Hash</span>
                     </div>
                   </div>
                 </div>
@@ -911,14 +910,14 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
                       className={`toggle-pill ${previewMode === 'deposit' ? 'active' : ''}`}
                       onClick={() => setPreviewMode('deposit')}
                     >
-                      Deposit Preview ($500.00)
+                      Deposit Preview (₹500.00)
                     </button>
                     <button
                       type="button"
                       className={`toggle-pill ${previewMode === 'withdrawal' ? 'active' : ''}`}
                       onClick={() => setPreviewMode('withdrawal')}
                     >
-                      Withdrawal Preview ($200.00)
+                      Withdrawal Preview (₹200.00)
                     </button>
                   </div>
                 </div>

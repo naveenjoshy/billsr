@@ -1,9 +1,9 @@
 export const money = (value) => {
   const num = Number(value) || 0
-  const formatted = Math.abs(num).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  })
+  const formatted = `₹${Math.abs(num).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
   return num < 0 ? `-${formatted}` : formatted
 }
 

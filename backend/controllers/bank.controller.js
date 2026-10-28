@@ -13,7 +13,7 @@ import { User } from '../models/User.js'
 const DAY_MS = 24 * 60 * 60 * 1000
 const RISK_THRESHOLD = 0.8
 const num = (value) => (value == null ? 0 : Number(value.toString()))
-const money = (val) => '$' + Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (val) => '₹' + Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 async function findOwnBank(req, res) {
