@@ -189,7 +189,7 @@ export default function AgentHomePage({ user, onLoggedOut, onUserUpdated }) {
                   <strong>{inr(hold.held)}</strong>
                 </div>
                 <div className="ah-right">
-                  <span>HARD LIMIT</span>
+                  <span>Cash LIMIT</span>
                   <b>{inr(hold.limit)}</b>
                 </div>
               </div>
