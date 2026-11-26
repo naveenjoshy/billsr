@@ -26,8 +26,8 @@ export function validateUserID(userID) {
   if (/\d/.test(trimmed)) {
     return 'User ID cannot contain numbers'
   }
-  if (trimmed.length < 3) {
-    return 'User ID must be at least 3 characters'
+  if (trimmed.length < 6) {
+    return 'User ID must be at least 6 characters'
   }
   if (trimmed.length > 40) {
     return 'User ID is too long'

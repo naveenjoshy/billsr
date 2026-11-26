@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { onboardBank } from '../services/adminService'
+import { checkUserIdAvailability } from '../services/authService'
 import { PHONE, validateEmail, validateName, validateUserID } from '../utils/validators'
 
 const emptyForm = {
@@ -56,9 +57,61 @@ export default function OnboardBankModal({ onClose, onCreated }) {
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [checkingUserID, setCheckingUserID] = useState(false)
+  const [userIdAvailable, setUserIdAvailable] = useState(null)
+
+  useEffect(() => {
+    const trimmed = form.user.userID.trim()
+
+    const localErr = validateUserID(trimmed)
+    if (localErr) {
+      return
+    }
+
+    let active = true
+    const timer = setTimeout(async () => {
+      setCheckingUserID(true)
+      try {
+        const res = await checkUserIdAvailability(trimmed)
+        if (!active) return
+        if (!res.available) {
+          setUserIdAvailable(false)
+          setErrors((prev) => ({
+            ...prev,
+            'user.userID': res.message || 'Username is not available',
+          }))
+        } else {
+          setUserIdAvailable(true)
+          setErrors((prev) => {
+            if (
+              prev['user.userID'] === 'Username is not available' ||
+              prev['user.userID'] === 'This user ID is not available'
+            ) {
+              const next = { ...prev }
+              delete next['user.userID']
+              return next
+            }
+            return prev
+          })
+        }
+      } catch {
+        if (!active) return
+      } finally {
+        if (active) setCheckingUserID(false)
+      }
+    }, 500)
+
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [form.user.userID])
 
   const setField = (section, key) => (event) => {
     const { value } = event.target
+    if (section === 'user' && key === 'userID') {
+      setUserIdAvailable(null)
+    }
     const updated = {
       ...form,
       [section]: { ...form[section], [key]: value },
@@ -97,6 +150,7 @@ export default function OnboardBankModal({ onClose, onCreated }) {
 
   const field = (section, key, label, props = {}) => {
     const errorKey = `${section}.${key}`
+    const isUserID = section === 'user' && key === 'userID'
     return (
       <label className="admin-form-field">
         <span>{label}</span>
@@ -107,7 +161,13 @@ export default function OnboardBankModal({ onClose, onCreated }) {
           onBlur={handleBlur(section, key)}
           {...props}
         />
-        {errors[errorKey] && <small role="alert">{errors[errorKey]}</small>}
+        {errors[errorKey] ? (
+          <small role="alert">{errors[errorKey]}</small>
+        ) : isUserID && checkingUserID ? (
+          <small style={{ color: '#64748b' }}>Checking availability…</small>
+        ) : isUserID && userIdAvailable ? (
+          <small style={{ color: '#16a34a' }}>Username is available</small>
+        ) : null}
       </label>
     )
   }
@@ -115,6 +175,12 @@ export default function OnboardBankModal({ onClose, onCreated }) {
   const submit = async (event) => {
     event.preventDefault()
     const found = validate(form)
+    if (
+      errors['user.userID'] === 'Username is not available' ||
+      errors['user.userID'] === 'This user ID is not available'
+    ) {
+      found['user.userID'] = errors['user.userID']
+    }
     setErrors(found)
     setFormError('')
     if (Object.keys(found).length) return
@@ -122,6 +188,13 @@ export default function OnboardBankModal({ onClose, onCreated }) {
     const { grace_period_end: graceEnd, ...bank } = form.bank
     setSubmitting(true)
     try {
+      const checkRes = await checkUserIdAvailability(form.user.userID.trim()).catch(() => null)
+      if (checkRes && !checkRes.available) {
+        setErrors((prev) => ({ ...prev, 'user.userID': checkRes.message || 'Username is not available' }))
+        setSubmitting(false)
+        return
+      }
+
       const { bank: created } = await onboardBank({
         user: form.user,
         bank: bank.account_status === 'Grace' ? { ...bank, grace_period_end: graceEnd } : bank,

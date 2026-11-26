@@ -1,4 +1,4 @@
-import { patch, post } from './apiClient'
+import { get, patch, post } from './apiClient'
 
 export async function loginUser(email, password) {
   const data = await post('/api/auth/login', { email, password })
@@ -40,4 +40,9 @@ export async function updateProfile(payload) {
 export async function setFirstPassword(newPassword, confirmPassword) {
   const data = await post('/api/auth/first-login-password', { newPassword, confirmPassword })
   return data.user
+}
+
+export async function checkUserIdAvailability(userID) {
+  const query = new URLSearchParams({ userID }).toString()
+  return get(`/api/auth/check-userid?${query}`)
 }

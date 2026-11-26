@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import {
+  checkUserIdAvailability,
   login,
   logout,
   me,
@@ -21,6 +22,7 @@ const passwordResetLimiter = rateLimit({
   message: { message: 'Too many password reset attempts. Please try again later.' },
 })
 
+router.get('/check-userid', checkUserIdAvailability)
 router.post('/login', login)
 router.post('/refresh', refreshToken)
 router.post('/password-reset/verify', passwordResetLimiter, verifyPasswordReset)

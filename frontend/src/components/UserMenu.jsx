@@ -83,6 +83,7 @@ function EditProfileModal({ user, onClose, onSaved }) {
       <input
         aria-invalid={Boolean(errors[`profile.${key}`])}
         onChange={set(key)}
+        onBlur={handleBlur(key)}
         value={form[key]}
         {...props}
       />

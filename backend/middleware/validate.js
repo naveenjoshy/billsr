@@ -141,14 +141,18 @@ export function getUserSpec(User) {
   return {
     userID: fieldFromSchema(User, 'userID', {
       label: 'User ID',
-      min: 3,
+      min: 6,
       max: 40,
+      minMessage: 'User ID must be at least 6 characters',
       validate: (val) => {
         if (/\d/.test(val)) {
           throw new Error('User ID cannot contain numbers')
         }
         if (!USER_ID.test(val)) {
           throw new Error('User ID may only contain letters, dot, dash, and underscore')
+        }
+        if (val.length < 6) {
+          throw new Error('User ID must be at least 6 characters')
         }
       },
     }),

@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer'
 import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { User } from '../models/User.js'
-import { fieldFromSchema, NAME, validateEmailFormat, validateSection } from '../middleware/validate.js'
+import { fieldFromSchema, NAME, USER_ID, validateEmailFormat, validateSection } from '../middleware/validate.js'
 
 const ACCESS_COOKIE = 'accessToken'
 const REFRESH_COOKIE = 'refreshToken'
@@ -338,6 +338,54 @@ export async function updateProfile(req, res) {
   } catch (error) {
     console.error('Update profile error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.GENERAL.SERVER_ERROR })
+  }
+}
+
+export async function checkUserIdAvailability(req, res) {
+  try {
+    const rawUserID = req.query.userID ?? req.query.username ?? ''
+    const userID = typeof rawUserID === 'string' ? rawUserID.trim() : ''
+    if (!userID) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        available: false,
+        message: 'User ID is required',
+      })
+    }
+    if (userID.length < 6) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        available: false,
+        message: 'User ID must be at least 6 characters',
+      })
+    }
+    if (/\d/.test(userID)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        available: false,
+        message: 'User ID cannot contain numbers',
+      })
+    }
+    if (!USER_ID.test(userID)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        available: false,
+        message: 'User ID may only contain letters, dot, dash, and underscore',
+      })
+    }
+
+    const existing = await User.findOne({ userID })
+      .collation({ locale: 'en', strength: 2 })
+      .select('_id')
+      .lean()
+
+    if (existing) {
+      return res.json({ available: false, message: 'Username is not available' })
+    }
+
+    return res.json({ available: true, message: 'Username is available' })
+  } catch (error) {
+    console.error('Check user ID availability error:', error)
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      available: false,
+      message: 'Unable to check user ID availability',
+    })
   }
 }
 

@@ -78,6 +78,12 @@ export async function request(path, options = {}) {
   return data
 }
 
+export const get = (path, options = {}) =>
+  request(path, {
+    method: 'GET',
+    ...options,
+  })
+
 export const post = (path, body, options = {}) =>
   request(path, {
     method: 'POST',
