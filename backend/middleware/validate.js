@@ -36,8 +36,15 @@ function coerce(name, field, raw) {
       if (field.pattern && !field.pattern.test(result)) {
         throw new Error(field.message || `${name} is invalid`)
       }
-      if (field.min && result.length < field.min) throw new Error(`${name} is too short`)
-      if (field.max && result.length > field.max) throw new Error(`${name} is too long`)
+      if (field.validate && typeof field.validate === 'function') {
+        field.validate(result)
+      }
+      if (field.min && result.length < field.min) {
+        throw new Error(field.minMessage || `${name} must be at least ${field.min} characters`)
+      }
+      if (field.max && result.length > field.max) {
+        throw new Error(field.maxMessage || `${name} must be at most ${field.max} characters`)
+      }
       return result
     }
     case 'Date': {
@@ -110,17 +117,60 @@ export function validateSection(input, spec, label) {
 }
 
 export const PHONE = /^\+?[0-9][0-9 ()-]{6,19}$/
-export const USER_ID = /^[A-Za-z0-9._-]+$/
+export const USER_ID = /^[A-Za-z._-]+$/
+export const NAME = /^[A-Za-z\s.'-]+$/
+
+export function validateEmailFormat(email) {
+  if (!EMAIL.test(email)) {
+    throw new Error('Email is invalid')
+  }
+  const atIndex = email.indexOf('@')
+  if (atIndex === -1) {
+    throw new Error('Email is invalid')
+  }
+  const localPart = email.slice(0, atIndex)
+  if (localPart.length < 3) {
+    throw new Error('Email must have at least 3 characters before the @ symbol')
+  }
+  if (/^\d+$/.test(localPart) || !/[a-zA-Z]/.test(localPart)) {
+    throw new Error('Email cannot be all numbers before the @ symbol')
+  }
+}
 
 export function getUserSpec(User) {
   return {
     userID: fieldFromSchema(User, 'userID', {
-      label: 'User ID', min: 3, max: 40, pattern: USER_ID,
-      message: 'User ID may only contain letters, numbers, dot, dash and underscore',
+      label: 'User ID',
+      min: 3,
+      max: 40,
+      validate: (val) => {
+        if (/\d/.test(val)) {
+          throw new Error('User ID cannot contain numbers')
+        }
+        if (!USER_ID.test(val)) {
+          throw new Error('User ID may only contain letters, dot, dash, and underscore')
+        }
+      },
     }),
-    name: fieldFromSchema(User, 'name', { label: 'Name', max: 120 }),
+    name: fieldFromSchema(User, 'name', {
+      label: 'Name',
+      min: 2,
+      max: 120,
+      validate: (val) => {
+        if (/\d/.test(val)) {
+          throw new Error('Name cannot contain numbers')
+        }
+        if (!NAME.test(val)) {
+          throw new Error('Name may only contain letters, spaces, hyphens, and apostrophes')
+        }
+      },
+    }),
     email: fieldFromSchema(User, 'email', {
-      label: 'Email', max: 254, pattern: EMAIL, message: 'Email is invalid',
+      label: 'Email',
+      max: 254,
+      validate: (val) => {
+        validateEmailFormat(val)
+      },
     }),
   }
 }

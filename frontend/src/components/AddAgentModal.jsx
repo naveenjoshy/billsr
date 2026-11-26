@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { addAgent } from '../services/bankService'
+import { HTTP_URL, PHONE, validateEmail, validateName, validateUserID } from '../utils/validators'
 import './AddAgentModal.css'
 
 const emptyForm = {
@@ -16,25 +17,26 @@ const emptyForm = {
   },
 }
 
-const PHONE = /^\+?[0-9][0-9 ()-]{6,19}$/
-const HTTP_URL = /^https?:\/\/\S+$/i
-
 function validate({ user, agent }) {
   const errors = {}
   const need = (section, data, key, label) => {
     if (!String(data[key]).trim()) errors[`${section}.${key}`] = `${label} is required`
   }
-  need('user', user, 'userID', 'User ID')
-  need('user', user, 'name', 'Name')
-  need('user', user, 'email', 'Email')
+
+  const userIdErr = validateUserID(user.userID)
+  if (userIdErr) errors['user.userID'] = userIdErr
+
+  const nameErr = validateName(user.name, 'Name')
+  if (nameErr) errors['user.name'] = nameErr
+
+  const emailErr = validateEmail(user.email)
+  if (emailErr) errors['user.email'] = emailErr
+
   need('agent', agent, 'address', 'Address')
   need('agent', agent, 'phone_no', 'Phone')
   need('agent', agent, 'cash_holding_limit', 'Cash holding limit')
   need('agent', agent, 'cash_holding_days', 'Cash holding days')
 
-  if (user.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(user.email.trim())) {
-    errors['user.email'] = 'Email is invalid'
-  }
   if (user.password.length < 8) errors['user.password'] = 'Password must be at least 8 characters'
   if (agent.phone_no.trim() && !PHONE.test(agent.phone_no.trim())) {
     errors['agent.phone_no'] = 'Phone must be 7–20 digits (may start with +)'
@@ -63,7 +65,37 @@ export default function AddAgentModal({ onClose, onCreated }) {
 
   const setField = (section, key) => (event) => {
     const { value } = event.target
-    setForm((current) => ({ ...current, [section]: { ...current[section], [key]: value } }))
+    const updated = {
+      ...form,
+      [section]: { ...form[section], [key]: value },
+    }
+    setForm(updated)
+
+    const errorKey = `${section}.${key}`
+    if (Object.keys(errors).length > 0) {
+      const fieldErrors = validate(updated)
+      setErrors((current) => {
+        const next = { ...current }
+        if (fieldErrors[errorKey]) {
+          next[errorKey] = fieldErrors[errorKey]
+        } else {
+          delete next[errorKey]
+        }
+        return next
+      })
+      if (formError) setFormError('')
+    }
+  }
+
+  const handleBlur = (section, key) => () => {
+    const errorKey = `${section}.${key}`
+    const val = String(form[section]?.[key] ?? '').trim()
+    if (val !== '') {
+      const fieldErrors = validate(form)
+      if (fieldErrors[errorKey]) {
+        setErrors((current) => ({ ...current, [errorKey]: fieldErrors[errorKey] }))
+      }
+    }
   }
 
   const field = (section, key, label, props = {}) => {
@@ -74,6 +106,7 @@ export default function AddAgentModal({ onClose, onCreated }) {
         <input
           aria-invalid={Boolean(errors[errorKey])}
           onChange={setField(section, key)}
+          onBlur={handleBlur(section, key)}
           value={form[section][key]}
           {...props}
         />

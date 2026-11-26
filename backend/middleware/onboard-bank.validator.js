@@ -4,6 +4,7 @@ import { User } from '../models/User.js'
 import {
   fieldFromSchema,
   getUserSpec,
+  NAME,
   PHONE,
   validatePassword,
   validateSection,
@@ -17,7 +18,14 @@ const bankSpec = {
   phone: fieldFromSchema(Bank, 'phone', {
     label: 'Phone', pattern: PHONE, message: 'Phone must be 7–20 digits (may start with +)',
   }),
-  name_ceo: fieldFromSchema(Bank, 'name_ceo', { label: 'CEO name', max: 120 }),
+  name_ceo: fieldFromSchema(Bank, 'name_ceo', {
+    label: 'CEO name',
+    max: 120,
+    validate: (val) => {
+      if (/\d/.test(val)) throw new Error('CEO name cannot contain numbers')
+      if (!NAME.test(val)) throw new Error('CEO name may only contain letters, spaces, hyphens, and apostrophes')
+    },
+  }),
   designation: fieldFromSchema(Bank, 'designation', { label: 'Designation', max: 120 }),
   license_expiry: fieldFromSchema(Bank, 'license_expiry', { label: 'License expiry' }),
   account_status: fieldFromSchema(Bank, 'compliance_status.account_status', {

@@ -4,7 +4,7 @@ import { Buffer } from 'node:buffer'
 import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { User } from '../models/User.js'
-import { EMAIL, fieldFromSchema, validateSection } from '../middleware/validate.js'
+import { fieldFromSchema, NAME, validateEmailFormat, validateSection } from '../middleware/validate.js'
 
 const ACCESS_COOKIE = 'accessToken'
 const REFRESH_COOKIE = 'refreshToken'
@@ -279,9 +279,21 @@ export async function resetPassword(req, res) {
 }
 
 const profileSpec = {
-  name: fieldFromSchema(User, 'name', { label: 'Name', max: 120 }),
+  name: fieldFromSchema(User, 'name', {
+    label: 'Name',
+    min: 2,
+    max: 120,
+    validate: (val) => {
+      if (/\d/.test(val)) throw new Error('Name cannot contain numbers')
+      if (!NAME.test(val)) throw new Error('Name may only contain letters, spaces, hyphens, and apostrophes')
+    },
+  }),
   email: fieldFromSchema(User, 'email', {
-    label: 'Email', max: 254, pattern: EMAIL, message: 'Email is invalid',
+    label: 'Email',
+    max: 254,
+    validate: (val) => {
+      validateEmailFormat(val)
+    },
   }),
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { logoutUser, updateProfile } from '../services/authService'
+import { validateEmail, validateName } from '../utils/validators'
 import './UserMenu.css'
 
 function EditProfileModal({ user, onClose, onSaved }) {
@@ -9,14 +10,56 @@ function EditProfileModal({ user, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
   const emailChanged = form.email.trim().toLowerCase() !== (user.email ?? '').toLowerCase()
 
-  const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
+  const validateForm = (currentForm) => {
+    const found = {}
+    const nameErr = validateName(currentForm.name, 'Name')
+    if (nameErr) found['profile.name'] = nameErr
+
+    const emailErr = validateEmail(currentForm.email)
+    if (emailErr) found['profile.email'] = emailErr
+
+    const isEmailChanged = currentForm.email.trim().toLowerCase() !== (user.email ?? '').toLowerCase()
+    if (isEmailChanged && !currentForm.currentPassword) {
+      found['profile.currentPassword'] = 'Current password is required'
+    }
+    return found
+  }
+
+  const set = (key) => (event) => {
+    const { value } = event.target
+    const updated = { ...form, [key]: value }
+    setForm(updated)
+
+    const errorKey = `profile.${key}`
+    if (Object.keys(errors).length > 0) {
+      const fieldErrors = validateForm(updated)
+      setErrors((current) => {
+        const next = { ...current }
+        if (fieldErrors[errorKey]) {
+          next[errorKey] = fieldErrors[errorKey]
+        } else {
+          delete next[errorKey]
+        }
+        return next
+      })
+      if (formError) setFormError('')
+    }
+  }
+
+  const handleBlur = (key) => () => {
+    const errorKey = `profile.${key}`
+    const val = String(form[key] ?? '').trim()
+    if (val !== '') {
+      const fieldErrors = validateForm(form)
+      if (fieldErrors[errorKey]) {
+        setErrors((current) => ({ ...current, [errorKey]: fieldErrors[errorKey] }))
+      }
+    }
+  }
 
   const submit = async (event) => {
     event.preventDefault()
-    const found = {}
-    if (!form.name.trim()) found['profile.name'] = 'Name is required'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) found['profile.email'] = 'Email is invalid'
-    if (emailChanged && !form.currentPassword) found['profile.currentPassword'] = 'Current password is required'
+    const found = validateForm(form)
     setErrors(found)
     setFormError('')
     if (Object.keys(found).length) return
