@@ -15,7 +15,13 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [isCheckingSession, setIsCheckingSession] = useState(true)
   const [bankView, setBankView] = useState('dashboard')
+  const [ledgerFilters, setLedgerFilters] = useState(null)
   const [accessMessage, setAccessMessage] = useState('')
+
+  const handleBankNavigate = (view, params = null) => {
+    setBankView(view)
+    setLedgerFilters(params)
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -49,6 +55,7 @@ function App() {
   const handleLoggedOut = () => {
     setAccessMessage('')
     setBankView('dashboard')
+    setLedgerFilters(null)
     setCurrentUser(null)
   }
 
@@ -76,7 +83,7 @@ function App() {
     if (bankView === 'agents') {
       return (
         <AgentManagementPage
-          onNavigate={setBankView}
+          onNavigate={handleBankNavigate}
           onLoggedOut={handleLoggedOut}
           onUserUpdated={setCurrentUser}
           user={currentUser}
@@ -87,8 +94,10 @@ function App() {
     if (bankView === 'ledger' || bankView === 'cancellations') {
       return (
         <TransactionLedgerPage
+          key={`${bankView}-${ledgerFilters?.agent || 'all'}`}
           activeView={bankView}
-          onNavigate={setBankView}
+          initialFilters={ledgerFilters}
+          onNavigate={handleBankNavigate}
           onLoggedOut={handleLoggedOut}
           onUserUpdated={setCurrentUser}
           user={currentUser}
@@ -99,7 +108,7 @@ function App() {
     if (bankView === 'schemes') {
       return (
         <SchemesReceiptsPage
-          onNavigate={setBankView}
+          onNavigate={handleBankNavigate}
           onLoggedOut={handleLoggedOut}
           onUserUpdated={setCurrentUser}
           user={currentUser}
@@ -109,7 +118,7 @@ function App() {
 
     return (
       <BankHomePage
-        onNavigate={setBankView}
+        onNavigate={handleBankNavigate}
         onLoggedOut={handleLoggedOut}
         onUserUpdated={setCurrentUser}
         user={currentUser}

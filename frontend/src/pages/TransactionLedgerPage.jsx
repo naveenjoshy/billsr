@@ -29,19 +29,27 @@ export default function TransactionLedgerPage({
   onLoggedOut,
   onNavigate,
   activeView = 'ledger',
+  initialFilters = null,
 }) {
   // Bank and Shell Info
   const [dashboard, setDashboard] = useState(null)
 
   // Filters State
-  const [search, setSearch] = useState('')
-  const [searchInput, setSearchInput] = useState('')
-  const [dateRange, setDateRange] = useState('all')
-  const [scheme, setScheme] = useState('all')
-  const [agent, setAgent] = useState('all')
-  const [txnType, setTxnType] = useState('all')
-  const [status, setStatus] = useState(activeView === 'cancellations' ? 'P' : 'all')
-  const [mode, setMode] = useState('all')
+  const [search, setSearch] = useState(initialFilters?.search || '')
+  const [searchInput, setSearchInput] = useState(initialFilters?.search || '')
+  const [dateRange, setDateRange] = useState(initialFilters?.dateRange || 'all')
+  const [scheme, setScheme] = useState(initialFilters?.scheme || 'all')
+  const [agent, setAgent] = useState(initialFilters?.agent || 'all')
+  const [initialAgentName] = useState(initialFilters?.agentName || '')
+  const [txnType, setTxnType] = useState(initialFilters?.txnType || 'all')
+  const [status, setStatus] = useState(
+    initialFilters?.status !== undefined
+      ? initialFilters.status
+      : activeView === 'cancellations'
+        ? 'P'
+        : 'all',
+  )
+  const [mode, setMode] = useState(initialFilters?.mode || 'all')
 
   // Pagination & Layout
   const [page, setPage] = useState(1)
@@ -152,7 +160,7 @@ export default function TransactionLedgerPage({
     }
     if (agent !== 'all') {
       const a = txData.filterOptions.agents.find((x) => x._id === agent)
-      list.push({ key: 'agent', label: `Agent: ${a?.name || agent}`, onClear: () => setAgent('all') })
+      list.push({ key: 'agent', label: `Agent: ${a?.name || initialAgentName || agent}`, onClear: () => setAgent('all') })
     }
     if (txnType !== 'all') {
       list.push({ key: 'txnType', label: `Type: ${txnType === 'D' ? 'Deposit' : 'Withdrawal'}`, onClear: () => setTxnType('all') })
@@ -165,7 +173,7 @@ export default function TransactionLedgerPage({
       list.push({ key: 'mode', label: `Mode: ${mode === 'C' ? 'Cash' : 'Transfer'}`, onClear: () => setMode('all') })
     }
     return list
-  }, [search, dateRange, scheme, agent, txnType, status, mode, txData.filterOptions])
+  }, [search, dateRange, scheme, agent, txnType, status, mode, txData.filterOptions, initialAgentName])
 
   // Approve Cancellation handler
   const handleApproveCancellation = async () => {
@@ -521,6 +529,9 @@ export default function TransactionLedgerPage({
                 }}
               >
                 <option value="all">All Agents</option>
+                {agent !== 'all' && !txData.filterOptions.agents.some((a) => a._id === agent) && (
+                  <option value={agent}>{initialAgentName || 'Selected Agent'}</option>
+                )}
                 {txData.filterOptions.agents.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.name}
