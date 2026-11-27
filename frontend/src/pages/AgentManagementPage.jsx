@@ -482,7 +482,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
             <div className="am-table-head">
               <div className="am-registry-title-wrap">
                 <span className="am-record-count-badge">
-                  {visible.length} of {agents.length} Records
+                  {visible.length} of {agents.length} Agents
                 </span>
               </div>
 
