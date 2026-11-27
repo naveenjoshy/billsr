@@ -26,6 +26,15 @@ export const getBankTransactions = (query = {}) => {
 export const getPendingCancellationsCount = () =>
   request('/api/bank/cancellations/pending-count')
 
+export const notifyCancellationsChanged = () => {
+  window.dispatchEvent(new CustomEvent('bank:cancellations-updated'))
+  try {
+    localStorage.setItem('billsr:cancellations-updated', Date.now().toString())
+  } catch {
+    // ignore storage quota/sandbox issues
+  }
+}
+
 export const cancelBankTransaction = (id, reason) =>
   post(`/api/bank/transactions/${id}/cancel`, { reason })
 

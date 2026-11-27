@@ -1,10 +1,16 @@
 import { get, patch, post } from './apiClient'
 
-export async function loginUser(email, password) {
-  const data = await post('/api/auth/login', { email, password })
+export async function loginUser(emailOrUsername, password) {
+  const data = await post('/api/auth/login', {
+    email: emailOrUsername,
+    username: emailOrUsername,
+    password,
+  })
   if (!data?.user) throw new Error('Invalid response from server')
   return data.user
 }
+
+export const loginAgent = (username, password) => loginUser(username, password)
 
 export async function getCurrentUser() {
   let response

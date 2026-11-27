@@ -4,7 +4,8 @@ import LoginPage from './pages/LoginPage'
 import SuperAdminHomePage from './pages/SuperAdminHomePage'
 import BankHomePage from './pages/BankHomePage'
 import AgentManagementPage from './pages/AgentManagementPage'
-import AgentHomePage from './pages/AgentHomePage'
+import AgentLoginPage from './pages/AgentLoginPage'
+import AgentDashboardPage from './pages/AgentDashboardPage'
 import TransactionLedgerPage from './pages/TransactionLedgerPage'
 import SchemesReceiptsPage from './pages/SchemesReceiptsPage'
 import './App.css'
@@ -17,6 +18,7 @@ function App() {
   const [bankView, setBankView] = useState('dashboard')
   const [ledgerFilters, setLedgerFilters] = useState(null)
   const [accessMessage, setAccessMessage] = useState('')
+  const [authPortal, setAuthPortal] = useState('bank')
 
   const handleBankNavigate = (view, params = null) => {
     setBankView(view)
@@ -128,10 +130,22 @@ function App() {
 
   if (session?.role === 'Agent') {
     return (
-      <AgentHomePage
+      <AgentDashboardPage
         onLoggedOut={handleLoggedOut}
         onUserUpdated={setCurrentUser}
         user={currentUser}
+      />
+    )
+  }
+
+  if (authPortal === 'agent') {
+    return (
+      <AgentLoginPage
+        onAuthenticated={(user) => {
+          setAccessMessage('')
+          setCurrentUser(user)
+        }}
+        onSwitchPortal={() => setAuthPortal('bank')}
       />
     )
   }
@@ -144,6 +158,7 @@ function App() {
         setAccessMessage('')
         setCurrentUser(user)
       }}
+      onSwitchToAgentPortal={() => setAuthPortal('agent')}
     />
   )
 }

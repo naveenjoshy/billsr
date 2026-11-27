@@ -118,12 +118,19 @@ export function passwordStrengthError(password) {
 }
 
 export async function login(req, res) {
-  const { email, password } = req.body ?? {}
-  if (typeof email !== 'string' || typeof password !== 'string') {
+  const { email, username, password } = req.body ?? {}
+  const identifier = (typeof email === 'string' ? email : typeof username === 'string' ? username : '').trim()
+  if (!identifier || typeof password !== 'string') {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.AUTH.REQUIRED_CREDENTIALS })
   }
 
-  const user = await User.findOne({ email: email.trim().toLowerCase() })
+  const user = await User.findOne({
+    $or: [
+      { email: identifier.toLowerCase() },
+      { userID: identifier },
+      { userID: new RegExp(`^${identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+    ],
+  })
   const ok = user && user.is_active && (await bcrypt.compare(password, user.password_hash))
   if (!ok) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({ message: MESSAGES.AUTH.INVALID_CREDENTIALS })

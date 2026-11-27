@@ -115,3 +115,95 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================================
+   Add Agent (Onboard Agent) Modal Dark Theme Overrides
+   ======================================================== */
+[data-theme='dark'] .aa-backdrop,
+.dark .aa-backdrop {
+  background: rgba(5, 8, 15, 0.75);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme='dark'] .aa-modal,
+.dark .aa-modal {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme='dark'] .aa-modal h2,
+.dark .aa-modal h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .aa-modal fieldset,
+.dark .aa-modal fieldset {
+  border-color: #1e293b !important;
+  background: #0b1120 !important;
+}
+
+[data-theme='dark'] .aa-modal legend,
+.dark .aa-modal legend {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .aa-field,
+.dark .aa-field {
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .aa-field input,
+.dark .aa-field input {
+  background: #141f33 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .aa-field input:focus,
+.dark .aa-field input:focus {
+  outline: none !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+}
+
+[data-theme='dark'] .aa-field input[aria-invalid='true'],
+.dark .aa-field input[aria-invalid='true'] {
+  border-color: #ef4444 !important;
+}
+
+[data-theme='dark'] .aa-field small,
+[data-theme='dark'] .aa-error,
+.dark .aa-field small,
+.dark .aa-error {
+  color: #f87171 !important;
+}
+
+[data-theme='dark'] .aa-cancel,
+.dark .aa-cancel {
+  background: #141f33 !important;
+  border: 1px solid #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .aa-cancel:hover:not(:disabled),
+.dark .aa-cancel:hover:not(:disabled) {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .aa-submit,
+.dark .aa-submit {
+  background: #b22c06 !important;
+  color: #ffffff !important;
+  border: 1px solid #b22c06 !important;
+}
+
+[data-theme='dark'] .aa-submit:hover:not(:disabled),
+.dark .aa-submit:hover:not(:disabled) {
+  background: #991b1b !important;
+  border-color: #991b1b !important;
+}

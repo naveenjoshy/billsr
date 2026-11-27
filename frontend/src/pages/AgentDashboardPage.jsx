@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import UserMenu from '../components/UserMenu'
 import { getAgentHome } from '../services/agentService'
 import './BankHomePage.css'
-import './AgentHomePage.css'
+import './AgentDashboardPage.css'
 
 const inr = (value, decimals = 2) =>
   `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`
@@ -98,7 +98,7 @@ function QueueRow({ item }) {
   )
 }
 
-export default function AgentHomePage({ user, onLoggedOut, onUserUpdated }) {
+export default function AgentDashboardPage({ user, onLoggedOut, onUserUpdated }) {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
 

@@ -398,7 +398,6 @@
 .pending-review-panel {
   background: #ffffff;
   border: 1px solid #fcd34d;
-  border-left: 5px solid #f59e0b;
   border-radius: 12px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.2);
   margin-bottom: 0;
@@ -1446,3 +1445,408 @@
     text-align: center !important;
   }
 }
+
+/* ========================================================
+   Transaction Ledger Dark Theme Overrides
+   ======================================================== */
+[data-theme='dark'] .ledger-page,
+.dark .ledger-page {
+  background-color: #090d16 !important;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .ledger-subbar,
+.dark .ledger-subbar {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .crumb-category,
+.dark .crumb-category {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .crumb-divider,
+.dark .crumb-divider {
+  color: #334155;
+}
+
+[data-theme='dark'] .ledger-title,
+.dark .ledger-title {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .ledger-search-input,
+.dark .ledger-search-input {
+  background-color: #141f33 !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .ledger-search-input::placeholder,
+.dark .ledger-search-input::placeholder {
+  color: #64748b;
+}
+
+[data-theme='dark'] .action-btn-secondary,
+.dark .action-btn-secondary {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme='dark'] .action-btn-secondary:hover,
+.dark .action-btn-secondary:hover {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .action-btn-escalation,
+.dark .action-btn-escalation {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .action-btn-escalation:hover,
+.dark .action-btn-escalation:hover {
+  background-color: #334155 !important;
+}
+
+/* Metric Cards */
+[data-theme='dark'] .metric-card,
+.dark .metric-card {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .metric-card.metric-amber,
+.dark .metric-card.metric-amber {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme='dark'] .metric-card.card-selected,
+.dark .metric-card.card-selected {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25) !important;
+}
+
+[data-theme='dark'] .metric-label,
+.dark .metric-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .metric-primary-val,
+.dark .metric-primary-val {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .metric-primary-val.text-amber,
+.dark .metric-primary-val.text-amber {
+  color: #f59e0b;
+}
+
+[data-theme='dark'] .metric-subtext,
+.dark .metric-subtext {
+  color: #64748b;
+}
+
+[data-theme='dark'] .metric-sparkline svg path {
+  stroke: #10b981;
+}
+
+/* Filter Toolbar */
+[data-theme='dark'] .ledger-filter-toolbar,
+.dark .ledger-filter-toolbar {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .filter-item label,
+.dark .filter-item label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .filter-item select,
+.dark .filter-item select {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .filter-item select:focus,
+.dark .filter-item select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+}
+
+[data-theme='dark'] .filter-chip,
+.dark .filter-chip {
+  background-color: #141f33 !important;
+  border-color: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .reset-filters-btn,
+.dark .reset-filters-btn {
+  color: #818cf8 !important;
+}
+
+[data-theme='dark'] .reset-filters-btn:hover,
+.dark .reset-filters-btn:hover {
+  color: #a5b4fc !important;
+}
+
+[data-theme='dark'] .entries-count-label,
+.dark .entries-count-label {
+  color: #94a3b8;
+}
+
+/* Table Card Section */
+[data-theme='dark'] .ledger-table-card,
+.dark .ledger-table-card {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .table-card-header,
+.dark .table-card-header {
+  background-color: #0f172a !important;
+  border-bottom-color: #1e293b !important;
+}
+
+[data-theme='dark'] .table-title,
+.dark .table-title {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .table-print-btn,
+.dark .table-print-btn {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .table-print-btn:hover,
+.dark .table-print-btn:hover {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .ledger-table th,
+.dark .ledger-table th {
+  background-color: #141f33 !important;
+  border-bottom-color: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .ledger-table td,
+.dark .ledger-table td {
+  border-bottom-color: #1e293b !important;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .ledger-table tbody tr,
+.dark .ledger-table tbody tr {
+  background-color: #0f172a !important;
+}
+
+[data-theme='dark'] .ledger-table tbody tr:hover,
+.dark .ledger-table tbody tr:hover {
+  background-color: #141f33 !important;
+}
+
+[data-theme='dark'] .row-selected,
+.dark .row-selected {
+  background-color: #17243c !important;
+}
+
+[data-theme='dark'] .cell-customer-name,
+.dark .cell-customer-name {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .cell-customer-acc,
+.dark .cell-customer-acc {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .cell-receipt-code,
+.dark .cell-receipt-code {
+  color: #818cf8 !important;
+}
+
+[data-theme='dark'] .scheme-badge,
+.dark .scheme-badge {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme='dark'] .mode-badge,
+.dark .mode-badge {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+/* Pagination Footer */
+[data-theme='dark'] .ledger-pagination-bar,
+.dark .ledger-pagination-bar {
+  background-color: #0f172a !important;
+  border-top-color: #1e293b !important;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .page-size-selector select,
+.dark .page-size-selector select {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .pagination-range-text,
+.dark .pagination-range-text {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .nav-btn,
+.dark .nav-btn {
+  background-color: #141f33 !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .nav-btn:hover:not(:disabled),
+.dark .nav-btn:hover:not(:disabled) {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .nav-btn:disabled,
+.dark .nav-btn:disabled {
+  opacity: 0.35;
+}
+
+/* Pending Cancellation Review Popup Dark Theme */
+[data-theme='dark'] .review-modal-backdrop,
+.dark .review-modal-backdrop {
+  background: rgba(5, 8, 15, 0.75);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme='dark'] .pending-review-panel,
+.dark .pending-review-panel {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  border-left: 1px solid #1e293b !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-theme='dark'] .review-panel-header,
+.dark .review-panel-header {
+  background: #0b1120 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+[data-theme='dark'] .review-header-tag,
+.dark .review-header-tag {
+  color: #f59e0b !important;
+}
+
+[data-theme='dark'] .review-dismiss-link,
+.dark .review-dismiss-link {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .review-dismiss-link:hover,
+.dark .review-dismiss-link:hover {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .review-cust-name,
+.dark .review-cust-name {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .review-cust-meta,
+.dark .review-cust-meta {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .review-justification-box,
+.dark .review-justification-box {
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+[data-theme='dark'] .justification-heading,
+.dark .justification-heading {
+  color: #fbbf24 !important;
+}
+
+[data-theme='dark'] .justification-icon,
+.dark .justification-icon {
+  color: #f59e0b !important;
+}
+
+[data-theme='dark'] .justification-text,
+.dark .justification-text {
+  color: #fde68a !important;
+}
+
+[data-theme='dark'] .reversal-amount-box,
+.dark .reversal-amount-box {
+  background: #141f33 !important;
+  border: 1px solid #1e293b !important;
+}
+
+[data-theme='dark'] .reversal-amount-label,
+.dark .reversal-amount-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .reversal-amount-val,
+.dark .reversal-amount-val {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .reversal-type-tag,
+.dark .reversal-type-tag {
+  color: #94a3b8 !important;
+}
+
+[data-theme='dark'] .review-btn-reject,
+.dark .review-btn-reject {
+  background: #141f33 !important;
+  border: 1px solid #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme='dark'] .review-btn-reject:hover:not(:disabled),
+.dark .review-btn-reject:hover:not(:disabled) {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .review-btn-approve,
+.dark .review-btn-approve {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .review-btn-approve:hover:not(:disabled),
+.dark .review-btn-approve:hover:not(:disabled) {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+

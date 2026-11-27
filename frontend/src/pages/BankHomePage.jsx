@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import './BankHomePage.css'
 import BankShell from '../components/BankShell'
-import { dateText, initials, licenseLabels, money } from '../components/bankShellUtils'
+import { initials, money } from '../components/bankShellUtils'
 import {
   approveTransaction,
   getBankDashboard,
@@ -208,32 +208,17 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
                 </a>
               </p>
             </article>
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">BANK LICENSE</p>
-              <p className="bank-kpi-value">
-                {bank ? Math.max(bank.daysLeft, 0) : '—'}<small> Days Left</small>
-              </p>
-              {bank && (
-                <p className="bank-kpi-foot-row">
-                  <span>Expires {dateText(bank.licenseExpiry)}</span>
-                  <b className={`bank-health bank-health-${bank.status}`}>
-                    {bank.status === 'active' ? 'Healthy' : licenseLabels[bank.status]}
-                  </b>
-                </p>
-              )}
-            </article>
           </section>
 
-          <section className="bank-card" aria-labelledby="risk-title">
-            <h2 id="risk-title">Risk Surveillance</h2>
-            <p className="bank-card-sub">
-              Monitoring agent cash holding limits to prevent unbanked cash float risk.
-            </p>
-            {dashboard && dashboard.risk.length === 0 && (
-              <p className="bank-empty">No agents are near their cash holding limit.</p>
-            )}
-            {dashboard?.risk.map((agent) => <RiskRow agent={agent} key={agent._id} />)}
-          </section>
+          {dashboard && Array.isArray(dashboard.risk) && dashboard.risk.length > 0 && (
+            <section className="bank-card" aria-labelledby="risk-title">
+              <h2 id="risk-title">Risk Surveillance</h2>
+              <p className="bank-card-sub">
+                Monitoring agent cash holding limits to prevent unbanked cash float risk.
+              </p>
+              {dashboard.risk.map((agent) => <RiskRow agent={agent} key={agent._id} />)}
+            </section>
+          )}
 
           <section className="bank-card" id="approvals" aria-labelledby="receipts-title">
             <div className="bank-card-head">

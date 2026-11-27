@@ -164,6 +164,8 @@
   flex: none;
   left: 12px;
   position: absolute;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .input-wrap input {
@@ -177,7 +179,15 @@
   height: 100%;
   min-width: 0;
   outline: none;
-  padding: 0 40px;
+  padding: 0 42px;
+}
+
+.input-wrap:not(.input-wrap-no-icon) input {
+  padding-left: 42px !important;
+}
+
+.input-wrap input {
+  padding-right: 44px !important;
 }
 
 .input-wrap input::placeholder {

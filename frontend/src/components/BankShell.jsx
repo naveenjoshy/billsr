@@ -21,35 +21,36 @@ export default function BankShell({
   const [polledCount, setPolledCount] = useState(null)
 
   useEffect(() => {
-    let activePoll = true
+    let active = true
 
     const fetchCount = async () => {
       try {
         const res = await getPendingCancellationsCount()
-        if (activePoll && res && typeof res.count === 'number') {
+        if (active && res && typeof res.count === 'number') {
           setPolledCount(res.count)
         }
       } catch {
-        // Silently ignore background poll errors
+        // Silently ignore errors
       }
     }
 
     fetchCount()
 
-    // Poll every 5s so when field agents submit cancellations, the count refreshes automatically
-    const timer = setInterval(fetchCount, 5000)
+    // Refresh ONLY when explicitly triggered (agent requested/cancelled cancellation, or bank accepted/rejected)
+    const handleCancellationsChanged = () => fetchCount()
+    const handleStorage = (e) => {
+      if (e.key === 'billsr:cancellations-updated') {
+        fetchCount()
+      }
+    }
 
-    const handleFocus = () => fetchCount()
-    window.addEventListener('focus', handleFocus)
-    document.addEventListener('visibilitychange', handleFocus)
-    window.addEventListener('bank:cancellations-updated', handleFocus)
+    window.addEventListener('bank:cancellations-updated', handleCancellationsChanged)
+    window.addEventListener('storage', handleStorage)
 
     return () => {
-      activePoll = false
-      clearInterval(timer)
-      window.removeEventListener('focus', handleFocus)
-      document.removeEventListener('visibilitychange', handleFocus)
-      window.removeEventListener('bank:cancellations-updated', handleFocus)
+      active = false
+      window.removeEventListener('bank:cancellations-updated', handleCancellationsChanged)
+      window.removeEventListener('storage', handleStorage)
     }
   }, [])
 

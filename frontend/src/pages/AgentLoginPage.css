@@ -1,0 +1,341 @@
+/* frontend/src/pages/AgentLoginPage.css */
+
+.agent-login-page {
+  align-items: center;
+  background-color: #f8f9ff;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+  width: 100%;
+}
+
+.agent-login-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: auto;
+  max-width: 400px;
+  width: 100%;
+}
+
+/* 1. Header Branding Module */
+.agent-brand-header {
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.agent-brand-logo {
+  display: block;
+  height: auto;
+  max-height: 52px;
+  max-width: 144px;
+  object-fit: contain;
+  width: 100%;
+}
+
+/* 2. Main Login Form Card */
+.agent-login-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  width: 100%;
+}
+
+.agent-card-title-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.agent-icon-badge {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  height: 18px;
+  justify-content: center;
+  width: 18px;
+}
+
+.agent-icon-badge img {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.agent-card-heading {
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.agent-form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.agent-instruction-label {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 -4px;
+}
+
+.agent-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.agent-field-label {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.agent-input-wrap {
+  align-items: center;
+  background-color: #f1f5f9;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  display: flex;
+  position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.agent-input-wrap:focus-within {
+  border-color: #ff633b;
+  box-shadow: 0 0 0 2px rgba(255, 99, 59, 0.2);
+}
+
+.agent-input-wrap input {
+  background: transparent !important;
+  border: none !important;
+  border-radius: inherit;
+  color: #0f172a;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  height: 38px;
+  outline: none !important;
+  padding: 8px 12px !important;
+  width: 100%;
+}
+
+.agent-input-wrap input::placeholder {
+  color: #9ca3af;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.agent-input-wrap.has-toggle input {
+  padding-right: 38px !important;
+}
+
+.agent-toggle-btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  padding: 0 10px;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.agent-toggle-btn img {
+  display: block;
+  height: 14px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+  width: 16px;
+}
+
+.agent-toggle-btn:hover img {
+  opacity: 1;
+}
+
+/* 3. Primary Action Button */
+.agent-login-btn {
+  align-items: center;
+  background-color: #ff633b;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font-size: 16px;
+  font-weight: 600;
+  gap: 8px;
+  justify-content: center;
+  letter-spacing: -0.01em;
+  padding: 13px 20px;
+  transition: background-color 0.15s, transform 0.1s;
+  width: 100%;
+}
+
+.agent-login-btn:hover:not(:disabled) {
+  background-color: #f4512a;
+  transform: translateY(-1px);
+}
+
+.agent-login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.agent-login-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.agent-btn-arrow {
+  display: block;
+  height: 13px;
+  width: 13px;
+}
+
+/* Error / Status Messages */
+.agent-status-msg {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #b91c1c;
+  font-size: 12.5px;
+  font-weight: 500;
+  margin: 0;
+  padding: 8px 12px;
+  text-align: center;
+}
+
+/* 4. Support and Diagnostic Footer */
+.agent-support-footer {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  width: 100%;
+}
+
+.agent-support-link {
+  align-items: center;
+  color: #b22c06;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.agent-support-link:hover {
+  color: #8f2306;
+  text-decoration: underline;
+}
+
+.agent-support-phone-icon {
+  display: block;
+  height: 12px;
+  width: 12px;
+}
+
+.agent-back-portal-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 4px 8px;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.agent-back-portal-btn:hover {
+  color: #0f172a;
+}
+
+/* Dark Mode Overrides */
+[data-theme='dark'] .agent-login-page,
+.dark .agent-login-page {
+  background-color: #090d16;
+}
+
+[data-theme='dark'] .agent-brand-header,
+[data-theme='dark'] .agent-login-card,
+.dark .agent-brand-header,
+.dark .agent-login-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .agent-card-heading,
+.dark .agent-card-heading {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-instruction-label,
+[data-theme='dark'] .agent-field-label,
+.dark .agent-instruction-label,
+.dark .agent-field-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-input-wrap,
+.dark .agent-input-wrap {
+  background-color: #141f33;
+}
+
+[data-theme='dark'] .agent-input-wrap input,
+.dark .agent-input-wrap input {
+  color: #f8fafc !important;
+}
+
+[data-theme='dark'] .agent-input-wrap input::placeholder,
+.dark .agent-input-wrap input::placeholder {
+  color: #64748b;
+}
+
+[data-theme='dark'] .agent-support-link,
+.dark .agent-support-link {
+  color: #fb923c;
+}
+
+[data-theme='dark'] .agent-support-link:hover,
+.dark .agent-support-link:hover {
+  color: #fdba74;
+}
+
+[data-theme='dark'] .agent-back-portal-btn,
+.dark .agent-back-portal-btn {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-back-portal-btn:hover,
+.dark .agent-back-portal-btn:hover {
+  color: #f1f5f9;
+}

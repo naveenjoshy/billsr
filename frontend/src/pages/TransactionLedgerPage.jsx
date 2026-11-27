@@ -7,6 +7,7 @@ import {
   cancelBankTransaction,
   getBankDashboard,
   getBankTransactions,
+  notifyCancellationsChanged,
   rejectBankCancellation,
 } from '../services/bankService'
 import './TransactionLedgerPage.css'
@@ -214,7 +215,7 @@ export default function TransactionLedgerPage({
       setActionNotice({ type: 'success', text: msg })
       toast.success(msg, 'Cancellation Approved')
       setReviewTxn(null)
-      window.dispatchEvent(new CustomEvent('bank:cancellations-updated'))
+      notifyCancellationsChanged()
       await fetchLedger()
     } catch (err) {
       const errText = err.message || 'Failed to approve cancellation'
@@ -236,7 +237,7 @@ export default function TransactionLedgerPage({
       setActionNotice({ type: 'info', text: msg })
       toast.info(msg, 'Cancellation Rejected')
       setReviewTxn(null)
-      window.dispatchEvent(new CustomEvent('bank:cancellations-updated'))
+      notifyCancellationsChanged()
       await fetchLedger()
     } catch (err) {
       const errText = err.message || 'Failed to reject cancellation'

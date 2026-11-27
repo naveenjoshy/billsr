@@ -12,7 +12,12 @@ import {
   verifyPasswordReset,
 } from '../services/authService';
 
-export default function LoginPage({ onAuthenticated, accessMessage = '', pendingUser = null }) {
+export default function LoginPage({
+  onAuthenticated,
+  accessMessage = '',
+  pendingUser = null,
+  onSwitchToAgentPortal,
+}) {
   const [firstLoginUser, setFirstLoginUser] = useState(pendingUser);
   const [statusMessage, setStatusMessage] = useState(accessMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,6 +90,18 @@ export default function LoginPage({ onAuthenticated, accessMessage = '', pending
           />
         )}
         <LegalNotice />
+        {onSwitchToAgentPortal && !firstLoginUser && !isResettingPassword && (
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <button
+              type="button"
+              className="login-link-button"
+              onClick={onSwitchToAgentPortal}
+              style={{ fontSize: '14px', color: '#64748b' }}
+            >
+              Field Collection Agent? Sign in to Agent Portal →
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );

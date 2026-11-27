@@ -236,8 +236,9 @@
 
 .bank-kpis {
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 100%;
 }
 
 .bank-kpi {
@@ -247,23 +248,30 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 14px;
+  padding: 12px 14px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .bank-kpi-label {
   color: #64748b;
   display: flex;
+  align-items: center;
   font-size: 10px;
   font-weight: 600;
   justify-content: space-between;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   margin: 0;
+  gap: 4px;
 }
 
 .bank-kpi-value {
-  font-size: 22px;
+  font-size: clamp(16px, 1.4vw, 22px);
   font-weight: 700;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bank-kpi-value small {
@@ -657,13 +665,7 @@
   text-decoration: underline;
 }
 
-@media (max-width: 1180px) {
-  .bank-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .bank-shell {
     grid-template-columns: 1fr;
   }
@@ -673,6 +675,7 @@
   }
 
   .bank-kpis {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 }
