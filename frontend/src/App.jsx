@@ -6,9 +6,10 @@ import BankHomePage from './pages/BankHomePage'
 import AgentManagementPage from './pages/AgentManagementPage'
 import TransactionLedgerPage from './pages/TransactionLedgerPage'
 import SchemesReceiptsPage from './pages/SchemesReceiptsPage'
+import AgentHome from './pages/AgentHome'
 import './App.css'
 
-const HOME_ROLES = ['Superadmin', 'Bank']
+const HOME_ROLES = ['Superadmin', 'Bank', 'Agent']
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
@@ -120,6 +121,15 @@ function App() {
         onNavigate={handleBankNavigate}
         onLoggedOut={handleLoggedOut}
         onUserUpdated={setCurrentUser}
+        user={currentUser}
+      />
+    )
+  }
+
+  if (session?.role === 'Agent') {
+    return (
+      <AgentHome
+        onLoggedOut={handleLoggedOut}
         user={currentUser}
       />
     )

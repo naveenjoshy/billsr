@@ -29,14 +29,14 @@ export default function LoginForm({
       <BrandHeader />
 
       <form className="login-form" onSubmit={handleSubmit}>
-        <FormField htmlFor="email" icon={emailIcon} label="Email ID">
+        <FormField htmlFor="email" icon={emailIcon} label="Email ID or Agent ID">
           <input
             autoComplete="username"
             id="email"
             name="email"
-            placeholder="admin@devikulamcardbank.in"
+            placeholder="admin@devikulamcardbank.in or AGT-1008"
             required
-            type="email"
+            type="text"
             disabled={isSubmitting}
           />
         </FormField>
@@ -75,6 +75,10 @@ export default function LoginForm({
         >
           Forgot password?
         </button>
+
+        <p className="login-agent-note">
+          Field Collection Agents: Enter your assigned Agent ID (e.g. AGT-1008) and password.
+        </p>
 
         {statusMessage && (
           <p aria-live="polite" className="form-status">

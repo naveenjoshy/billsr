@@ -99,6 +99,14 @@
   outline-offset: 2px;
 }
 
+.login-agent-note {
+  font-size: 13px;
+  line-height: 18px;
+  color: #64748b;
+  text-align: center;
+  margin: 4px 0 0;
+}
+
 .reset-status {
   color: #475569;
   font-size: 15px;
