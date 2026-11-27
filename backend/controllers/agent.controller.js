@@ -2,6 +2,7 @@ import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { Bank } from '../models/Bank.js'
 import { Customer } from '../models/Customer.js'
+import { CustomerScheme } from '../models/CustomerScheme.js'
 import { Scheme } from '../models/Scheme.js'
 import { Transaction } from '../models/Transaction.js'
 import { User } from '../models/User.js'
@@ -247,6 +248,118 @@ export async function createAgentTransaction(req, res) {
       type: populated.transact_type,
       status: populated.transaction_status,
       at: populated.collect_date,
+    },
+  })
+}
+
+export async function onboardCustomer(req, res) {
+  const agent = await Agent.findOne({ user_id: req.auth.sub })
+  if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
+
+  const {
+    name,
+    phone,
+    email = '',
+    shopName,
+    address = 'Sector 4 Market',
+    category = 'Retail Daily Pigmy (MBS)',
+    schemeId,
+    monthlyTarget = 15000,
+    latitude = 19.076,
+    longitude = 72.8777,
+    customerPhotoUrl = null,
+    shopPhotoUrl = null,
+    initialDeposit = 500,
+  } = req.body ?? {}
+
+  if (!name || !name.trim()) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Customer full name is required.' })
+  }
+  if (!phone || !phone.trim()) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Valid contact phone number is required.' })
+  }
+  if (!shopName || !shopName.trim()) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Business or trade name is required.' })
+  }
+
+  // 1. Create the customer document
+  const customer = await Customer.create({
+    agent_id: agent._id,
+    bank_id: agent.bank_id,
+    name: name.trim(),
+    shop_name: shopName.trim(),
+    phone: phone.trim(),
+    email: email.trim(),
+    address: address.trim(),
+    type: category,
+    location: {
+      type: 'Point',
+      coordinates: [Number(longitude) || 72.8777, Number(latitude) || 19.076],
+    },
+    customer_photo_url: customerPhotoUrl,
+    shop_photo_url: shopPhotoUrl,
+    audit_trail: {
+      created_by: req.auth.sub,
+      modified_by: req.auth.sub,
+    },
+  })
+
+  // 2. Link Scheme Profile
+  let targetSchemeId = schemeId
+  if (!targetSchemeId) {
+    const defaultScheme = await Scheme.findOne({ bank_id: agent.bank_id, status: 'A' })
+    if (defaultScheme) targetSchemeId = defaultScheme._id
+  }
+
+  if (targetSchemeId) {
+    await CustomerScheme.create({
+      customer_id: customer._id,
+      scheme_id: targetSchemeId,
+      scheme_opening_amount: Number(initialDeposit) || 0,
+      monthly_target: Number(monthlyTarget) || 15000,
+      remittance_periodicity: 'D',
+      audit_trail: {
+        created_by: req.auth.sub,
+        modified_by: req.auth.sub,
+      },
+    })
+  }
+
+  // 3. Create initial opening collection deposit
+  const randomReceipt = `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`
+  const depositAmt = Number(initialDeposit) || 500.0
+
+  if (targetSchemeId && depositAmt > 0) {
+    await Transaction.create({
+      receipt_no: randomReceipt,
+      bank_id: agent.bank_id,
+      customer_id: customer._id,
+      agent_id: agent._id,
+      scheme_id: targetSchemeId,
+      transact_amt: depositAmt,
+      transact_type: 'D',
+      transaction_status: 'A',
+      transact_mode: 'C',
+      balance_snapshot: {
+        opening_bal: 0,
+        new_balance: depositAmt,
+      },
+      collect_date: new Date(),
+    })
+  }
+
+  res.status(HTTP_STATUS.CREATED).json({
+    message: 'Customer successfully onboarded and geo-tagged with active passbook.',
+    customer: {
+      _id: String(customer._id),
+      name: customer.name,
+      shopName: customer.shop_name,
+      phone: customer.phone,
+      email: customer.email,
+      address: customer.address,
+      category: customer.type,
+      coordinates: customer.location.coordinates,
+      receiptNo: randomReceipt,
     },
   })
 }

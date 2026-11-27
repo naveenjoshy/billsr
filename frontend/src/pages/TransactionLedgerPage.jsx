@@ -74,6 +74,7 @@ export default function TransactionLedgerPage({
     filterOptions: { schemes: [], agents: [] },
   })
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState('')
 
   // Interactive UI State
@@ -82,6 +83,19 @@ export default function TransactionLedgerPage({
   const [actionLoading, setActionLoading] = useState(false)
   const [forensicTxn, setForensicTxn] = useState(null)
   const [copiedId, setCopiedId] = useState(null)
+
+  // Reload transactions & summaries helper
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await fetchLedger()
+      toast.success('Live transactions reloaded.', 'Refreshed', 2000)
+    } catch (err) {
+      toast.error(err?.message || 'Failed to refresh transactions.', 'Error')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   // Load Dashboard metadata for the shell
   useEffect(() => {
@@ -319,8 +333,10 @@ export default function TransactionLedgerPage({
       bank={dashboard?.bank}
       designation={dashboard?.user?.designation}
       displayName={user?.name || dashboard?.user?.name}
+      isRefreshing={isRefreshing || loading}
       onLoggedOut={onLoggedOut}
       onNavigate={onNavigate}
+      onRefresh={handleRefresh}
       onUserUpdated={onUserUpdated}
       pendingCancellationsCount={pendingCount}
       user={user}
@@ -371,6 +387,30 @@ export default function TransactionLedgerPage({
                 </button>
               )}
             </div>
+
+            {/* Refresh Button */}
+            <button
+              type="button"
+              className="action-btn-secondary"
+              onClick={handleRefresh}
+              disabled={isRefreshing || loading}
+              title="Reload live transactions & metrics"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`btn-icon ${isRefreshing || loading ? 'is-spinning' : ''}`}
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              <span>{isRefreshing || loading ? 'Refreshing…' : 'Refresh'}</span>
+            </button>
 
             {/* Export CSV Button */}
             <button
@@ -799,7 +839,31 @@ export default function TransactionLedgerPage({
           </div>
 
           <div className="table-card-header">
-            <h2 className="table-title">Transactions</h2>
+            <div className="table-title-with-refresh">
+              <h2 className="table-title">Transactions</h2>
+              <button
+                type="button"
+                className="table-refresh-btn"
+                onClick={handleRefresh}
+                disabled={isRefreshing || loading}
+                title="Reload live transactions"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`btn-icon ${isRefreshing || loading ? 'is-spinning' : ''}`}
+                >
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+                <span>{isRefreshing || loading ? 'Refreshing…' : 'Refresh'}</span>
+              </button>
+            </div>
             <div className="table-header-meta">
               <button
                 type="button"

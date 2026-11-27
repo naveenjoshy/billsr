@@ -3,6 +3,7 @@ import { logoutUser } from '../services/authService'
 import { getAgentHome, createAgentTransaction } from '../services/agentService'
 import { useTheme } from '../context/ThemeContext'
 import { useToast } from '../context/ToastContext'
+import CustomerOnboardingPage from './CustomerOnboardingPage'
 import './AgentHome.css'
 
 import cashLimitIcon from '../assets/agent/cash-limit.svg'
@@ -10,6 +11,7 @@ import collectedIcon from '../assets/agent/collected.svg'
 import payoutsIcon from '../assets/agent/payouts.svg'
 import cashInHandIcon from '../assets/agent/cash-in-hand.svg'
 import scanQrIcon from '../assets/agent/scan-qr.svg'
+import transactActionIcon from '../assets/agent/transact-action.svg'
 import depositIcon from '../assets/agent/deposit.svg'
 import payoutIcon from '../assets/agent/payout.svg'
 import printSlipIcon from '../assets/agent/print-slip.svg'
@@ -168,7 +170,7 @@ export default function AgentHome({ user, onLoggedOut }) {
   }
 
   const handleAction = (actionKey) => {
-    if (actionKey === 'deposit') {
+    if (actionKey === 'transact' || actionKey === 'deposit') {
       setTransactType('D')
       setTransactModalOpen(true)
     } else if (actionKey === 'payout') {
@@ -207,6 +209,18 @@ export default function AgentHome({ user, onLoggedOut }) {
   const stops = queue?.allStops || queue?.items || []
   const utilization = hold ? Number(hold.utilization || 0) : 0
   const barWidth = Math.min(Math.max(utilization, 0), 100)
+
+  if (activeTab === 'onboard') {
+    return (
+      <CustomerOnboardingPage
+        user={user}
+        onNavigateHome={() => {
+          setActiveTab('home')
+          reloadHomeData()
+        }}
+      />
+    )
+  }
 
   return (
     <div className="agent-shell" data-node-id="4:1673">
@@ -390,28 +404,14 @@ export default function AgentHome({ user, onLoggedOut }) {
                   <button
                     type="button"
                     className="agent-action-btn"
-                    onClick={() => handleAction('deposit')}
+                    onClick={() => handleAction('transact')}
                     data-node-id="4:1791"
                   >
                     <div className="agent-action-icon-bg bg-emerald" data-node-id="4:1793">
-                      <img src={depositIcon} alt="" width="16.67" height="16.67" data-node-id="4:1794" />
+                      <img src={transactActionIcon} alt="" width="18" height="14" data-node-id="4:1794" />
                     </div>
                     <span className="agent-action-label" data-node-id="4:1797">
-                      Deposit<br />(D)
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="agent-action-btn"
-                    onClick={() => handleAction('payout')}
-                    data-node-id="4:1798"
-                  >
-                    <div className="agent-action-icon-bg bg-rust" data-node-id="4:1800">
-                      <img src={payoutIcon} alt="" width="16.67" height="16.67" data-node-id="4:1801" />
-                    </div>
-                    <span className="agent-action-label" data-node-id="4:1804">
-                      Payout<br />(W)
+                      Transact
                     </span>
                   </button>
 
@@ -650,6 +650,28 @@ export default function AgentHome({ user, onLoggedOut }) {
             </div>
 
             <form className="agent-modal-form" onSubmit={handleTransactSubmit}>
+              {/* Type Switcher: Deposit vs Payout */}
+              <div className="agent-transact-type-toggle" role="group" aria-label="Transaction Type">
+                <button
+                  type="button"
+                  className={`agent-type-btn ${transactType === 'D' ? 'active-deposit' : ''}`}
+                  onClick={() => setTransactType('D')}
+                  disabled={isSubmittingTx}
+                >
+                  <img src={depositIcon} alt="" width="14" height="14" className="type-icon" />
+                  <span>Deposit (D)</span>
+                </button>
+                <button
+                  type="button"
+                  className={`agent-type-btn ${transactType === 'W' ? 'active-payout' : ''}`}
+                  onClick={() => setTransactType('W')}
+                  disabled={isSubmittingTx}
+                >
+                  <img src={payoutIcon} alt="" width="14" height="14" className="type-icon" />
+                  <span>Payout (W)</span>
+                </button>
+              </div>
+
               <div className="agent-form-field">
                 <label htmlFor="tx-customer">Select Vendor / Customer</label>
                 <select
@@ -716,7 +738,11 @@ export default function AgentHome({ user, onLoggedOut }) {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="agent-btn-submit" disabled={isSubmittingTx}>
+                <button
+                  type="submit"
+                  className={`agent-btn-submit ${transactType === 'W' ? 'is-payout' : 'is-deposit'}`}
+                  disabled={isSubmittingTx}
+                >
                   {isSubmittingTx
                     ? 'Recording...'
                     : transactType === 'D'

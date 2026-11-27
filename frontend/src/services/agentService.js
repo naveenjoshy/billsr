@@ -6,3 +6,9 @@ export const createAgentTransaction = (data) =>
     method: 'POST',
     body: JSON.stringify(data),
   })
+
+export const onboardCustomer = (data) =>
+  request('/api/agent/customers', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })

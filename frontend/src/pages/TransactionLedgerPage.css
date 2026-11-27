@@ -798,6 +798,12 @@
   background: #ffffff;
 }
 
+.table-title-with-refresh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .table-title {
   margin: 0;
   font-size: 13.5px;
@@ -810,6 +816,36 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.table-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.table-refresh-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.table-refresh-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-icon.is-spinning {
+  animation: spin 0.8s linear infinite;
 }
 
 .table-print-btn {
@@ -1274,6 +1310,7 @@
   .th-actions,
   .cell-actions,
   .table-print-btn,
+  .table-refresh-btn,
   .um-avatar-btn,
   .user-menu-wrapper,
   .toast-container {
@@ -1625,14 +1662,18 @@
 }
 
 [data-theme='dark'] .table-print-btn,
-.dark .table-print-btn {
+.dark .table-print-btn,
+[data-theme='dark'] .table-refresh-btn,
+.dark .table-refresh-btn {
   background-color: #141f33 !important;
   border-color: #334155 !important;
   color: #cbd5e1 !important;
 }
 
 [data-theme='dark'] .table-print-btn:hover,
-.dark .table-print-btn:hover {
+.dark .table-print-btn:hover,
+[data-theme='dark'] .table-refresh-btn:hover:not(:disabled),
+.dark .table-refresh-btn:hover:not(:disabled) {
   background-color: #1e293b !important;
   border-color: #475569 !important;
   color: #ffffff !important;

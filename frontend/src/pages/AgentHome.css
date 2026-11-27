@@ -878,7 +878,7 @@
   padding: 10px;
   border-radius: 8px;
   border: 0;
-  background: #ff633b;
+  background: #059669;
   color: #ffffff;
   font-weight: 600;
   font-size: 14px;
@@ -886,13 +886,72 @@
   transition: background-color 0.15s ease;
 }
 
+.agent-btn-submit.is-deposit {
+  background: #059669;
+}
+
+.agent-btn-submit.is-deposit:hover:not(:disabled) {
+  background: #047857;
+}
+
+.agent-btn-submit.is-payout {
+  background: #b22c06;
+}
+
+.agent-btn-submit.is-payout:hover:not(:disabled) {
+  background: #991b1b;
+}
+
 .agent-btn-submit:hover:not(:disabled) {
-  background: #e04f29;
+  opacity: 0.95;
 }
 
 .agent-btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* --- Transact Modal Type Switcher --- */
+.agent-transact-type-toggle {
+  display: flex;
+  background-color: #f1f5f9;
+  padding: 4px;
+  border-radius: 10px;
+  gap: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.agent-type-btn {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.agent-type-btn img.type-icon {
+  display: block;
+}
+
+.agent-type-btn.active-deposit {
+  background-color: #059669;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+}
+
+.agent-type-btn.active-payout {
+  background-color: #b22c06;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(178, 44, 6, 0.25);
 }
 
 [data-theme='dark'] .agent-modal-card,
@@ -941,6 +1000,29 @@
   background: #1e293b;
   border-color: #334155;
   color: #cbd5e1;
+}
+
+[data-theme='dark'] .agent-transact-type-toggle,
+.dark .agent-transact-type-toggle {
+  background-color: #141f33;
+  border-color: #1e293b;
+}
+
+[data-theme='dark'] .agent-type-btn,
+.dark .agent-type-btn {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-type-btn.active-deposit,
+.dark .agent-type-btn.active-deposit {
+  background-color: #059669;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .agent-type-btn.active-payout,
+.dark .agent-type-btn.active-payout {
+  background-color: #b22c06;
+  color: #ffffff;
 }
 
 [data-theme='dark'] .tag-cancelled,

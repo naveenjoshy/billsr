@@ -390,6 +390,13 @@
   padding: 2px 8px;
 }
 
+.bank-card-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .bank-search {
   background: #f1f5f9;
   border: 0;
@@ -399,6 +406,94 @@
   min-height: 34px;
   padding: 0 12px;
   width: min(320px, 100%);
+}
+
+.bank-head-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bank-btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 12px;
+  min-height: 34px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bank-btn-refresh:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.bank-btn-refresh:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bank-topbar-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.bank-topbar-refresh:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.bank-topbar-refresh:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bank-refresh-icon.is-spinning {
+  animation: bankSpin 0.8s linear infinite;
+}
+
+@keyframes bankSpin {
+  to { transform: rotate(360deg); }
+}
+
+[data-theme='dark'] .bank-btn-refresh,
+.dark .bank-btn-refresh,
+[data-theme='dark'] .bank-topbar-refresh,
+.dark .bank-topbar-refresh {
+  background: #141f33;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .bank-btn-refresh:hover:not(:disabled),
+.dark .bank-btn-refresh:hover:not(:disabled),
+[data-theme='dark'] .bank-topbar-refresh:hover:not(:disabled),
+.dark .bank-topbar-refresh:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #475569;
+  color: #ffffff;
 }
 
 .bank-risk-row {

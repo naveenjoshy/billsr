@@ -59,6 +59,7 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   const [search, setSearch] = useState('')
   const [notice, setNotice] = useState('')
   const [approvingId, setApprovingId] = useState(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10))
 
   const loadDashboard = useCallback(async () => {
@@ -81,6 +82,18 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
       setTxLoading(false)
     }
   }, [page, search])
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await Promise.all([loadTransactions(), loadDashboard()])
+      setNotice('Live transactions and metrics reloaded.')
+    } catch (error) {
+      setNotice(error?.message || 'Failed to refresh transactions.')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -127,9 +140,11 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
       bank={bank}
       designation={dashboard?.user.designation}
       displayName={displayName}
+      isRefreshing={isRefreshing || txLoading}
       onDateChange={setSelectedDate}
       onLoggedOut={onLoggedOut}
       onNavigate={onNavigate}
+      onRefresh={handleRefresh}
       onUserUpdated={onUserUpdated}
       pendingCancellationsCount={kpis?.pendingCount ?? 0}
       selectedDate={selectedDate}
@@ -222,10 +237,36 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
 
           <section className="bank-card" id="approvals" aria-labelledby="receipts-title">
             <div className="bank-card-head">
-              <h2 id="receipts-title">
-                Live Receipts &amp; Approvals
-                {pendingTx > 0 && <span className="bank-action-pill">{pendingTx} Action Items</span>}
-              </h2>
+              <div className="bank-card-title-wrap">
+                <h2 id="receipts-title">
+                  Live Receipts &amp; Approvals
+                  {pendingTx > 0 && <span className="bank-action-pill">{pendingTx} Action Items</span>}
+                </h2>
+                <button
+                  type="button"
+                  className="bank-btn-refresh"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing || txLoading}
+                  title="Reload live transactions & metrics"
+                >
+                  <svg
+                    className={`bank-refresh-icon ${isRefreshing || txLoading ? 'is-spinning' : ''}`}
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="23 4 23 10 17 10" />
+                    <polyline points="1 20 1 14 7 14" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                  <span>{isRefreshing || txLoading ? 'Refreshing…' : 'Refresh'}</span>
+                </button>
+              </div>
               <input
                 aria-label="Search transactions"
                 className="bank-search"
