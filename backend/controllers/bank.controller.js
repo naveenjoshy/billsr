@@ -235,7 +235,26 @@ export async function listTransactions(req, res) {
     }
 
     // Date filter: specific date or range
-    if (req.query.date) {
+    if (req.query.startDate || req.query.endDate) {
+      const dateFilter = {}
+      if (req.query.startDate) {
+        const start = new Date(req.query.startDate)
+        if (!Number.isNaN(start.getTime())) {
+          start.setHours(0, 0, 0, 0)
+          dateFilter.$gte = start
+        }
+      }
+      if (req.query.endDate) {
+        const end = new Date(req.query.endDate)
+        if (!Number.isNaN(end.getTime())) {
+          end.setHours(23, 59, 59, 999)
+          dateFilter.$lte = end
+        }
+      }
+      if (Object.keys(dateFilter).length > 0) {
+        filter.collect_date = dateFilter
+      }
+    } else if (req.query.date) {
       const selectedDate = new Date(req.query.date)
       if (!Number.isNaN(selectedDate.getTime())) {
         const startOfDay = new Date(selectedDate)
@@ -835,6 +854,13 @@ export async function setAgentSuspension(req, res) {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'suspend must be a boolean (true or false)' })
     }
 
+    const trimmedReason = typeof reason === 'string' ? reason.trim() : ''
+    if (!trimmedReason) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        message: `Reason is required to ${suspend ? 'suspend' : 'reactivate'} an agent.`,
+      })
+    }
+
     const agent = await Agent.findOne({ _id: id, bank_id: bank._id }).populate('user_id', 'userID name email is_active')
     if (!agent) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.AGENT_NOT_FOUND })
@@ -861,13 +887,11 @@ export async function setAgentSuspension(req, res) {
     }
     await agent.save()
 
-    const justification = typeof reason === 'string' && reason.trim() ? reason.trim() : `Agent ${suspend ? 'suspended' : 'reactivated'} by bank admin`
-
     await AuditLog.create({
       collection_name: 'agents',
       document_id: agent._id,
       action: suspend ? 'SUSPEND' : 'ACTIVATE',
-      description: `${agent.user_id?.name || 'Agent'} (${agent.user_id?.userID || ''}) was ${suspend ? 'suspended' : 'reactivated'}: ${justification}`,
+      description: `${agent.user_id?.name || 'Agent'} (${agent.user_id?.userID || ''}) was ${suspend ? 'suspended' : 'reactivated'}: ${trimmedReason}`,
       changed_field: 'status',
       previous_value: previousStatus,
       new_value: nextStatus,

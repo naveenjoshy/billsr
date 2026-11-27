@@ -5,7 +5,8 @@ import ReallocateCustomers from '../components/ReallocateCustomers'
 import SuspendAgent from '../components/SuspendAgent'
 import BankShell from '../components/BankShell'
 import { dateText, initials, money } from '../components/bankShellUtils'
-import { getBankAgents, setAgentStatus, updateAgentLimit } from '../services/bankService'
+import { getBankAgents, updateAgentLimit } from '../services/bankService'
+import { useToast } from '../context/ToastContext'
 import './AgentManagementPage.css'
 
 const PAGE_SIZE = 5
@@ -43,6 +44,7 @@ function limitBarTone(agent) {
 }
 
 export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, onNavigate }) {
+  const { toast } = useToast()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -57,6 +59,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
 
   // Suspend & Reallocate modal state
   const [suspendingAgent, setSuspendingAgent] = useState(null)
+  const [reactivatingAgent, setReactivatingAgent] = useState(null)
   const [reallocatingAgent, setReallocatingAgent] = useState(null)
   const [showAuditModal, setShowAuditModal] = useState(false)
 
@@ -198,7 +201,9 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
         limit: numLimit,
         holdingDays: numDays,
       })
-      setNotice(`Updated cash parameters for ${adjustingAgent.name}.`)
+      const msg = `Updated cash parameters for ${adjustingAgent.name}.`
+      setNotice(msg)
+      toast.success(msg, 'Parameters Updated')
       setAdjustingAgent(null)
       await load()
     } catch (err) {
@@ -211,23 +216,10 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
   // Request Settlement Dispatch Alert
   const handleRequestSettlement = () => {
     if (!selected) return
-    setNotice(`Immediate settlement demand push notification dispatched to ${selected.name} (${selected.agentCode}).`)
+    const msg = `Immediate settlement demand push notification dispatched to ${selected.name} (${selected.agentCode}).`
+    setNotice(msg)
+    toast.info(msg, 'Settlement Demanded')
     setTimeout(() => setNotice(''), 6000)
-  }
-
-  // Reactivate Suspended Agent
-  const handleReactivateAgent = async (agentToReactivate) => {
-    if (!agentToReactivate) return
-    setLoading(true)
-    try {
-      const res = await setAgentStatus(agentToReactivate._id, false)
-      setNotice(res.message || `Access for ${agentToReactivate.name} has been restored.`)
-      await load()
-    } catch (err) {
-      setError(err.message || 'Failed to reactivate agent')
-    } finally {
-      setLoading(false)
-    }
   }
 
   return (
@@ -897,7 +889,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                     <button
                       type="button"
                       className="telemetry-btn-reactivate"
-                      onClick={() => handleReactivateAgent(selected)}
+                      onClick={() => setReactivatingAgent(selected)}
                       title="Reactivate agent portal login and collection access"
                     >
                       <svg viewBox="0 0 20 20" fill="currentColor">
@@ -983,7 +975,9 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
           onClose={() => setAdding(false)}
           onCreated={(created) => {
             setAdding(false)
-            setNotice(`Agent ${created.name} (${created.userID}) onboarded successfully.`)
+            const msg = `Agent ${created.name} (${created.userID}) onboarded successfully.`
+            setNotice(msg)
+            toast.success(msg, 'Agent Onboarded')
             setSelectedId(created._id)
             load()
           }}
@@ -994,6 +988,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
       {suspendingAgent && (
         <SuspendAgent
           agent={suspendingAgent}
+          action="suspend"
           onClose={() => setSuspendingAgent(null)}
           onOpenReallocate={(ag) => {
             const target = ag || suspendingAgent
@@ -1002,7 +997,23 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
           }}
           onSuccess={(msg) => {
             setNotice(msg)
+            toast.warning(msg, 'Agent Suspended')
             setSuspendingAgent(null)
+            load()
+          }}
+        />
+      )}
+
+      {/* Reactivate Agent Modal */}
+      {reactivatingAgent && (
+        <SuspendAgent
+          agent={reactivatingAgent}
+          action="reactivate"
+          onClose={() => setReactivatingAgent(null)}
+          onSuccess={(msg) => {
+            setNotice(msg)
+            toast.success(msg, 'Agent Reactivated')
+            setReactivatingAgent(null)
             load()
           }}
         />
@@ -1016,6 +1027,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
           onClose={() => setReallocatingAgent(null)}
           onSuccess={(msg) => {
             setNotice(msg)
+            toast.success(msg, 'Routes Reallocated')
             setReallocatingAgent(null)
             load()
           }}

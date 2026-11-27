@@ -648,6 +648,75 @@
   border-color: #6366f1;
 }
 
+.custom-date-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background-color: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-date-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.custom-date-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-date-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.filter-date-input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12.5px;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.filter-date-input:focus {
+  border-color: #6366f1;
+}
+
+.custom-date-sep {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.custom-date-clear-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.custom-date-clear-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
 .filter-chips-row {
   display: flex;
   align-items: center;
@@ -742,6 +811,27 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.table-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.table-print-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
 .live-badge {
@@ -1153,4 +1243,198 @@
   color: #334155;
   font-weight: 500;
   padding: 0 4px;
+}
+
+/* ==========================================================================
+   Report Print Styles
+   ========================================================================== */
+
+/* Hidden on normal screen view */
+.print-report-header,
+.print-report-footer {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 12mm 10mm 12mm 10mm;
+  }
+
+  /* Hide navigation, sidebars, interactive tools, search, dialogs, buttons */
+  .bank-sidebar,
+  .ledger-subbar,
+  .ledger-header,
+  .ledger-metrics-grid,
+  .ledger-filter-toolbar,
+  .action-notice-banner,
+  .am-modal-overlay,
+  .ledger-pagination-bar,
+  .copy-receipt-btn,
+  .th-actions,
+  .cell-actions,
+  .table-print-btn,
+  .um-avatar-btn,
+  .user-menu-wrapper,
+  .toast-container {
+    display: none !important;
+  }
+
+  /* Reset layout constraints for print */
+  html,
+  body,
+  #root,
+  .bank-shell,
+  .bank-main,
+  .ledger-page {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  .ledger-table-card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  .table-card-header {
+    display: none !important;
+  }
+
+  .ledger-table-wrapper {
+    overflow: visible !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+  }
+
+  .ledger-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
+  }
+
+  .ledger-table thead {
+    display: table-header-group !important;
+  }
+
+  .ledger-table th,
+  .ledger-table td {
+    padding: 6px 8px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+  }
+
+  .ledger-table th {
+    background-color: #f8fafc !important;
+    font-weight: 700 !important;
+    font-size: 9.5px !important;
+    color: #334155 !important;
+    text-transform: uppercase !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+  }
+
+  .ledger-row {
+    page-break-inside: avoid !important;
+  }
+
+  .ledger-row:nth-child(even) td {
+    background-color: #fbfcfe !important;
+  }
+
+  .amount-text {
+    font-weight: 700 !important;
+    font-size: 11px !important;
+  }
+
+  .amt-d {
+    color: #047857 !important;
+  }
+
+  .amt-w {
+    color: #b91c1c !important;
+  }
+
+  .status-pill,
+  .mode-badge,
+  .scheme-tag {
+    border: 1px solid #cbd5e1 !important;
+    font-size: 9px !important;
+    padding: 2px 5px !important;
+    background: #ffffff !important;
+  }
+
+  /* Show dedicated print header and footer */
+  .print-report-header {
+    display: block !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 2px solid #0f172a !important;
+  }
+
+  .print-header-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    margin-bottom: 8px !important;
+  }
+
+  .print-bank-name {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    letter-spacing: 0.03em !important;
+    text-transform: uppercase !important;
+  }
+
+  .print-report-title {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    margin: 2px 0 0 0 !important;
+  }
+
+  .print-meta-right {
+    font-size: 9.5px !important;
+    color: #475569 !important;
+    text-align: right !important;
+    line-height: 1.4 !important;
+  }
+
+  .print-filter-summary {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 6px !important;
+  }
+
+  .print-filter-pill {
+    display: inline-block !important;
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 4px !important;
+    padding: 2px 7px !important;
+    font-size: 9.5px !important;
+    color: #334155 !important;
+  }
+
+  .print-report-footer {
+    display: block !important;
+    margin-top: 14px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid #cbd5e1 !important;
+    font-size: 9px !important;
+    color: #64748b !important;
+    text-align: center !important;
+  }
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import BankShell from '../components/BankShell'
 import TransactionForensic from '../components/TransactionForensic'
 import { money } from '../components/bankShellUtils'
+import { useToast } from '../context/ToastContext'
 import {
   cancelBankTransaction,
   getBankDashboard,
@@ -31,6 +32,7 @@ export default function TransactionLedgerPage({
   activeView = 'ledger',
   initialFilters = null,
 }) {
+  const { toast } = useToast()
   // Bank and Shell Info
   const [dashboard, setDashboard] = useState(null)
 
@@ -38,6 +40,8 @@ export default function TransactionLedgerPage({
   const [search, setSearch] = useState(initialFilters?.search || '')
   const [searchInput, setSearchInput] = useState(initialFilters?.search || '')
   const [dateRange, setDateRange] = useState(initialFilters?.dateRange || 'all')
+  const [startDate, setStartDate] = useState(initialFilters?.startDate || '')
+  const [endDate, setEndDate] = useState(initialFilters?.endDate || '')
   const [scheme, setScheme] = useState(initialFilters?.scheme || 'all')
   const [agent, setAgent] = useState(initialFilters?.agent || 'all')
   const [initialAgentName] = useState(initialFilters?.agentName || '')
@@ -118,6 +122,8 @@ export default function TransactionLedgerPage({
         scheme,
         agent,
         dateRange,
+        startDate: dateRange === 'custom' && startDate ? startDate : undefined,
+        endDate: dateRange === 'custom' && endDate ? endDate : undefined,
       })
       setTxData(data)
       setError('')
@@ -126,7 +132,7 @@ export default function TransactionLedgerPage({
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, search, status, txnType, mode, scheme, agent, dateRange])
+  }, [page, pageSize, search, status, txnType, mode, scheme, agent, dateRange, startDate, endDate])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -138,6 +144,8 @@ export default function TransactionLedgerPage({
     setSearchInput('')
     setSearch('')
     setDateRange('all')
+    setStartDate('')
+    setEndDate('')
     setScheme('all')
     setAgent('all')
     setTxnType('all')
@@ -151,8 +159,28 @@ export default function TransactionLedgerPage({
     const list = []
     if (search) list.push({ key: 'search', label: `Search: "${search}"`, onClear: () => setSearchInput('') })
     if (dateRange !== 'all') {
-      const labelMap = { today: 'Today', week: 'This Week', month: 'This Month' }
-      list.push({ key: 'dateRange', label: `Date: ${labelMap[dateRange] || dateRange}`, onClear: () => setDateRange('all') })
+      if (dateRange === 'custom') {
+        const label =
+          startDate && endDate
+            ? `Dates: ${startDate} to ${endDate}`
+            : startDate
+              ? `From: ${startDate}`
+              : endDate
+                ? `Until: ${endDate}`
+                : 'Custom Date Range'
+        list.push({
+          key: 'dateRange',
+          label,
+          onClear: () => {
+            setDateRange('all')
+            setStartDate('')
+            setEndDate('')
+          },
+        })
+      } else {
+        const labelMap = { today: 'Today', week: 'This Week', month: 'This Month' }
+        list.push({ key: 'dateRange', label: `Date: ${labelMap[dateRange] || dateRange}`, onClear: () => setDateRange('all') })
+      }
     }
     if (scheme !== 'all') {
       const s = txData.filterOptions.schemes.find((x) => x._id === scheme)
@@ -173,7 +201,7 @@ export default function TransactionLedgerPage({
       list.push({ key: 'mode', label: `Mode: ${mode === 'C' ? 'Cash' : 'Transfer'}`, onClear: () => setMode('all') })
     }
     return list
-  }, [search, dateRange, scheme, agent, txnType, status, mode, txData.filterOptions, initialAgentName])
+  }, [search, dateRange, startDate, endDate, scheme, agent, txnType, status, mode, txData.filterOptions, initialAgentName])
 
   // Approve Cancellation handler
   const handleApproveCancellation = async () => {
@@ -182,11 +210,15 @@ export default function TransactionLedgerPage({
     setActionLoading(true)
     try {
       const res = await cancelBankTransaction(targetTxn._id, targetTxn.cancellationReason || 'Admin approved cancellation')
-      setActionNotice({ type: 'success', text: res.message || `Cancellation approved for receipt ${targetTxn.receiptNo}. Funds reversed.` })
+      const msg = res.message || `Cancellation approved for receipt ${targetTxn.receiptNo}. Funds reversed.`
+      setActionNotice({ type: 'success', text: msg })
+      toast.success(msg, 'Cancellation Approved')
       setReviewTxn(null)
       await fetchLedger()
     } catch (err) {
-      setActionNotice({ type: 'error', text: err.message || 'Failed to approve cancellation' })
+      const errText = err.message || 'Failed to approve cancellation'
+      setActionNotice({ type: 'error', text: errText })
+      toast.error(errText, 'Cancellation Error')
     } finally {
       setActionLoading(false)
     }
@@ -199,11 +231,15 @@ export default function TransactionLedgerPage({
     setActionLoading(true)
     try {
       const res = await rejectBankCancellation(targetTxn._id)
-      setActionNotice({ type: 'info', text: res.message || `Cancellation rejected. Receipt ${targetTxn.receiptNo} marked accepted.` })
+      const msg = res.message || `Cancellation rejected. Receipt ${targetTxn.receiptNo} marked accepted.`
+      setActionNotice({ type: 'info', text: msg })
+      toast.info(msg, 'Cancellation Rejected')
       setReviewTxn(null)
       await fetchLedger()
     } catch (err) {
-      setActionNotice({ type: 'error', text: err.message || 'Failed to reject cancellation' })
+      const errText = err.message || 'Failed to reject cancellation'
+      setActionNotice({ type: 'error', text: errText })
+      toast.error(errText, 'Cancellation Error')
     } finally {
       setActionLoading(false)
     }
@@ -251,6 +287,11 @@ export default function TransactionLedgerPage({
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  // Print Report handler
+  const handlePrintReport = () => {
+    window.print()
   }
 
   // Copy receipt number to clipboard
@@ -339,6 +380,19 @@ export default function TransactionLedgerPage({
                 <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
               Export Audit CSV
+            </button>
+
+            {/* Print Report Button */}
+            <button
+              type="button"
+              className="action-btn-secondary"
+              onClick={handlePrintReport}
+              title="Print transaction report currently displaying on screen"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="btn-icon">
+                <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
+              </svg>
+              Print Report
             </button>
 
             {/* Escalation Queue Button */}
@@ -494,6 +548,7 @@ export default function TransactionLedgerPage({
                 <option value="today">Today</option>
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
+                <option value="custom">Custom Date Range...</option>
               </select>
             </div>
 
@@ -593,6 +648,53 @@ export default function TransactionLedgerPage({
             </div>
           </div>
 
+          {/* Custom Date Range Picker Row */}
+          {dateRange === 'custom' && (
+            <div className="custom-date-row">
+              <span className="custom-date-hint">Select Dates:</span>
+              <div className="custom-date-field">
+                <label htmlFor="filter-start-date">From</label>
+                <input
+                  id="filter-start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => {
+                    setStartDate(e.target.value)
+                    setPage(1)
+                  }}
+                  className="filter-date-input"
+                />
+              </div>
+              <span className="custom-date-sep">to</span>
+              <div className="custom-date-field">
+                <label htmlFor="filter-end-date">To</label>
+                <input
+                  id="filter-end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => {
+                    setEndDate(e.target.value)
+                    setPage(1)
+                  }}
+                  className="filter-date-input"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  className="custom-date-clear-btn"
+                  onClick={() => {
+                    setStartDate('')
+                    setEndDate('')
+                    setPage(1)
+                  }}
+                >
+                  Clear Range
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Active Filter Tags Row */}
           <div className="filter-chips-row">
             <div className="active-chips-list">
@@ -622,8 +724,92 @@ export default function TransactionLedgerPage({
 
         {/* Ledger Table Section */}
         <section className="ledger-table-card" aria-label="Direct Agent Ledger Stream">
+          {/* Dedicated Print Report Header (visible only during window.print) */}
+          <div className="print-report-header" aria-hidden="true">
+            <div className="print-header-top">
+              <div>
+                <h1 className="print-bank-name">{dashboard?.bank?.name || 'BILLSR COOPERATIVE BANK'}</h1>
+                <h2 className="print-report-title">Transaction &amp; Cancellation Audit Ledger</h2>
+              </div>
+              <div className="print-meta-right">
+                <div><strong>Printed:</strong> {new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                <div><strong>Generated By:</strong> {user?.name || dashboard?.user?.name || 'Administrator'}</div>
+              </div>
+            </div>
+
+            <div className="print-filter-summary">
+              <span className="print-filter-pill">
+                <strong>Date Range:</strong>{' '}
+                {dateRange === 'custom'
+                  ? `${startDate || 'Start'} to ${endDate || 'End'}`
+                  : dateRange === 'today'
+                  ? 'Today'
+                  : dateRange === 'week'
+                  ? 'This Week'
+                  : dateRange === 'month'
+                  ? 'This Month'
+                  : 'All Dates'}
+              </span>
+              {agent !== 'all' && (
+                <span className="print-filter-pill">
+                  <strong>Agent:</strong>{' '}
+                  {txData.filterOptions.agents.find((a) => a._id === agent)?.name || initialAgentName || agent}
+                </span>
+              )}
+              {scheme !== 'all' && (
+                <span className="print-filter-pill">
+                  <strong>Scheme:</strong>{' '}
+                  {txData.filterOptions.schemes.find((s) => s._id === scheme)?.name || scheme}
+                </span>
+              )}
+              {txnType !== 'all' && (
+                <span className="print-filter-pill">
+                  <strong>Type:</strong> {txnType === 'D' ? 'Deposit (D)' : 'Withdrawal (W)'}
+                </span>
+              )}
+              {status !== 'all' && (
+                <span className="print-filter-pill">
+                  <strong>Status:</strong>{' '}
+                  {status === 'P' ? 'Pending Review' : status === 'A' ? 'Accepted' : status === 'C' ? 'Cancelled' : status}
+                </span>
+              )}
+              {mode !== 'all' && (
+                <span className="print-filter-pill">
+                  <strong>Mode:</strong> {mode === 'C' ? 'Cash' : 'Transfer'}
+                </span>
+              )}
+              {search && (
+                <span className="print-filter-pill">
+                  <strong>Keyword:</strong> &quot;{search}&quot;
+                </span>
+              )}
+              <span className="print-filter-pill">
+                <strong>Showing:</strong> {startEntry}–{endEntry} of {txData.total}
+              </span>
+              <span className="print-filter-pill">
+                <strong>Total Deposits:</strong> {money(totalVolumeToday.deposits ?? 0)}
+              </span>
+              <span className="print-filter-pill">
+                <strong>Total Withdrawals:</strong> {money(totalVolumeToday.withdrawals ?? 0)}
+              </span>
+            </div>
+          </div>
+
           <div className="table-card-header">
             <h2 className="table-title">Transactions</h2>
+            <div className="table-header-meta">
+              <button
+                type="button"
+                className="table-print-btn"
+                onClick={handlePrintReport}
+                title="Print current transactions"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="btn-icon">
+                  <path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clipRule="evenodd" />
+                </svg>
+                Print Report
+              </button>
+            </div>
           </div>
 
           <div className="ledger-table-wrapper">
@@ -781,6 +967,11 @@ export default function TransactionLedgerPage({
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Dedicated Print Report Footer (visible only during window.print) */}
+          <div className="print-report-footer" aria-hidden="true">
+            <span>Billsr Treasury Operations • Official Transaction Ledger Report • Page {page} of {Math.max(1, Math.ceil(txData.total / pageSize))}</span>
           </div>
 
           {/* Pagination Footer */}

@@ -18,6 +18,8 @@ export const getBankTransactions = (query = {}) => {
   if (query.scheme && query.scheme !== 'all') params.set('scheme', query.scheme)
   if (query.agent && query.agent !== 'all') params.set('agent', query.agent)
   if (query.dateRange && query.dateRange !== 'all') params.set('dateRange', query.dateRange)
+  if (query.startDate) params.set('startDate', query.startDate)
+  if (query.endDate) params.set('endDate', query.endDate)
   return request(`/api/bank/transactions?${params.toString()}`)
 }
 

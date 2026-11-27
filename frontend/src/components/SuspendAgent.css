@@ -298,3 +298,57 @@
 .am-modal-btn-danger:hover {
   background-color: #b91c1c;
 }
+
+.field-required-asterisk {
+  color: #dc2626;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.am-suspend-icon-circle.is-reactivate {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.am-suspend-info-box {
+  background-color: #f0fdf4;
+  border-left: 4px solid #16a34a;
+  padding: 12px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.am-suspend-info-box .info-box-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 4px;
+}
+
+.am-suspend-info-box p {
+  font-size: 12px;
+  color: #14532d;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.am-modal-btn-success {
+  background-color: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.am-modal-btn-success:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.am-modal-btn-success:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

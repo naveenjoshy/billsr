@@ -2,10 +2,18 @@ import { useEffect, useState } from 'react'
 import { setAgentStatus } from '../services/bankService'
 import './SuspendAgent.css'
 
-export default function SuspendAgent({ agent, onClose, onSuccess, onOpenReallocate }) {
+export default function SuspendAgent({
+  agent,
+  action = 'suspend',
+  onClose,
+  onSuccess,
+  onOpenReallocate,
+}) {
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  const isReactivate = action === 'reactivate'
 
   // Escape key listener to close modal
   useEffect(() => {
@@ -24,14 +32,22 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
 
   const handleConfirm = async (e) => {
     e.preventDefault()
+    const trimmedReason = reason.trim()
+    if (!trimmedReason) {
+      setError(`Reason for ${isReactivate ? 'reactivation' : 'suspension'} is required.`)
+      return
+    }
     setSubmitting(true)
     setError('')
     try {
-      const res = await setAgentStatus(agent._id, true, reason.trim())
-      onSuccess?.(res.message || `Agent ${agent.name} has been suspended.`)
+      const res = await setAgentStatus(agent._id, !isReactivate, trimmedReason)
+      onSuccess?.(
+        res.message ||
+          `Agent ${agent.name} has been ${isReactivate ? 'reactivated' : 'suspended'}.`,
+      )
       onClose?.()
     } catch (err) {
-      setError(err.message || 'Failed to suspend agent.')
+      setError(err.message || `Failed to ${isReactivate ? 'reactivate' : 'suspend'} agent.`)
     } finally {
       setSubmitting(false)
     }
@@ -53,21 +69,33 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
       >
         <div className="am-modal-header">
           <div className="am-suspend-header-wrap">
-            <div className="am-suspend-icon-circle">
-              <svg viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
+            <div className={`am-suspend-icon-circle ${isReactivate ? 'is-reactivate' : ''}`}>
+              {isReactivate ? (
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              )}
             </div>
             <div>
               <h3 id="suspend-modal-title" className="am-modal-title">
-                Suspend Agent Access
+                {isReactivate ? 'Reactivate Agent Access' : 'Suspend Agent Access'}
               </h3>
               <p className="am-suspend-subtitle">
-                Revoke portal access and collection privileges
+                {isReactivate
+                  ? 'Restore portal access and collection privileges'
+                  : 'Revoke portal access and collection privileges'}
               </p>
             </div>
           </div>
@@ -106,14 +134,23 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
             </div>
           </div>
 
-          <div className="am-suspend-warning-box">
-            <div className="warning-box-title">Security &amp; Operational Notice</div>
-            <p>
-              Suspending this agent will immediately log them out and block them from collecting payments or accessing the Billsr application.
-            </p>
-          </div>
+          {isReactivate ? (
+            <div className="am-suspend-info-box">
+              <div className="info-box-title">Reactivation Notice</div>
+              <p>
+                Reactivating this agent will restore their portal access and permit them to resume field collections and login to the Billsr application.
+              </p>
+            </div>
+          ) : (
+            <div className="am-suspend-warning-box">
+              <div className="warning-box-title">Security &amp; Operational Notice</div>
+              <p>
+                Suspending this agent will immediately log them out and block them from collecting payments or accessing the Billsr application.
+              </p>
+            </div>
+          )}
 
-          {customerCount > 0 && (
+          {!isReactivate && customerCount > 0 && (
             <div className="am-suspend-reallocate-callout">
               <div className="reallocate-callout-content">
                 <strong>Active Route Notice</strong>
@@ -136,16 +173,25 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
 
           <div className="am-modal-field">
             <label htmlFor="suspend-reason">
-              Reason for Suspension (Audit note)
+              {isReactivate ? 'Reason for Reactivation' : 'Reason for Suspension'}{' '}
+              <span className="field-required-asterisk">*</span>
             </label>
             <input
               id="suspend-reason"
               type="text"
-              placeholder="e.g., Extended leave, device misplaced, route reorganization"
+              placeholder={
+                isReactivate
+                  ? 'e.g., Leave ended, device recovered, compliance clearance completed'
+                  : 'e.g., Extended leave, device misplaced, route reorganization'
+              }
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                setReason(e.target.value)
+                if (error) setError('')
+              }}
               disabled={submitting}
               maxLength={200}
+              required
             />
           </div>
 
@@ -160,10 +206,16 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
             </button>
             <button
               type="submit"
-              className="am-modal-btn-danger"
+              className={isReactivate ? 'am-modal-btn-success' : 'am-modal-btn-danger'}
               disabled={submitting}
             >
-              {submitting ? 'Suspending…' : 'Confirm Suspension'}
+              {submitting
+                ? isReactivate
+                  ? 'Reactivating…'
+                  : 'Suspending…'
+                : isReactivate
+                  ? 'Confirm Reactivation'
+                  : 'Confirm Suspension'}
             </button>
           </div>
         </form>

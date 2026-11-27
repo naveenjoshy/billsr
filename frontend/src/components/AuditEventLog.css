@@ -492,3 +492,71 @@
   font-size: 12px;
   color: #94a3b8;
 }
+
+.ael-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ael-print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ael-print-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.ael-print-btn .btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
+@media print {
+  .am-modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .audit-modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .am-modal-close,
+  .ael-controls-bar,
+  .ael-print-btn,
+  .am-modal-btn-cancel {
+    display: none !important;
+  }
+
+  .ael-events-list {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .ael-event-card {
+    page-break-inside: avoid !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+  }
+}
