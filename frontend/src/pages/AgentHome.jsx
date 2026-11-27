@@ -52,6 +52,7 @@ export default function AgentHome({ user, onLoggedOut }) {
   // Quick Operation Modal State
   const [transactModalOpen, setTransactModalOpen] = useState(false)
   const [transactType, setTransactType] = useState('D')
+  const [transactMode, setTransactMode] = useState('C')
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
   const [selectedSchemeId, setSelectedSchemeId] = useState('')
   const [amount, setAmount] = useState('')
@@ -152,10 +153,10 @@ export default function AgentHome({ user, onLoggedOut }) {
         schemeId: selectedSchemeId || undefined,
         amount: parsedAmount,
         type: transactType,
-        mode: 'C',
+        mode: transactMode,
       })
       toast.success(
-        `Receipt #${res.transaction?.receiptNo || 'REC'} for ₹${parsedAmount.toLocaleString('en-IN')} confirmed.`,
+        `Receipt #${res.transaction?.receiptNo || 'REC'} for ₹${parsedAmount.toLocaleString('en-IN')} (${transactMode === 'C' ? 'Cash' : 'Transfer'}) confirmed.`,
         `${transactType === 'D' ? 'Deposit' : 'Payout'} Recorded`,
         3000,
       )
@@ -638,7 +639,11 @@ export default function AgentHome({ user, onLoggedOut }) {
         >
           <div className="agent-modal-card">
             <div className="agent-modal-head">
-              <h3>{transactType === 'D' ? 'New Cash Deposit' : 'New Payout Voucher'}</h3>
+              <h3>
+                {transactType === 'D'
+                  ? `New ${transactMode === 'C' ? 'Cash' : 'Transfer'} Deposit`
+                  : `New ${transactMode === 'C' ? 'Cash' : 'Transfer'} Payout Voucher`}
+              </h3>
               <button
                 type="button"
                 className="agent-modal-close"
@@ -711,6 +716,39 @@ export default function AgentHome({ user, onLoggedOut }) {
                     <option value="">Default Scheme</option>
                   )}
                 </select>
+              </div>
+
+              <div className="agent-form-field">
+                <label>Transaction Mode</label>
+                <div className="agent-transact-mode-toggle" role="radiogroup" aria-label="Transaction Mode">
+                  <button
+                    type="button"
+                    className={`agent-mode-btn ${transactMode === 'C' ? 'active' : ''}`}
+                    onClick={() => setTransactMode('C')}
+                    disabled={isSubmittingTx}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="6" width="20" height="12" rx="2" />
+                      <circle cx="12" cy="12" r="2" />
+                      <path d="M6 12h.01M18 12h.01" />
+                    </svg>
+                    <span>Cash (C)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`agent-mode-btn ${transactMode === 'T' ? 'active' : ''}`}
+                    onClick={() => setTransactMode('T')}
+                    disabled={isSubmittingTx}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="17 1 21 5 17 9" />
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                      <polyline points="7 23 3 19 7 15" />
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                    </svg>
+                    <span>Transfer (T)</span>
+                  </button>
+                </div>
               </div>
 
               <div className="agent-form-field">

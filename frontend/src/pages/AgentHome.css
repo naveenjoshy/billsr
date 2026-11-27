@@ -954,6 +954,47 @@
   box-shadow: 0 2px 4px rgba(178, 44, 6, 0.25);
 }
 
+/* --- Transaction Mode Selector (Cash / Transfer) --- */
+.agent-transact-mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.agent-mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-mode-btn:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.agent-mode-btn.active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.agent-mode-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 [data-theme='dark'] .agent-modal-card,
 .dark .agent-modal-card {
   background: #0f172a;
@@ -1022,6 +1063,27 @@
 [data-theme='dark'] .agent-type-btn.active-payout,
 .dark .agent-type-btn.active-payout {
   background-color: #b22c06;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .agent-mode-btn,
+.dark .agent-mode-btn {
+  background: #141f33;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-mode-btn:hover:not(:disabled),
+.dark .agent-mode-btn:hover:not(:disabled) {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-mode-btn.active,
+.dark .agent-mode-btn.active {
+  background: #ff633b;
+  border-color: #ff633b;
   color: #ffffff;
 }
 

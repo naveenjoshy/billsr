@@ -150,7 +150,6 @@ export default function TransactionLedgerPage({
   }, [page, pageSize, search, status, txnType, mode, scheme, agent, dateRange, startDate, endDate])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchLedger()
   }, [fetchLedger])
 
