@@ -245,3 +245,109 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+/* ==========================================================================
+   Dark Mode Overrides for UserMenu
+   ========================================================================== */
+
+[data-theme='dark'] .um-menu,
+.dark .um-menu {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 10px 25px -3px rgb(0 0 0 / 50%);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .um-menu-head,
+.dark .um-menu-head {
+  border-bottom: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .um-menu-head span,
+.dark .um-menu-head span {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .um-menu button,
+.dark .um-menu button {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .um-menu button:hover,
+[data-theme='dark'] .um-menu button:focus-visible,
+.dark .um-menu button:hover,
+.dark .um-menu button:focus-visible {
+  background: #141f33;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .um-logout,
+.dark .um-logout {
+  color: #f87171;
+}
+
+[data-theme='dark'] .um-logout:hover,
+.dark .um-logout:hover {
+  background: rgb(220 38 38 / 15%) !important;
+  color: #ef4444 !important;
+}
+
+[data-theme='dark'] .um-backdrop,
+.dark .um-backdrop {
+  background: rgb(0 0 0 / 70%);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme='dark'] .um-modal,
+.dark .um-modal {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 70%);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .um-modal h2,
+.dark .um-modal h2 {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .um-field,
+.dark .um-field {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .um-field input,
+.dark .um-field input {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .um-field input:focus,
+.dark .um-field input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+  outline: none;
+}
+
+[data-theme='dark'] .um-field input:disabled,
+.dark .um-field input:disabled {
+  background: #080c16;
+  border-color: #1e293b;
+  color: #64748b;
+}
+
+[data-theme='dark'] .um-cancel,
+.dark .um-cancel {
+  background: #141f33;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .um-cancel:hover,
+.dark .um-cancel:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+

@@ -1317,3 +1317,541 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Dark Mode Overrides for SuperAdminHomePage & Sub-windows
+   ========================================================================== */
+
+[data-theme='dark'] .admin-shell,
+.dark .admin-shell {
+  background: #090d16;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .admin-sidebar,
+.dark .admin-sidebar {
+  background: #05080f;
+  border-right: 1px solid #1e293b;
+}
+
+[data-theme='dark'] .admin-topbar,
+.dark .admin-topbar {
+  background: rgb(15 23 42 / 92%);
+  border-bottom: 1px solid #1e293b;
+  box-shadow: 0 1px 8px rgb(0 0 0 / 30%);
+}
+
+[data-theme='dark'] .admin-global-search,
+[data-theme='dark'] .admin-table-search,
+.dark .admin-global-search,
+.dark .admin-table-search {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+}
+
+[data-theme='dark'] .admin-global-search input,
+[data-theme='dark'] .admin-table-search input,
+.dark .admin-global-search input,
+.dark .admin-table-search input {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-global-search input::placeholder,
+[data-theme='dark'] .admin-table-search input::placeholder,
+.dark .admin-global-search input::placeholder,
+.dark .admin-table-search input::placeholder {
+  color: #64748b;
+}
+
+[data-theme='dark'] .admin-global-search:focus-within,
+[data-theme='dark'] .admin-table-search:focus-within,
+.dark .admin-global-search:focus-within,
+.dark .admin-table-search:focus-within {
+  border-color: #3b82f6;
+  outline: 2px solid rgb(59 130 246 / 30%);
+}
+
+[data-theme='dark'] .admin-notifications,
+.dark .admin-notifications {
+  border-right-color: #1e293b;
+}
+
+[data-theme='dark'] .admin-notifications i,
+.dark .admin-notifications i {
+  border-color: #0f172a;
+}
+
+[data-theme='dark'] .admin-user strong,
+.dark .admin-user strong {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-user span,
+.dark .admin-user span {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-page-heading h1,
+.dark .admin-page-heading h1 {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-page-heading p,
+.dark .admin-page-heading p {
+  color: #94a3b8;
+}
+
+/* --- Summary Cards --- */
+[data-theme='dark'] .admin-summary-card,
+.dark .admin-summary-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+[data-theme='dark'] .admin-summary-label,
+.dark .admin-summary-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-summary-expiring .admin-summary-label,
+.dark .admin-summary-expiring .admin-summary-label {
+  color: #f59e0b;
+}
+
+[data-theme='dark'] .admin-summary-suspended .admin-summary-label,
+.dark .admin-summary-suspended .admin-summary-label {
+  color: #ef4444;
+}
+
+[data-theme='dark'] .admin-summary-value strong,
+.dark .admin-summary-value strong {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-summary-value span,
+.dark .admin-summary-value span {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-summary-detail,
+.dark .admin-summary-detail {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-summary-banks .admin-summary-detail,
+.dark .admin-summary-banks .admin-summary-detail {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .admin-summary-expiring .admin-summary-detail,
+.dark .admin-summary-expiring .admin-summary-detail {
+  color: #f59e0b;
+}
+
+[data-theme='dark'] .admin-summary-grace .admin-summary-detail,
+.dark .admin-summary-grace .admin-summary-detail {
+  color: #818cf8;
+}
+
+[data-theme='dark'] .admin-summary-suspended .admin-summary-detail,
+.dark .admin-summary-suspended .admin-summary-detail {
+  color: #ef4444;
+}
+
+/* --- Registry Table Card & Toolbar --- */
+[data-theme='dark'] .admin-registry-card,
+.dark .admin-registry-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+[data-theme='dark'] .admin-filter-tabs button,
+.dark .admin-filter-tabs button {
+  background: #141f33;
+  border: 1px solid #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-filter-tabs button:hover,
+.dark .admin-filter-tabs button:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-filter-tabs button.is-active,
+.dark .admin-filter-tabs button.is-active {
+  background: #1e293b;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-bank-table th,
+.dark .admin-bank-table th {
+  background: #141f33;
+  border-bottom: 1px solid #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-bank-table td,
+.dark .admin-bank-table td {
+  border-bottom: 1px solid #1e293b;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .admin-bank-table tbody tr:hover,
+.dark .admin-bank-table tbody tr:hover {
+  background: rgb(30 41 59 / 40%);
+}
+
+[data-theme='dark'] .admin-bank-table tbody tr.admin-row-selected,
+.dark .admin-bank-table tbody tr.admin-row-selected {
+  background: rgb(30 41 59 / 60%);
+}
+
+[data-theme='dark'] .admin-bank-monogram,
+.dark .admin-bank-monogram {
+  background: #1e293b;
+  color: #93c5fd;
+}
+
+[data-theme='dark'] .admin-monogram-grace,
+.dark .admin-monogram-grace {
+  background: rgb(217 119 6 / 15%);
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .admin-monogram-expiring,
+.dark .admin-monogram-expiring {
+  background: rgb(59 130 246 / 15%);
+  color: #60a5fa;
+}
+
+[data-theme='dark'] .admin-monogram-suspended,
+.dark .admin-monogram-suspended {
+  background: rgb(220 38 38 / 15%);
+  color: #f87171;
+}
+
+[data-theme='dark'] .admin-bank-copy strong,
+.dark .admin-bank-copy strong {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-bank-copy small,
+.dark .admin-bank-copy small {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-expiry-cell,
+.dark .admin-expiry-cell {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .admin-status-active,
+.dark .admin-status-active {
+  background: rgb(16 185 129 / 15%);
+  color: #34d399;
+}
+
+[data-theme='dark'] .admin-status-grace,
+[data-theme='dark'] .admin-status-expiring,
+.dark .admin-status-grace,
+.dark .admin-status-expiring {
+  background: rgb(245 158 11 / 15%);
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .admin-status-suspended,
+.dark .admin-status-suspended {
+  background: rgb(239 68 68 / 15%);
+  color: #f87171;
+}
+
+[data-theme='dark'] .admin-row-action,
+[data-theme='dark'] .admin-icon-button,
+.dark .admin-row-action,
+.dark .admin-icon-button {
+  background: #141f33;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .admin-row-action:hover,
+[data-theme='dark'] .admin-icon-button:hover,
+.dark .admin-row-action:hover,
+.dark .admin-icon-button:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-row-action-primary,
+.dark .admin-row-action-primary {
+  background: var(--admin-red);
+  border: 0;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-row-action-primary:hover,
+.dark .admin-row-action-primary:hover {
+  background: #982608;
+}
+
+[data-theme='dark'] .admin-table-footer,
+.dark .admin-table-footer {
+  color: #64748b;
+}
+
+[data-theme='dark'] .admin-pagination button,
+.dark .admin-pagination button {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .admin-pagination button:hover,
+.dark .admin-pagination button:hover {
+  background: #141f33;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-pagination button.is-current,
+.dark .admin-pagination button.is-current {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-pagination img,
+.dark .admin-pagination img {
+  filter: brightness(1.6);
+}
+
+/* ==========================================================================
+   Sub-Window 1: License Authority Master Override Panel
+   ========================================================================== */
+
+[data-theme='dark'] .admin-authority-card,
+.dark .admin-authority-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 50%);
+}
+
+[data-theme='dark'] .admin-authority-heading h2,
+.dark .admin-authority-heading h2 {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-authority-heading p,
+.dark .admin-authority-heading p {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-authority-heading code,
+.dark .admin-authority-heading code {
+  background: #141f33;
+  border: 1px solid #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-authority-close,
+.dark .admin-authority-close {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-authority-close:hover,
+.dark .admin-authority-close:hover {
+  background: #141f33;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-entity-summary,
+.dark .admin-entity-summary {
+  background: #141f33;
+  border: 1px solid #1e293b;
+}
+
+[data-theme='dark'] .admin-entity-name-row > strong,
+.dark .admin-entity-name-row > strong {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-entity-summary p,
+.dark .admin-entity-summary p {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-entity-summary p strong,
+.dark .admin-entity-summary p strong {
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .admin-expiry-warning,
+.dark .admin-expiry-warning {
+  background: rgb(245 158 11 / 15%);
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .admin-control-label,
+.dark .admin-control-label {
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .admin-extension-options button,
+.dark .admin-extension-options button {
+  background: #141f33;
+  border: 1px solid #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .admin-extension-options button:hover,
+.dark .admin-extension-options button:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-extension-options button.is-selected,
+[data-theme='dark'] .admin-custom-date-button.is-selected,
+.dark .admin-extension-options button.is-selected,
+.dark .admin-custom-date-button.is-selected {
+  background: #1e293b;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px var(--admin-red);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-justification-input,
+.dark .admin-justification-input {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-justification-input:focus,
+.dark .admin-justification-input:focus {
+  border-color: #3b82f6;
+  outline: 2px solid rgb(59 130 246 / 30%);
+}
+
+[data-theme='dark'] .admin-custom-date,
+.dark .admin-custom-date {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-custom-date input,
+.dark .admin-custom-date input {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-custom-date input:focus,
+.dark .admin-custom-date input:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+[data-theme='dark'] .admin-suspend-button,
+.dark .admin-suspend-button {
+  background: rgb(220 38 38 / 15%);
+  border: 1px solid rgb(220 38 38 / 30%);
+  color: #f87171;
+}
+
+[data-theme='dark'] .admin-suspend-button:hover,
+.dark .admin-suspend-button:hover {
+  background: rgb(220 38 38 / 25%);
+  border-color: rgb(220 38 38 / 50%);
+  color: #fca5a5;
+}
+
+/* ==========================================================================
+   Sub-Window 2: Onboard Bank Tenant Modal
+   ========================================================================== */
+
+[data-theme='dark'] .admin-modal-backdrop,
+.dark .admin-modal-backdrop {
+  background: rgb(0 0 0 / 75%);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme='dark'] .admin-modal,
+.dark .admin-modal {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 70%);
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .admin-modal h2,
+.dark .admin-modal h2 {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-modal fieldset,
+.dark .admin-modal fieldset {
+  background: rgb(15 23 42 / 60%);
+  border: 1px solid #1e293b;
+}
+
+[data-theme='dark'] .admin-modal legend,
+.dark .admin-modal legend {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-form-field,
+.dark .admin-form-field {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .admin-form-field label,
+.dark .admin-form-field label {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .admin-form-field input,
+[data-theme='dark'] .admin-form-field select,
+.dark .admin-form-field input,
+.dark .admin-form-field select {
+  background: #0b1120;
+  border: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .admin-form-field input:focus,
+[data-theme='dark'] .admin-form-field select:focus,
+.dark .admin-form-field input:focus,
+.dark .admin-form-field select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+  outline: none;
+}
+
+[data-theme='dark'] .admin-form-field input::placeholder,
+.dark .admin-form-field input::placeholder {
+  color: #475569;
+}
+
+[data-theme='dark'] .admin-modal-cancel,
+.dark .admin-modal-cancel {
+  background: #141f33;
+  border: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+
+[data-theme='dark'] .admin-modal-cancel:hover,
+.dark .admin-modal-cancel:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-modal-submit,
+.dark .admin-modal-submit {
+  background: var(--admin-red);
+  color: #ffffff;
+}
+
+[data-theme='dark'] .admin-modal-submit:hover,
+.dark .admin-modal-submit:hover {
+  background: #982608;
+}
+
