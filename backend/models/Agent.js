@@ -11,6 +11,7 @@ const AgentSchema = new mongoose.Schema({
   agent_id_type: { type: String },
   password_reset_flag: { type: Boolean, default: true },
   last_password_change_date: { type: Date },
+  status: { type: String, enum: ['Active', 'Suspended'], default: 'Active' },
   cash_holding_limit: { type: mongoose.Schema.Types.Decimal128, required: true },
   cash_holding_days: { type: Number, required: true }, // Representing integer parameters
   audit_trail: {

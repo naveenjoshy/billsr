@@ -1,0 +1,155 @@
+.am-suspend-modal {
+  max-width: 480px;
+  width: 100%;
+}
+
+.am-suspend-header-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.am-suspend-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #fee2e2;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.am-suspend-icon-circle svg {
+  width: 22px;
+  height: 22px;
+}
+
+.am-suspend-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.am-suspend-agent-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.am-suspend-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.am-suspend-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.am-suspend-agent-meta strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.am-suspend-agent-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.am-suspend-warning-box {
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.warning-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9f1239;
+  margin-bottom: 4px;
+}
+
+.am-suspend-warning-box p {
+  font-size: 12px;
+  color: #be123c;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.am-suspend-reallocate-callout {
+  background-color: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reallocate-callout-content strong {
+  font-size: 12px;
+  color: #0f766e;
+}
+
+.reallocate-callout-content p {
+  font-size: 12px;
+  color: #115e59;
+  margin: 4px 0 0;
+}
+
+.am-btn-reallocate-prompt {
+  align-self: flex-start;
+  background-color: #0d9488;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.am-btn-reallocate-prompt:hover {
+  background-color: #0f766e;
+}
+
+.am-modal-btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.am-modal-btn-danger:hover {
+  background-color: #b91c1c;
+}

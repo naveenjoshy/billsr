@@ -1,0 +1,249 @@
+.am-reallocate-modal {
+  max-width: 580px;
+  width: 100%;
+}
+
+.am-reallocate-header-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.am-reallocate-icon-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #ccfbf1;
+  color: #0d9488;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.am-reallocate-icon-circle svg {
+  width: 22px;
+  height: 22px;
+}
+
+.am-reallocate-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.am-reallocate-source-card {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.source-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.source-agent-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.source-agent-details strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.agent-badge-code {
+  background-color: #e2e8f0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.agent-vendor-pill {
+  background-color: #dbeafe;
+  color: #1e40af;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: auto;
+}
+
+.req-star {
+  color: #dc2626;
+}
+
+.am-select-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #0f172a;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.am-select-control:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.am-scope-tabs {
+  display: flex;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.scope-tab-btn {
+  flex: 1;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.scope-tab-btn.is-active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.am-vendor-selection-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.vendor-panel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.vendor-search-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #0f172a;
+  outline: none;
+}
+
+.vendor-search-input:focus {
+  border-color: #0d9488;
+}
+
+.vendor-bulk-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-select-mini {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #475569;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.btn-select-mini:hover {
+  background: #f1f5f9;
+}
+
+.vendor-checkbox-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 6px 0;
+  background: #ffffff;
+}
+
+.vendor-item-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.vendor-item-row:hover {
+  background-color: #f8fafc;
+}
+
+.vendor-item-row.is-checked {
+  background-color: #f0fdfa;
+}
+
+.vendor-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.vendor-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vendor-name {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.vendor-shop {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.vendor-sub-row {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.vendor-list-loading,
+.vendor-list-empty {
+  padding: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.am-transfer-summary-box {
+  background-color: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #166534;
+  margin-bottom: 16px;
+}

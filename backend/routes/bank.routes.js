@@ -7,10 +7,13 @@ import {
   createScheme,
   deleteScheme,
   getDashboard,
+  listAgentCustomers,
   listAgents,
   listSchemes,
   listTransactions,
+  reallocateAgentCustomers,
   rejectCancellation,
+  setAgentSuspension,
   updateAgentLimit,
   updateScheme,
 } from '../controllers/bank.controller.js'
@@ -23,6 +26,10 @@ router.get('/dashboard', getDashboard)
 router.get('/agents', listAgents)
 router.post('/agents', validateAddAgent, createAgent)
 router.put('/agents/:id/limit', updateAgentLimit)
+router.put('/agents/:id/status', setAgentSuspension)
+router.post('/agents/:id/suspension', setAgentSuspension)
+router.get('/agents/:id/customers', listAgentCustomers)
+router.post('/agents/reallocate-customers', reallocateAgentCustomers)
 router.get('/transactions', listTransactions)
 router.post('/transactions/:id/approve', approveTransaction)
 router.post('/transactions/:id/cancel', cancelTransaction)

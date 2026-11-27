@@ -413,8 +413,6 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
           <div className="schemes-breadcrumb">
             <span className="crumb-category">FINANCIAL PRODUCTS & HARDWARE TEMPLATES</span>
             <span className="crumb-divider">•</span>
-            <span className="crumb-table">tbl_mt_schemes</span>
-            <span className="crumb-divider">•</span>
             <span className="crumb-sync">
               <span className="sync-dot" />
               Synchronized Core

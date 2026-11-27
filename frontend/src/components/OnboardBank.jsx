@@ -1,27 +1,26 @@
 import { useEffect, useState } from 'react'
-import { addAgent } from '../services/bankService'
+import { onboardBank } from '../services/adminService'
 import { checkUserIdAvailability } from '../services/authService'
-import { HTTP_URL, PHONE, validateEmail, validateName, validateUserID } from '../utils/validators'
-import './AddAgentModal.css'
+import { PHONE, validateEmail, validateName, validateUserID } from '../utils/validators'
 
 const emptyForm = {
   user: { userID: '', name: '', email: '', password: '' },
-  agent: {
+  bank: {
+    bank_name: '',
     address: '',
-    phone_no: '',
-    agent_id_type: '',
-    agent_id_number: '',
-    agent_photo_url: '',
-    agent_id_url: '',
-    cash_holding_limit: '',
-    cash_holding_days: '',
+    phone: '',
+    name_ceo: '',
+    designation: '',
+    license_expiry: '',
+    account_status: 'Active',
+    grace_period_end: '',
   },
 }
 
-function validate({ user, agent }) {
+function validate({ user, bank }) {
   const errors = {}
-  const need = (section, data, key, label) => {
-    if (!String(data[key]).trim()) errors[`${section}.${key}`] = `${label} is required`
+  const need = (name, section, key, label) => {
+    if (!section[key].trim()) errors[`${name}.${key}`] = `${label} is required`
   }
 
   const userIdErr = validateUserID(user.userID)
@@ -33,32 +32,27 @@ function validate({ user, agent }) {
   const emailErr = validateEmail(user.email)
   if (emailErr) errors['user.email'] = emailErr
 
-  need('agent', agent, 'address', 'Address')
-  need('agent', agent, 'phone_no', 'Phone')
-  need('agent', agent, 'cash_holding_limit', 'Cash holding limit')
-  need('agent', agent, 'cash_holding_days', 'Cash holding days')
+  need('bank', bank, 'bank_name', 'Bank name')
+  need('bank', bank, 'address', 'Address')
+  need('bank', bank, 'phone', 'Phone')
+  need('bank', bank, 'license_expiry', 'License expiry')
+
+  if (bank.name_ceo.trim()) {
+    const ceoErr = validateName(bank.name_ceo, 'CEO name')
+    if (ceoErr) errors['bank.name_ceo'] = ceoErr
+  }
 
   if (user.password.length < 8) errors['user.password'] = 'Password must be at least 8 characters'
-  if (agent.phone_no.trim() && !PHONE.test(agent.phone_no.trim())) {
-    errors['agent.phone_no'] = 'Phone must be 7–20 digits (may start with +)'
+  if (bank.phone.trim() && !PHONE.test(bank.phone.trim())) {
+    errors['bank.phone'] = 'Phone must be 7–20 digits (may start with +)'
   }
-  const limit = Number(agent.cash_holding_limit)
-  if (agent.cash_holding_limit !== '' && !(limit > 0)) {
-    errors['agent.cash_holding_limit'] = 'Cash holding limit must be greater than 0'
-  }
-  const days = Number(agent.cash_holding_days)
-  if (agent.cash_holding_days !== '' && !(Number.isInteger(days) && days >= 1 && days <= 365)) {
-    errors['agent.cash_holding_days'] = 'Enter a whole number of days (1–365)'
-  }
-  for (const key of ['agent_photo_url', 'agent_id_url']) {
-    if (agent[key].trim() && !HTTP_URL.test(agent[key].trim())) {
-      errors[`agent.${key}`] = 'Must be an http(s) link'
-    }
+  if (bank.account_status === 'Grace' && !bank.grace_period_end) {
+    errors['bank.grace_period_end'] = 'Grace period end is required'
   }
   return errors
 }
 
-export default function AddAgentModal({ onClose, onCreated }) {
+export default function OnboardBank({ onClose, onCreated }) {
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
@@ -134,6 +128,9 @@ export default function AddAgentModal({ onClose, onCreated }) {
         } else {
           delete next[errorKey]
         }
+        if (section === 'bank' && key === 'account_status' && value !== 'Grace') {
+          delete next['bank.grace_period_end']
+        }
         return next
       })
       if (formError) setFormError('')
@@ -155,13 +152,13 @@ export default function AddAgentModal({ onClose, onCreated }) {
     const errorKey = `${section}.${key}`
     const isUserID = section === 'user' && key === 'userID'
     return (
-      <label className="aa-field">
+      <label className="admin-form-field">
         <span>{label}</span>
         <input
           aria-invalid={Boolean(errors[errorKey])}
+          value={form[section][key]}
           onChange={setField(section, key)}
           onBlur={handleBlur(section, key)}
-          value={form[section][key]}
           {...props}
         />
         {errors[errorKey] ? (
@@ -188,6 +185,7 @@ export default function AddAgentModal({ onClose, onCreated }) {
     setFormError('')
     if (Object.keys(found).length) return
 
+    const { grace_period_end: graceEnd, ...bank } = form.bank
     setSubmitting(true)
     try {
       const checkRes = await checkUserIdAvailability(form.user.userID.trim()).catch(() => null)
@@ -197,15 +195,10 @@ export default function AddAgentModal({ onClose, onCreated }) {
         return
       }
 
-      // Optional blanks are omitted; numeric fields are sent as numbers.
-      const agent = {}
-      for (const [key, value] of Object.entries(form.agent)) {
-        if (String(value).trim() !== '') agent[key] = value
-      }
-      agent.cash_holding_limit = Number(form.agent.cash_holding_limit)
-      agent.cash_holding_days = Number(form.agent.cash_holding_days)
-
-      const { agent: created } = await addAgent({ user: form.user, agent })
+      const { bank: created } = await onboardBank({
+        user: form.user,
+        bank: bank.account_status === 'Grace' ? { ...bank, grace_period_end: graceEnd } : bank,
+      })
       onCreated(created)
     } catch (error) {
       setErrors(error.fieldErrors ?? {})
@@ -216,16 +209,16 @@ export default function AddAgentModal({ onClose, onCreated }) {
   }
 
   return (
-    <div className="aa-backdrop" role="presentation">
+    <div className="admin-modal-backdrop" role="presentation">
       <form
-        aria-labelledby="add-agent-title"
+        aria-labelledby="onboard-title"
         aria-modal="true"
-        className="aa-modal"
+        className="admin-modal"
         noValidate
         onSubmit={submit}
         role="dialog"
       >
-        <h2 id="add-agent-title">Add New Agent</h2>
+        <h2 id="onboard-title">Onboard New Bank Tenant</h2>
 
         <fieldset>
           <legend>Login details</legend>
@@ -236,23 +229,33 @@ export default function AddAgentModal({ onClose, onCreated }) {
         </fieldset>
 
         <fieldset>
-          <legend>Agent details</legend>
-          {field('agent', 'phone_no', 'Phone', { type: 'tel', maxLength: 20 })}
-          {field('agent', 'address', 'Address', { maxLength: 300 })}
-          {field('agent', 'agent_id_type', 'ID type (optional)', { maxLength: 60 })}
-          {field('agent', 'agent_id_number', 'ID number (optional)', { maxLength: 60 })}
-          {field('agent', 'cash_holding_limit', 'Cash holding limit', { type: 'number', min: '0.01', step: '0.01' })}
-          {field('agent', 'cash_holding_days', 'Cash holding days', { type: 'number', min: '1', max: '365', step: '1' })}
-          {field('agent', 'agent_photo_url', 'Photo link (optional)', { type: 'url', maxLength: 500 })}
-          {field('agent', 'agent_id_url', 'ID document link (optional)', { type: 'url', maxLength: 500 })}
+          <legend>Bank details</legend>
+          {field('bank', 'bank_name', 'Bank name', { maxLength: 160 })}
+          {field('bank', 'address', 'Address', { maxLength: 300 })}
+          {field('bank', 'phone', 'Phone', { type: 'tel', maxLength: 20 })}
+          {field('bank', 'name_ceo', 'CEO name', { maxLength: 120 })}
+          {field('bank', 'designation', 'Designation', { maxLength: 120 })}
+          {field('bank', 'license_expiry', 'License expiry', { type: 'date' })}
+          <label className="admin-form-field">
+            <span>Account status</span>
+            <select value={form.bank.account_status} onChange={setField('bank', 'account_status')}>
+              <option value="Active">Active</option>
+              <option value="Grace">Grace</option>
+              <option value="Suspended">Suspended</option>
+            </select>
+          </label>
+          {form.bank.account_status === 'Grace' &&
+            field('bank', 'grace_period_end', 'Grace period end', { type: 'date' })}
         </fieldset>
 
-        {formError && <p className="aa-error" role="alert">{formError}</p>}
+        {formError && <p className="admin-form-error" role="alert">{formError}</p>}
 
-        <div className="aa-actions">
-          <button className="aa-cancel" disabled={submitting} onClick={onClose} type="button">Cancel</button>
-          <button className="aa-submit" disabled={submitting} type="submit">
-            {submitting ? 'Creating…' : 'Create agent'}
+        <div className="admin-modal-actions">
+          <button className="admin-modal-cancel" disabled={submitting} onClick={onClose} type="button">
+            Cancel
+          </button>
+          <button className="admin-modal-submit" disabled={submitting} type="submit">
+            {submitting ? 'Creating…' : 'Create bank'}
           </button>
         </div>
       </form>

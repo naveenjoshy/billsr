@@ -668,7 +668,8 @@ export async function listAgents(req, res) {
           agentCode: agent.user_id?.userID ?? String(agent._id).slice(-6).toUpperCase(),
           name: agent.user_id?.name ?? 'Unknown agent',
           email: agent.user_id?.email ?? null,
-          isActive: agent.user_id?.is_active !== false,
+          isActive: agent.user_id?.is_active !== false && agent.status !== 'Suspended',
+          status: agent.user_id?.is_active === false || agent.status === 'Suspended' ? 'suspended' : 'active',
           phone: agent.phone_no,
           address: agent.address,
           branch: branchName,
@@ -807,6 +808,205 @@ export async function updateAgentLimit(req, res) {
   } catch (error) {
     console.error('Update agent limit error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.BANK.AGENT_LIMIT_UPDATE_FAILED })
+  }
+}
+
+export async function setAgentSuspension(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.INVALID_ID })
+    }
+
+    const { suspend, reason } = req.body ?? {}
+    if (typeof suspend !== 'boolean') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'suspend must be a boolean (true or false)' })
+    }
+
+    const agent = await Agent.findOne({ _id: id, bank_id: bank._id }).populate('user_id', 'userID name email is_active')
+    if (!agent) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.AGENT_NOT_FOUND })
+    }
+
+    const nextStatus = suspend ? 'Suspended' : 'Active'
+    const previousActive = agent.user_id?.is_active !== false
+    const previousStatus = agent.status || (previousActive ? 'Active' : 'Suspended')
+
+    // Update User is_active
+    if (agent.user_id?._id) {
+      await User.updateOne(
+        { _id: agent.user_id._id },
+        { $set: { is_active: !suspend, 'audit_trail.modified_at': new Date() } },
+      )
+    }
+
+    // Update Agent status & audit
+    agent.status = nextStatus
+    agent.audit_trail = {
+      ...agent.audit_trail,
+      modified_by: req.auth.sub,
+      modified_at: new Date(),
+    }
+    await agent.save()
+
+    const justification = typeof reason === 'string' && reason.trim() ? reason.trim() : `Agent ${suspend ? 'suspended' : 'reactivated'} by bank admin`
+
+    await AuditLog.create({
+      collection_name: 'agents',
+      document_id: agent._id,
+      action: suspend ? 'SUSPEND' : 'ACTIVATE',
+      description: `${agent.user_id?.name || 'Agent'} (${agent.user_id?.userID || ''}) was ${suspend ? 'suspended' : 'reactivated'}: ${justification}`,
+      changed_field: 'status',
+      previous_value: previousStatus,
+      new_value: nextStatus,
+      updated_by: req.auth.sub,
+    })
+
+    const customerCount = await Customer.countDocuments({ agent_id: agent._id, bank_id: bank._id })
+
+    res.json({
+      message: `Agent ${agent.user_id?.name || ''} has been ${suspend ? 'suspended' : 'reactivated'} successfully.`,
+      agent: {
+        _id: String(agent._id),
+        name: agent.user_id?.name,
+        agentCode: agent.user_id?.userID,
+        isActive: !suspend,
+        status: nextStatus.toLowerCase(),
+        customers: customerCount,
+      },
+    })
+  } catch (error) {
+    console.error('Set agent suspension error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to update agent status' })
+  }
+}
+
+export async function listAgentCustomers(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: MESSAGES.BANK.INVALID_ID })
+    }
+
+    const agent = await Agent.findOne({ _id: id, bank_id: bank._id }).populate('user_id', 'userID name').lean()
+    if (!agent) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.AGENT_NOT_FOUND })
+    }
+
+    const customers = await Customer.find({ agent_id: id, bank_id: bank._id })
+      .select('_id name shop_name phone address location type')
+      .sort({ name: 1 })
+      .lean()
+
+    res.json({
+      agent: {
+        _id: String(agent._id),
+        name: agent.user_id?.name || 'Unknown agent',
+        agentCode: agent.user_id?.userID || '',
+      },
+      customers: customers.map((c) => ({
+        _id: String(c._id),
+        name: c.name,
+        shopName: c.shop_name || '',
+        phone: c.phone || '',
+        address: c.address || '',
+        type: c.type || 'Retail',
+      })),
+      total: customers.length,
+    })
+  } catch (error) {
+    console.error('List agent customers error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to load agent customers' })
+  }
+}
+
+export async function reallocateAgentCustomers(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { sourceAgentId, targetAgentId, customerIds, reason } = req.body ?? {}
+
+    if (!mongoose.isValidObjectId(sourceAgentId) || !mongoose.isValidObjectId(targetAgentId)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Valid source and destination agent IDs are required' })
+    }
+
+    if (String(sourceAgentId) === String(targetAgentId)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Destination agent must be different from source agent' })
+    }
+
+    const [sourceAgent, targetAgent] = await Promise.all([
+      Agent.findOne({ _id: sourceAgentId, bank_id: bank._id }).populate('user_id', 'userID name is_active').lean(),
+      Agent.findOne({ _id: targetAgentId, bank_id: bank._id }).populate('user_id', 'userID name is_active status').lean(),
+    ])
+
+    if (!sourceAgent) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Source agent not found in your bank' })
+    }
+    if (!targetAgent) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Destination agent not found in your bank' })
+    }
+
+    // Target agent must be active
+    const targetIsActive = targetAgent.user_id?.is_active !== false && targetAgent.status !== 'Suspended'
+    if (!targetIsActive) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Cannot reallocate customers to a suspended agent' })
+    }
+
+    // Determine filter for customers to update
+    const filter = { agent_id: sourceAgent._id, bank_id: bank._id }
+    if (Array.isArray(customerIds) && customerIds.length > 0) {
+      const validIds = customerIds.filter((cid) => mongoose.isValidObjectId(cid))
+      if (validIds.length === 0) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'No valid customer IDs provided' })
+      }
+      filter._id = { $in: validIds }
+    }
+
+    const now = new Date()
+    const updateResult = await Customer.updateMany(filter, {
+      $set: {
+        agent_id: targetAgent._id,
+        'audit_trail.modified_at': now,
+        'audit_trail.modified_by': req.auth.sub,
+      },
+    })
+
+    const count = updateResult.modifiedCount
+
+    const justification = typeof reason === 'string' && reason.trim() ? reason.trim() : 'Customer route reallocation'
+
+    await AuditLog.create({
+      collection_name: 'customers',
+      document_id: targetAgent._id,
+      action: 'REALLOCATE',
+      description: `Reallocated ${count} customer(s) from ${sourceAgent.user_id?.name || 'Source Agent'} (${sourceAgent.user_id?.userID || ''}) to ${targetAgent.user_id?.name || 'Target Agent'} (${targetAgent.user_id?.userID || ''}). Note: ${justification}`,
+      changed_field: 'agent_id',
+      previous_value: String(sourceAgent._id),
+      new_value: String(targetAgent._id),
+      updated_by: req.auth.sub,
+    })
+
+    const [remainingSource, newTargetCount] = await Promise.all([
+      Customer.countDocuments({ agent_id: sourceAgent._id, bank_id: bank._id }),
+      Customer.countDocuments({ agent_id: targetAgent._id, bank_id: bank._id }),
+    ])
+
+    res.json({
+      message: `Successfully reallocated ${count} customer(s) to ${targetAgent.user_id?.name || 'target agent'}.`,
+      reallocatedCount: count,
+      sourceAgent: { _id: String(sourceAgent._id), remainingCustomers: remainingSource },
+      targetAgent: { _id: String(targetAgent._id), totalCustomers: newTargetCount },
+    })
+  } catch (error) {
+    console.error('Reallocate agent customers error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to reallocate customers' })
   }
 }
 

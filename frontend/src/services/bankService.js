@@ -41,6 +41,15 @@ export const addAgent = (payload) => post('/api/bank/agents', payload)
 
 export const updateAgentLimit = (id, payload) => put(`/api/bank/agents/${id}/limit`, payload)
 
+export const setAgentStatus = (id, suspend, reason = '') =>
+  post(`/api/bank/agents/${id}/suspension`, { suspend, reason })
+
+export const getAgentCustomers = (id) =>
+  request(`/api/bank/agents/${id}/customers`)
+
+export const reallocateCustomers = ({ sourceAgentId, targetAgentId, customerIds, reason }) =>
+  post('/api/bank/agents/reallocate-customers', { sourceAgentId, targetAgentId, customerIds, reason })
+
 export const getBankSchemes = () => request('/api/bank/schemes')
 
 export const createBankScheme = (payload) => post('/api/bank/schemes', payload)

@@ -1,7 +1,7 @@
 import { money } from './bankShellUtils'
-import './TransactionForensicModal.css'
+import './TransactionForensic.css'
 
-export default function TransactionForensicModal({
+export default function TransactionForensic({
   transaction,
   onClose,
   title = 'Transaction Forensic History',
@@ -122,7 +122,7 @@ export default function TransactionForensicModal({
               <div className="forensic-step-content">
                 <h4 className="forensic-step-title">{time2} - Core Ledger Write</h4>
                 <p className="forensic-step-desc">
-                  Row appended to tbl_tt_transact with balance delta{' '}
+                  Recorded to core ledger with balance delta{' '}
                   <strong className={transaction.type === 'W' ? 'delta-neg' : 'delta-pos'}>
                     {formattedDelta}
                   </strong>

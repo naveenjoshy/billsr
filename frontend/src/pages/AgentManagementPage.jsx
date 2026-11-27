@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AddAgentModal from '../components/AddAgentModal'
+import AddAgent from '../components/AddAgent'
+import ReallocateCustomers from '../components/ReallocateCustomers'
+import SuspendAgent from '../components/SuspendAgent'
 import BankShell from '../components/BankShell'
 import { dateText, initials, money } from '../components/bankShellUtils'
-import { getBankAgents, updateAgentLimit } from '../services/bankService'
+import { getBankAgents, setAgentStatus, updateAgentLimit } from '../services/bankService'
 import './AgentManagementPage.css'
 
 const PAGE_SIZE = 5
@@ -11,6 +13,7 @@ const FILTERS = [
   { key: 'all', label: 'All Statuses' },
   { key: 'warning', label: 'Warnings' },
   { key: 'breach', label: 'At Risk' },
+  { key: 'suspended', label: 'Suspended' },
 ]
 
 function Avatar({ agent, large = false }) {
@@ -51,6 +54,10 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
   const [notice, setNotice] = useState('')
   const [warningTriggerActive, setWarningTriggerActive] = useState(true)
 
+  // Suspend & Reallocate modal state
+  const [suspendingAgent, setSuspendingAgent] = useState(null)
+  const [reallocatingAgent, setReallocatingAgent] = useState(null)
+
   // Adjust limit modal state
   const [adjustingAgent, setAdjustingAgent] = useState(null)
   const [adjustLimitInput, setAdjustLimitInput] = useState('')
@@ -83,7 +90,11 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
     return agents.filter((agent) => {
-      if (filter !== 'all' && agent.risk !== filter) return false
+      if (filter === 'suspended') {
+        if (agent.isActive) return false
+      } else if (filter !== 'all') {
+        if (agent.risk !== filter) return false
+      }
       if (branchFilter !== 'all' && agent.branch !== branchFilter) return false
       if (!term) return true
       return [agent.name, agent.agentCode, agent.phone, agent.branch].some((val) =>
@@ -103,6 +114,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
     all: agents.length,
     warning: summary?.approachingCount ?? 0,
     breach: summary?.breachCount ?? 0,
+    suspended: agents.filter((a) => !a.isActive).length,
   }
 
   // Handle Export CSV
@@ -199,6 +211,21 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
     if (!selected) return
     setNotice(`Immediate settlement demand push notification dispatched to ${selected.name} (${selected.agentCode}).`)
     setTimeout(() => setNotice(''), 6000)
+  }
+
+  // Reactivate Suspended Agent
+  const handleReactivateAgent = async (agentToReactivate) => {
+    if (!agentToReactivate) return
+    setLoading(true)
+    try {
+      const res = await setAgentStatus(agentToReactivate._id, false)
+      setNotice(res.message || `Access for ${agentToReactivate.name} has been restored.`)
+      await load()
+    } catch (err) {
+      setError(err.message || 'Failed to reactivate agent')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -523,7 +550,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                     return (
                       <tr
                         key={agent._id}
-                        className={`am-table-row ${isSelected ? 'row-selected' : ''}`}
+                        className={`am-table-row ${isSelected ? 'row-selected' : ''} ${!agent.isActive ? 'row-suspended' : ''}`}
                         onClick={() => setSelectedId(agent._id)}
                       >
                         {/* Profile & Contact */}
@@ -531,7 +558,12 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                           <div className="am-profile-cell">
                             <Avatar agent={agent} />
                             <div className="am-profile-meta">
-                              <strong className="am-agent-name">{agent.name}</strong>
+                              <div className="am-agent-name-row">
+                                <strong className="am-agent-name">{agent.name}</strong>
+                                {!agent.isActive && (
+                                  <span className="am-status-badge badge-suspended">Suspended</span>
+                                )}
+                              </div>
                               <span className="am-agent-code">{agent.agentCode}</span>
                               <span className="am-agent-phone">{agent.phone || '—'}</span>
                             </div>
@@ -712,7 +744,11 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
             {/* Header */}
             <div className="telemetry-top-header">
               <span className="telemetry-title">LIVE AGENT TELEMETRY</span>
-              {selected?.risk === 'breach' || selected?.risk === 'warning' ? (
+              {!selected?.isActive ? (
+                <span className="telemetry-badge badge-suspended">
+                  <span className="pulse-dot suspended-dot" /> Suspended
+                </span>
+              ) : selected?.risk === 'breach' || selected?.risk === 'warning' ? (
                 <span className="telemetry-badge badge-warning">
                   <span className="pulse-dot warning-dot" /> Warning Active
                 </span>
@@ -729,7 +765,12 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                 <div className="telemetry-agent-card">
                   <Avatar agent={selected} large />
                   <div className="telemetry-agent-meta">
-                    <h3 className="telemetry-agent-name">{selected.name}</h3>
+                    <h3 className="telemetry-agent-name">
+                      {selected.name}
+                      {!selected.isActive && (
+                        <span className="telemetry-name-tag tag-suspended">Suspended</span>
+                      )}
+                    </h3>
                     <div className="telemetry-code-branch">
                       <span>{selected.agentCode}</span>
                       <span>•</span>
@@ -790,18 +831,68 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                 {/* Stacked Action Buttons */}
                 <div className="telemetry-actions-stack">
                   {/* Button 1: Request Settlement */}
+                  {selected.isActive && (
+                    <button
+                      type="button"
+                      className="telemetry-btn-demand"
+                      onClick={handleRequestSettlement}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                      </svg>
+                      Request Immediate Settlement Deposit
+                    </button>
+                  )}
+
+                  {/* Button 2: Reallocate Customers */}
                   <button
                     type="button"
-                    className="telemetry-btn-demand"
-                    onClick={handleRequestSettlement}
+                    className="telemetry-btn-reallocate"
+                    onClick={() => setReallocatingAgent(selected)}
+                    title="Reallocate vendors assigned to this agent to another active agent"
                   >
                     <svg viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                      <path d="M8 5a1 1 0 100 2h5.586l-1.293 1.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L13.586 5H8zM12 15a1 1 0 100-2H6.414l1.293-1.293a1 1 0 10-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L6.414 15H12z" />
                     </svg>
-                    Request Immediate Settlement Deposit
+                    Reallocate Vendors ({selected.customers ?? 0})
                   </button>
 
-                  {/* Button 2: View Live Ledger (tbl_tt_transact) */}
+                  {/* Button 3: Suspend / Reactivate Agent */}
+                  {selected.isActive ? (
+                    <button
+                      type="button"
+                      className="telemetry-btn-suspend"
+                      onClick={() => setSuspendingAgent(selected)}
+                      title="Suspend agent portal login and field collections"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Suspend Agent Access
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="telemetry-btn-reactivate"
+                      onClick={() => handleReactivateAgent(selected)}
+                      title="Reactivate agent portal login and collection access"
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Reactivate Agent Access
+                    </button>
+                  )}
+
+                  {/* Button 4: View Live Ledger */}
                   <button
                     type="button"
                     className="telemetry-btn-ledger"
@@ -814,7 +905,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                     View Live Ledger
                   </button>
 
-                  {/* Button 3: Adjust Custom Limit */}
+                  {/* Button 5: Adjust Custom Limit */}
                   <button
                     type="button"
                     className="telemetry-btn-adjust"
@@ -934,12 +1025,44 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
 
       {/* Onboard New Agent Modal */}
       {adding && (
-        <AddAgentModal
+        <AddAgent
           onClose={() => setAdding(false)}
           onCreated={(created) => {
             setAdding(false)
             setNotice(`Agent ${created.name} (${created.userID}) onboarded successfully.`)
             setSelectedId(created._id)
+            load()
+          }}
+        />
+      )}
+
+      {/* Suspend Agent Modal */}
+      {suspendingAgent && (
+        <SuspendAgent
+          agent={suspendingAgent}
+          onClose={() => setSuspendingAgent(null)}
+          onOpenReallocate={(ag) => {
+            const target = ag || suspendingAgent
+            setSuspendingAgent(null)
+            setReallocatingAgent(target)
+          }}
+          onSuccess={(msg) => {
+            setNotice(msg)
+            setSuspendingAgent(null)
+            load()
+          }}
+        />
+      )}
+
+      {/* Reallocate Customers Modal */}
+      {reallocatingAgent && (
+        <ReallocateCustomers
+          sourceAgent={reallocatingAgent}
+          agents={agents}
+          onClose={() => setReallocatingAgent(null)}
+          onSuccess={(msg) => {
+            setNotice(msg)
+            setReallocatingAgent(null)
             load()
           }}
         />

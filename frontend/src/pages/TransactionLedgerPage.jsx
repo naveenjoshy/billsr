@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import BankShell from '../components/BankShell'
-import TransactionForensicModal from '../components/TransactionForensicModal'
+import TransactionForensic from '../components/TransactionForensic'
 import { money } from '../components/bankShellUtils'
 import {
   cancelBankTransaction,
@@ -46,7 +46,6 @@ export default function TransactionLedgerPage({
   // Pagination & Layout
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [isDense, setIsDense] = useState(false)
 
   // Ledger Data State
   const [txData, setTxData] = useState({
@@ -278,8 +277,6 @@ export default function TransactionLedgerPage({
           <div className="ledger-breadcrumb">
             <span className="crumb-category">TREASURY & FIELD OPERATIONS</span>
             <span className="crumb-divider">•</span>
-            <span className="crumb-table">tbl_tt_transact</span>
-            <span className="crumb-divider">•</span>
             <span className="crumb-sync">
               <span className="sync-dot" />
               Synchronized
@@ -320,19 +317,6 @@ export default function TransactionLedgerPage({
                 </button>
               )}
             </div>
-
-            {/* Dense View Button */}
-            <button
-              type="button"
-              className={`action-btn-secondary ${isDense ? 'btn-active' : ''}`}
-              onClick={() => setIsDense(!isDense)}
-              title="Toggle compact table padding"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="btn-icon">
-                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-              </svg>
-              Dense View
-            </button>
 
             {/* Export CSV Button */}
             <button
@@ -707,7 +691,7 @@ export default function TransactionLedgerPage({
           </div>
 
           <div className="ledger-table-wrapper">
-            <table className={`ledger-table ${isDense ? 'dense-table' : ''}`}>
+            <table className="ledger-table">
               <thead>
                 <tr>
                   <th scope="col">TRANSACT ID & RECEIPT</th>
@@ -934,7 +918,7 @@ export default function TransactionLedgerPage({
 
       {/* Forensic Audit Modal */}
       {forensicTxn && (
-        <TransactionForensicModal
+        <TransactionForensic
           transaction={forensicTxn}
           onClose={() => setForensicTxn(null)}
         />
@@ -942,7 +926,7 @@ export default function TransactionLedgerPage({
 
       {/* Transaction Review Modal */}
       {reviewModalTxn && (
-        <TransactionForensicModal
+        <TransactionForensic
           transaction={reviewModalTxn}
           title="Transaction Review"
           closeLabel="Close Review Pane"

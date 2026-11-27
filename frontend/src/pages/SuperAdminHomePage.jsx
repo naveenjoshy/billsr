@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './SuperAdminHomePage.css'
 import UserMenu from '../components/UserMenu'
-import OnboardBankModal from '../components/OnboardBankModal'
+import OnboardBank from '../components/OnboardBank'
 import { extendBankLicense, getBanks, setBankSuspension } from '../services/adminService'
 import onboardIcon from '../assets/super-admin/onboard.svg'
 import bankStatIcon from '../assets/super-admin/stat-banks.svg'
@@ -648,7 +648,7 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
         </section>
       </main>
       {onboardOpen && (
-        <OnboardBankModal
+        <OnboardBank
           onClose={() => setOnboardOpen(false)}
           onCreated={handleOnboarded}
         />
