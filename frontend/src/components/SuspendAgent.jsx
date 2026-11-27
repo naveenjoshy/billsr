@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { setAgentStatus } from '../services/bankService'
 import './SuspendAgent.css'
 
@@ -6,6 +6,17 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  // Escape key listener to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !submitting) {
+        onClose?.()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [submitting, onClose])
 
   if (!agent) return null
 
@@ -27,7 +38,13 @@ export default function SuspendAgent({ agent, onClose, onSuccess, onOpenRealloca
   }
 
   return (
-    <div className="am-modal-backdrop" role="presentation">
+    <div
+      className="am-modal-backdrop"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) onClose?.()
+      }}
+    >
       <div
         className="am-modal-content am-suspend-modal"
         role="dialog"

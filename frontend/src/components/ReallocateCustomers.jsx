@@ -43,6 +43,17 @@ export default function ReallocateCustomers({
     }
   }, [sourceAgent?._id])
 
+  // Escape key listener to close modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !submitting) {
+        onClose?.()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [submitting, onClose])
+
   // Destination agent candidates: exclude source agent and suspended agents
   const availableTargetAgents = useMemo(() => {
     return agents.filter(
@@ -115,7 +126,13 @@ export default function ReallocateCustomers({
   }
 
   return (
-    <div className="am-modal-backdrop" role="presentation">
+    <div
+      className="am-modal-backdrop"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !submitting) onClose?.()
+      }}
+    >
       <div
         className="am-modal-content am-reallocate-modal"
         role="dialog"

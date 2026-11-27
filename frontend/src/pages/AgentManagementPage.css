@@ -1360,7 +1360,8 @@
 }
 
 /* Modal Overlay & Form */
-.am-modal-overlay {
+.am-modal-overlay,
+.am-modal-backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(15, 23, 42, 0.6);
@@ -1369,16 +1370,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1050;
   padding: 20px;
 }
 
-.am-modal-card {
+.am-modal-card,
+.am-modal-content {
   background-color: #ffffff;
-  border-radius: 10px;
-  width: 100%;
-  max-width: 440px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
 
