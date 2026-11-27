@@ -1691,19 +1691,10 @@
   color: #0f172a;
 }
 
-.telemetry-log-trigger-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 14px 16px;
+.telemetry-log-trigger-wrap {
   margin-top: 14px;
-}
-
-.telemetry-log-desc {
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.45;
-  margin: 6px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .telemetry-btn-open-audit {
@@ -1717,7 +1708,7 @@
   border: none;
   border-radius: 6px;
   color: #ffffff;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -1728,6 +1719,6 @@
 }
 
 .telemetry-btn-open-audit svg {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }

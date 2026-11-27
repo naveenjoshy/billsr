@@ -951,19 +951,13 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                   </button>
                 </div>
 
-                {/* Audit & System Event Log Launch Card */}
-                <div className="telemetry-section telemetry-log-trigger-card">
-                  <div className="telemetry-log-heading-row">
-                    <h4 className="telemetry-subheading">AUDIT &amp; SYSTEM EVENT LOG</h4>
-                    <span className="live-feed-tag">Protected Feed</span>
-                  </div>
-                  <p className="telemetry-log-desc">
-                    Audit logs are hidden from the main screen by default. Click below to inspect the event report with date range filtering.
-                  </p>
+                {/* Audit & System Event Log Launch Button */}
+                <div className="telemetry-log-trigger-wrap">
                   <button
                     type="button"
                     className="telemetry-btn-open-audit"
                     onClick={() => setShowAuditModal(true)}
+                    title="Open Audit & System Event Log Report"
                   >
                     <svg viewBox="0 0 20 20" fill="currentColor">
                       <path
