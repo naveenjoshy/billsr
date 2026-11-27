@@ -75,8 +75,8 @@ export async function getAgentHome(req, res) {
 
   // If there are existing transactions in DB for this agent but all pre-date today,
   // align them to today so the agent has realistic live collections in hand
-  if (todayRows.length === 0) {
-    const pastTxs = await Transaction.find({ agent_id: agent._id })
+  if (todayDocs.length === 0) {
+    const pastTxs = await Transaction.find({ agent_id: agent._id, transaction_status: { $ne: 'C' } })
       .sort({ collect_date: -1, _id: -1 })
       .limit(10)
       .lean()
@@ -522,6 +522,20 @@ export async function withdrawCancellationRequest(req, res) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Transaction not found or not authorized for this agent.' })
     }
 
+    if (transaction.transaction_status === 'C') {
+      return res.status(HTTP_STATUS.CONFLICT).json({
+        message: 'This transaction is already cancelled by the bank.',
+        isCancelled: true,
+        transaction: {
+          _id: String(transaction._id),
+          receiptNo: transaction.receipt_no,
+          status: 'Cancelled',
+          statusCode: 'C',
+          cancellationReason: transaction.cancellation_info?.cancellation_reason || null,
+        },
+      })
+    }
+
     if (transaction.transaction_status !== 'P') {
       return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'This transaction does not have an active pending cancellation request.' })
     }
@@ -557,5 +571,64 @@ export async function withdrawCancellationRequest(req, res) {
   } catch (error) {
     console.error('Withdraw cancellation request error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to withdraw cancellation request.' })
+  }
+}
+
+export async function getAgentTransactionDetail(req, res) {
+  try {
+    const agent = await Agent.findOne({ user_id: req.auth.sub }).lean()
+    if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid transaction ID format.' })
+    }
+
+    const t = await Transaction.findOne({ _id: id, agent_id: agent._id })
+      .populate('customer_id', 'name shop_name address phone')
+      .populate('scheme_id', 'scheme_name')
+      .populate('cancellation_info.reviewed_by', 'name userID')
+      .lean()
+
+    if (!t) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Transaction not found or not authorized for this agent.' })
+    }
+
+    const statusCode = t.transaction_status
+    const status =
+      statusCode === 'A'
+        ? 'Completed'
+        : statusCode === 'P'
+          ? 'Pending Cancellation'
+          : statusCode === 'C'
+            ? 'Cancelled'
+            : 'Pending'
+
+    res.json({
+      transaction: {
+        _id: String(t._id),
+        customerId: t.customer_id?._id ? String(t.customer_id._id) : null,
+        customer: t.customer_id?.name || t.customer_id?.shop_name || 'Customer',
+        shopName: t.customer_id?.shop_name || '',
+        phone: t.customer_id?.phone || '',
+        address: t.customer_id?.address || '',
+        scheme: t.scheme_id?.scheme_name ?? 'MBS Daily',
+        type: t.transact_type,
+        mode: t.transact_mode || 'C',
+        amount: num(t.transact_amt),
+        receiptNo: t.receipt_no,
+        statusCode,
+        status,
+        cancellationReason: t.cancellation_info?.cancellation_reason || null,
+        reviewedBy: t.cancellation_info?.reviewed_by?.name || null,
+        at: t.collect_date,
+        isCompleted: statusCode === 'A',
+        isCancelled: statusCode === 'C',
+        isPendingCancel: statusCode === 'P',
+      },
+    })
+  } catch (error) {
+    console.error('Get agent transaction detail error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to fetch transaction details.' })
   }
 }

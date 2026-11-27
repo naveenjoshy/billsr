@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { logoutUser } from '../services/authService'
 import {
   getAgentHome,
+  getAgentTransaction,
   requestTransactionCancellation,
   withdrawCancellationRequest,
 } from '../services/agentService'
@@ -131,6 +132,33 @@ export default function AgentHome({ user, onLoggedOut }) {
     if (!selectedTx?._id) return
     setIsWithdrawingCancel(true)
     try {
+      // Recheck latest status before attempting withdrawal
+      let freshTx = null
+      try {
+        const checkRes = await getAgentTransaction(selectedTx._id)
+        freshTx = checkRes?.transaction
+      } catch {
+        // Continue if initial probe fails
+      }
+
+      if (freshTx && (freshTx.statusCode === 'C' || freshTx.status === 'Cancelled')) {
+        setSelectedTx((prev) => (prev ? { ...prev, ...freshTx, statusCode: 'C', status: 'Cancelled' } : prev))
+        setHomeData((prev) => {
+          if (!prev) return prev
+          const currentQueue = prev.todayTransactions || prev.queue?.items || []
+          const updated = currentQueue.map((tx) =>
+            tx._id === freshTx._id ? { ...tx, ...freshTx, statusCode: 'C', status: 'Cancelled' } : tx,
+          )
+          return {
+            ...prev,
+            todayTransactions: updated,
+            queue: prev.queue ? { ...prev.queue, items: updated } : prev.queue,
+          }
+        })
+        toast.error('This transaction is already cancelled by the bank.', 'Already Cancelled', 3500)
+        return
+      }
+
       const res = await withdrawCancellationRequest(selectedTx._id)
       toast.success(
         res.message || `Cancellation request for Slip #${selectedTx.receiptNo} has been withdrawn.`,
@@ -148,11 +176,74 @@ export default function AgentHome({ user, onLoggedOut }) {
       setCancelReason('')
       await reloadHomeData()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to withdraw cancellation request.', 'Error')
+      const errMsg = err instanceof Error ? err.message : String(err)
+      if (
+        errMsg.toLowerCase().includes('already cancelled') ||
+        err?.status === 409 ||
+        err?.isCancelled
+      ) {
+        toast.error('This transaction is already cancelled by the bank.', 'Already Cancelled', 3500)
+        setSelectedTx((prev) =>
+          prev ? { ...prev, statusCode: 'C', status: 'Cancelled' } : null,
+        )
+        await reloadHomeData()
+      } else {
+        toast.error(errMsg || 'Failed to withdraw cancellation request.', 'Error')
+      }
     } finally {
       setIsWithdrawingCancel(false)
     }
   }
+
+  // Recheck status when transaction details are opened / displayed
+  useEffect(() => {
+    if (!selectedTx?._id) return
+    let isCancelled = false
+
+    getAgentTransaction(selectedTx._id)
+      .then((res) => {
+        if (isCancelled || !res?.transaction) return
+        const fresh = res.transaction
+        setSelectedTx((prev) => (prev && prev._id === fresh._id ? { ...prev, ...fresh } : prev))
+        setHomeData((prev) => {
+          if (!prev) return prev
+          const currentQueue = prev.todayTransactions || prev.queue?.items || []
+          const updated = currentQueue.map((tx) =>
+            tx._id === fresh._id ? { ...tx, ...fresh } : tx,
+          )
+          return {
+            ...prev,
+            todayTransactions: updated,
+            queue: prev.queue ? { ...prev.queue, items: updated } : prev.queue,
+          }
+        })
+      })
+      .catch((err) => {
+        console.warn('Unable to recheck transaction status on modal display:', err)
+      })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [selectedTx?._id])
+
+  // Live listener for cancellations updated across tabs or windows
+  useEffect(() => {
+    const handleCancellationsUpdated = () => {
+      reloadHomeData()
+    }
+    const handleStorage = (e) => {
+      if (e.key === 'billsr:cancellations-updated') {
+        reloadHomeData()
+      }
+    }
+    window.addEventListener('bank:cancellations-updated', handleCancellationsUpdated)
+    window.addEventListener('storage', handleStorage)
+    return () => {
+      window.removeEventListener('bank:cancellations-updated', handleCancellationsUpdated)
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [reloadHomeData])
 
   useEffect(() => {
     let isMounted = true
@@ -702,7 +793,7 @@ export default function AgentHome({ user, onLoggedOut }) {
                                           : 'tag-pending'
                                     }`}
                                   >
-                                    {isPendingCancel ? 'Pending' : item.status}
+                                    {isPendingCancel ? 'Pending' : isCancelled ? 'Cancelled' : item.status}
                                   </span>
                                 )}
                                 {item.at && (
