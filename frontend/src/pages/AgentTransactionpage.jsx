@@ -62,6 +62,11 @@ const DEFAULT_THERMAL_FIELDS = [
   { field_name: 'Thermal Footer Disclaimer', data_type: 'string', is_mandatory: false, print_order: 9 },
 ]
 
+const DENOMINATION_ROWS = [
+  [500, 200, 100],
+  [50, 20, 10],
+]
+
 export default function AgentTransactionpage({
   user,
   initialCustomerId,
@@ -85,12 +90,14 @@ export default function AgentTransactionpage({
   const [transactMode, setTransactMode] = useState(initialMode || 'C') // 'C' = Cash, 'T' = Transfer
   const [amount, setAmount] = useState('1000')
 
-  // Interactive Denominations state ({ 500: count, 200: count, 100: count, 50: count })
+  // Interactive Denominations state
   const [denominations, setDenominations] = useState({
     500: 2,
     200: 0,
     100: 0,
     50: 0,
+    20: 0,
+    10: 0,
   })
 
   // Submission & Confirmation State
@@ -179,7 +186,7 @@ export default function AgentTransactionpage({
   // Calculate denominations auto-split when amount changes
   const autoSplitDenominations = useCallback((totalAmount) => {
     let rem = Math.max(Math.floor(Number(totalAmount) || 0), 0)
-    const counts = { 500: 0, 200: 0, 100: 0, 50: 0 }
+    const counts = { 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0 }
 
     counts[500] = Math.floor(rem / 500)
     rem %= 500
@@ -191,6 +198,12 @@ export default function AgentTransactionpage({
     rem %= 100
 
     counts[50] = Math.floor(rem / 50)
+    rem %= 50
+
+    counts[20] = Math.floor(rem / 20)
+    rem %= 20
+
+    counts[10] = Math.floor(rem / 10)
 
     setDenominations(counts)
   }, [])
@@ -203,15 +216,6 @@ export default function AgentTransactionpage({
     if (!isNaN(numeric) && numeric > 0) {
       autoSplitDenominations(numeric)
     }
-  }
-
-  // Quick Amount Increment Chips
-  const handleAddAmount = (addVal) => {
-    const current = parseFloat(amount) || 0
-    const nextVal = current + addVal
-    setAmount(nextVal.toString())
-    setConfirmedTx(null)
-    autoSplitDenominations(nextVal)
   }
 
   // Denomination +/- Buttons
@@ -245,7 +249,52 @@ export default function AgentTransactionpage({
   // Calculation of Live & Projected Balance
   const currentLedgerBalance = currentCustomer?.balance ?? 3210.0
   const parsedAmount = parseFloat(amount) || 0
-  const isDeposit = transactType === 'D'
+
+  // Permitted Operation check: scheme permittedOperation === 'A' allows withdrawals, 'S' is Deposit Only
+  const isWithdrawalEnabled = useMemo(() => {
+    if (currentScheme?.permittedOperation) {
+      return currentScheme.permittedOperation === 'A'
+    }
+    if (currentCustomer?.permittedOperation) {
+      return currentCustomer.permittedOperation === 'A'
+    }
+    return true
+  }, [currentScheme, currentCustomer])
+
+  // Derive effective transaction type: if scheme does not permit withdrawal, force 'D'
+  const effectiveTransactType = !isWithdrawalEnabled && transactType === 'W' ? 'D' : transactType
+  const isDeposit = effectiveTransactType === 'D'
+
+  // Keyboard shortcut listener for D, W, C, T
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName)) return
+      const k = e.key?.toLowerCase()
+      if (k === 'd') {
+        setTransactType('D')
+        setConfirmedTx(null)
+      } else if (k === 'w') {
+        if (!isWithdrawalEnabled) {
+          toast.info(
+            `Withdrawal is not enabled for ${currentScheme?.name || 'this scheme'} (Deposit Only).`,
+            'Operation Disabled',
+            2200,
+          )
+          return
+        }
+        setTransactType('W')
+        setConfirmedTx(null)
+      } else if (k === 'c') {
+        setTransactMode('C')
+        setConfirmedTx(null)
+      } else if (k === 't') {
+        setTransactMode('T')
+        setConfirmedTx(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isWithdrawalEnabled, currentScheme, toast])
 
   const projectedBalance = isDeposit
     ? currentLedgerBalance + parsedAmount
@@ -279,6 +328,14 @@ export default function AgentTransactionpage({
       return
     }
 
+    if (!isDeposit && !isWithdrawalEnabled) {
+      toast.error(
+        `Withdrawals are not permitted for scheme '${currentScheme?.name || 'this scheme'}' (Deposit Only).`,
+        'Operation Not Permitted',
+      )
+      return
+    }
+
     if (!isDeposit && parsedAmount > currentLedgerBalance) {
       toast.error(
         `Withdrawal amount (${money(parsedAmount)}) exceeds available ledger balance (${money(currentLedgerBalance)}).`,
@@ -293,7 +350,7 @@ export default function AgentTransactionpage({
         customerId: selectedCustomerId,
         schemeId: selectedSchemeId || currentCustomer?.schemeId || undefined,
         amount: parsedAmount,
-        type: transactType,
+        type: effectiveTransactType,
         mode: transactMode,
       })
 
@@ -504,6 +561,11 @@ export default function AgentTransactionpage({
                     <span className="merchant-scheme-name">
                       {currentScheme?.name || currentCustomer?.schemeName || 'MBS Daily Pigmy (#101)'}
                     </span>
+                    {!isWithdrawalEnabled && (
+                      <span className="scheme-deposit-only-tag" title="Withdrawals are disabled for this scheme">
+                        Deposit Only
+                      </span>
+                    )}
                   </div>
                   {agentData?.schemes?.length > 1 && (
                     <div className="merchant-scheme-select-wrap">
@@ -534,7 +596,7 @@ export default function AgentTransactionpage({
                 <div className="agent-tx-toggle-group" role="group" aria-label="Transaction Type Switcher">
                   <button
                     type="button"
-                    className={`agent-tx-toggle-btn ${transactType === 'D' ? 'active-deposit' : 'inactive-type'}`}
+                    className={`agent-tx-toggle-btn ${effectiveTransactType === 'D' ? 'active-deposit' : 'inactive-type'}`}
                     onClick={() => {
                       setTransactType('D')
                       setConfirmedTx(null)
@@ -547,16 +609,39 @@ export default function AgentTransactionpage({
                   </button>
                   <button
                     type="button"
-                    className={`agent-tx-toggle-btn ${transactType === 'W' ? 'active-withdraw' : 'inactive-type'}`}
+                    className={`agent-tx-toggle-btn ${!isWithdrawalEnabled
+                        ? 'disabled-withdraw'
+                        : effectiveTransactType === 'W'
+                          ? 'active-withdraw'
+                          : 'inactive-type'
+                      }`}
                     onClick={() => {
+                      if (!isWithdrawalEnabled) {
+                        toast.info(
+                          `Withdrawal is not enabled for ${currentScheme?.name || 'this scheme'} (Deposit Only).`,
+                          'Withdrawal Disabled',
+                          2500,
+                        )
+                        return
+                      }
                       setTransactType('W')
                       setConfirmedTx(null)
                     }}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isWithdrawalEnabled}
+                    title={
+                      !isWithdrawalEnabled
+                        ? 'Withdrawals are disabled for this scheme (Deposit Only)'
+                        : 'Withdraw [W]'
+                    }
                     data-node-id="4:4910"
                   >
                     <img src={txWithdrawArrowIcon} alt="" width="14" height="14" />
                     <span>Withdraw [W]</span>
+                    {!isWithdrawalEnabled && (
+                      <span className="tx-lock-pill" title="Withdrawals Disabled">
+                        Locked
+                      </span>
+                    )}
                   </button>
                 </div>
 
@@ -664,42 +749,6 @@ export default function AgentTransactionpage({
                   </button>
                 </div>
 
-                {/* Quick Increment Chips */}
-                <div className="quick-chips-row" data-node-id="4:4986" role="group" aria-label="Quick amount increments">
-                  <button
-                    type="button"
-                    className="quick-chip-btn"
-                    onClick={() => handleAddAmount(200)}
-                    disabled={isSubmitting}
-                  >
-                    +₹200
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-chip-btn"
-                    onClick={() => handleAddAmount(500)}
-                    disabled={isSubmitting}
-                  >
-                    +₹500
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-chip-btn"
-                    onClick={() => handleAddAmount(1000)}
-                    disabled={isSubmitting}
-                  >
-                    +₹1,000
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-chip-btn"
-                    onClick={() => handleAddAmount(2000)}
-                    disabled={isSubmitting}
-                  >
-                    +₹2,000
-                  </button>
-                </div>
-
                 {/* Interactive Denomination Tally (Figma Node 4:5010) */}
                 <div className="denomination-tally-section">
                   <div className="tally-head">
@@ -715,36 +764,40 @@ export default function AgentTransactionpage({
                     </span>
                   </div>
 
-                  <div className="denominations-grid">
-                    {[500, 200, 100, 50].map((denom) => {
-                      const count = denominations[denom] || 0
-                      return (
-                        <div key={denom} className="denom-chip">
-                          <span className="denom-label">₹{denom}</span>
-                          <span className="denom-count">× {count}</span>
-                          <div className="denom-actions">
-                            <button
-                              type="button"
-                              className="denom-btn minus"
-                              onClick={() => adjustDenomination(denom, -1)}
-                              disabled={count === 0 || isSubmitting}
-                              aria-label={`Decrease ₹${denom} count`}
-                            >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              className="denom-btn plus"
-                              onClick={() => adjustDenomination(denom, 1)}
-                              disabled={isSubmitting}
-                              aria-label={`Increase ₹${denom} count`}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    })}
+                  <div className="denominations-container">
+                    {DENOMINATION_ROWS.map((row, rowIdx) => (
+                      <div key={rowIdx} className="denominations-row">
+                        {row.map((denom) => {
+                          const count = denominations[denom] || 0
+                          return (
+                            <div key={denom} className="denom-chip">
+                              <span className="denom-label">₹{denom}</span>
+                              <span className="denom-count">× {count}</span>
+                              <div className="denom-actions">
+                                <button
+                                  type="button"
+                                  className="denom-btn minus"
+                                  onClick={() => adjustDenomination(denom, -1)}
+                                  disabled={count === 0 || isSubmitting}
+                                  aria-label={`Decrease ₹${denom} count`}
+                                >
+                                  -
+                                </button>
+                                <button
+                                  type="button"
+                                  className="denom-btn plus"
+                                  onClick={() => adjustDenomination(denom, 1)}
+                                  disabled={isSubmitting}
+                                  aria-label={`Increase ₹${denom} count`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </section>

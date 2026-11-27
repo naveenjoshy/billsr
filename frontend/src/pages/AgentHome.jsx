@@ -219,7 +219,19 @@ export default function AgentHome({ user, onLoggedOut }) {
       setTransactType('D')
       setActiveTab('transact')
     } else if (actionKey === 'payout') {
-      setTransactType('W')
+      const activeCust =
+        homeData?.customers?.find((c) => c._id === selectedCustomerId) || homeData?.customers?.[0]
+      const isWithdrawAllowed = activeCust?.permittedOperation !== 'S'
+      if (!isWithdrawAllowed) {
+        toast.info(
+          `Withdrawal is not enabled for ${activeCust?.schemeName || 'this scheme'} (Deposit Only).`,
+          'Deposit Mode Only',
+          2500,
+        )
+        setTransactType('D')
+      } else {
+        setTransactType('W')
+      }
       setActiveTab('transact')
     } else if (actionKey === 'qr') {
       setTransactType('D')
@@ -722,7 +734,16 @@ export default function AgentHome({ user, onLoggedOut }) {
                             onClick={() => {
                               if (item.customerId) {
                                 setSelectedCustomerId(item.customerId)
-                                setTransactType(item.type === 'W' ? 'W' : 'D')
+                                const cust = homeData?.customers?.find((c) => c._id === item.customerId)
+                                const isWithdrawAllowed = cust?.permittedOperation !== 'S'
+                                if (item.type === 'W' && !isWithdrawAllowed) {
+                                  toast.info(
+                                    `Withdrawal is disabled for ${cust?.schemeName || 'this scheme'}. Opening in Deposit mode.`,
+                                    'Deposit Only',
+                                    2500,
+                                  )
+                                }
+                                setTransactType(item.type === 'W' && isWithdrawAllowed ? 'W' : 'D')
                                 setActiveTab('transact')
                               }
                             }}

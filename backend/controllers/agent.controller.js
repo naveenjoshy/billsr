@@ -236,6 +236,7 @@ export async function getAgentHome(req, res) {
         schemeId: cs?.scheme_id?._id ? String(cs.scheme_id._id) : null,
         schemeName: cs?.scheme_id?.scheme_name || 'MBS Daily Pigmy',
         receiptConfig: cs?.scheme_id?.receipt_config || null,
+        permittedOperation: cs?.scheme_id?.permitted_operation || 'A',
       }
     }),
     schemes: bankSchemes.map((s) => ({
@@ -259,10 +260,19 @@ export async function createAgentTransaction(req, res) {
   }
 
   let finalSchemeId = schemeId
-  if (!finalSchemeId) {
-    const scheme = await Scheme.findOne({ bank_id: agent.bank_id, status: 'A' })
-    if (!scheme) return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'No active scheme found.' })
-    finalSchemeId = scheme._id
+  let activeScheme = null
+  if (finalSchemeId) {
+    activeScheme = await Scheme.findById(finalSchemeId).lean()
+  } else {
+    activeScheme = await Scheme.findOne({ bank_id: agent.bank_id, status: 'A' }).lean()
+    if (!activeScheme) return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'No active scheme found.' })
+    finalSchemeId = activeScheme._id
+  }
+
+  if (type === 'W' && activeScheme && activeScheme.permitted_operation === 'S') {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      message: `Withdrawals are not permitted for scheme '${activeScheme.scheme_name}' (Deposit Only).`,
+    })
   }
 
   const lastTx = await Transaction.findOne({ customer_id: customerId })
