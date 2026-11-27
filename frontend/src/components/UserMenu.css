@@ -296,6 +296,7 @@
 [data-theme='dark'] .um-backdrop,
 .dark .um-backdrop {
   background: rgb(0 0 0 / 70%);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 

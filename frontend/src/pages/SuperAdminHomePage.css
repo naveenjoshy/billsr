@@ -1789,6 +1789,7 @@
 [data-theme='dark'] .admin-modal-backdrop,
 .dark .admin-modal-backdrop {
   background: rgb(0 0 0 / 75%);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
