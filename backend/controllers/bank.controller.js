@@ -586,6 +586,23 @@ export async function rejectCancellation(req, res) {
   }
 }
 
+export async function getPendingCancellationsCount(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const count = await Transaction.countDocuments({
+      bank_id: bank._id,
+      transaction_status: 'P',
+    })
+
+    res.json({ count })
+  } catch (error) {
+    console.error('Get pending cancellations count error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message })
+  }
+}
+
 const APPROACH_THRESHOLD = 0.85
 
 export async function listAgents(req, res) {

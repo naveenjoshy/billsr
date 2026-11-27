@@ -1263,6 +1263,7 @@
 
   /* Hide navigation, sidebars, interactive tools, search, dialogs, buttons */
   .bank-sidebar,
+  .bank-topbar,
   .ledger-subbar,
   .ledger-header,
   .ledger-metrics-grid,
@@ -1285,7 +1286,7 @@
   body,
   #root,
   .bank-shell,
-  .bank-main,
+  .bank-content,
   .ledger-page {
     background: #ffffff !important;
     color: #0f172a !important;
@@ -1296,6 +1297,13 @@
     box-shadow: none !important;
     border: none !important;
     overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .ledger-page,
+  .ledger-page * {
+    visibility: visible !important;
   }
 
   .ledger-table-card {

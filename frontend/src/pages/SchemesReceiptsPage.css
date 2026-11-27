@@ -1072,14 +1072,14 @@
 
 /* Print Optimization for Physical Thermal Printer */
 @media print {
-  body * {
+  body.printing-thermal-slip * {
     visibility: hidden;
   }
-  .thermal-paper-slip,
-  .thermal-paper-slip * {
+  body.printing-thermal-slip .thermal-paper-slip,
+  body.printing-thermal-slip .thermal-paper-slip * {
     visibility: visible;
   }
-  .thermal-paper-slip {
+  body.printing-thermal-slip .thermal-paper-slip {
     position: absolute;
     left: 0;
     top: 0;

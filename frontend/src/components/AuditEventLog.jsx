@@ -36,6 +36,14 @@ export default function AuditEventLog({ isOpen, onClose, initialEvents = [] }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
 
+  const handlePrintLog = () => {
+    document.body.classList.add('printing-audit-log')
+    window.print()
+    setTimeout(() => {
+      document.body.classList.remove('printing-audit-log')
+    }, 1500)
+  }
+
   // Fetch full audit events from server
   useEffect(() => {
     if (!isOpen) return
@@ -496,7 +504,7 @@ export default function AuditEventLog({ isOpen, onClose, initialEvents = [] }) {
             <button
               type="button"
               className="ael-print-btn"
-              onClick={() => window.print()}
+              onClick={handlePrintLog}
               title="Print visible audit log report"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="btn-icon">

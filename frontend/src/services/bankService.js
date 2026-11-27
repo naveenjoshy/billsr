@@ -23,6 +23,9 @@ export const getBankTransactions = (query = {}) => {
   return request(`/api/bank/transactions?${params.toString()}`)
 }
 
+export const getPendingCancellationsCount = () =>
+  request('/api/bank/cancellations/pending-count')
+
 export const cancelBankTransaction = (id, reason) =>
   post(`/api/bank/transactions/${id}/cancel`, { reason })
 

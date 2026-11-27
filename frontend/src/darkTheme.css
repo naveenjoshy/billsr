@@ -48,9 +48,11 @@
 }
 
 /* --- Headers & Titles --- */
+[data-theme='dark'] .bank-topbar,
 [data-theme='dark'] .am-header-section,
 [data-theme='dark'] .ledger-header,
 [data-theme='dark'] .schemes-header,
+.dark .bank-topbar,
 .dark .am-header-section,
 .dark .ledger-header,
 .dark .schemes-header {
@@ -72,6 +74,7 @@
 
 /* --- Cards, Panels & Metrics --- */
 [data-theme='dark'] .bank-kpi,
+[data-theme='dark'] .bank-card,
 [data-theme='dark'] .bank-panel,
 [data-theme='dark'] .am-table-card,
 [data-theme='dark'] .am-telemetry-aside,
@@ -83,6 +86,7 @@
 [data-theme='dark'] .audit-modal-content,
 [data-theme='dark'] .audit-filter-panel,
 .dark .bank-kpi,
+.dark .bank-card,
 .dark .bank-panel,
 .dark .am-table-card,
 .dark .am-telemetry-aside,
@@ -434,5 +438,275 @@
   border-color: #475569;
   color: #ffffff;
 }
+
+/* --- Bank Shell Topbar & Components --- */
+[data-theme='dark'] .bank-topbar,
+.dark .bank-topbar {
+  background-color: #0f172a;
+  border-bottom: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-topbar-date,
+.dark .bank-topbar-date {
+  background-color: #141f33;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-date-label,
+.dark .bank-date-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-date-input,
+.dark .bank-date-input {
+  background: transparent;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-chip,
+.dark .bank-chip {
+  background-color: #141f33;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-license-active,
+.dark .bank-license-active {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fde047;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme='dark'] .bank-license-expiring,
+[data-theme='dark'] .bank-license-grace,
+.dark .bank-license-expiring,
+.dark .bank-license-grace {
+  background-color: rgba(234, 88, 12, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(234, 88, 12, 0.3);
+}
+
+[data-theme='dark'] .bank-license-suspended,
+.dark .bank-license-suspended {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .um-trigger-text strong,
+.dark .um-trigger-text strong {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .um-trigger-text span,
+.dark .um-trigger-text span {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .um-caret,
+.dark .um-caret {
+  color: #94a3b8;
+}
+
+/* --- Bank Dashboard Cards & Elements --- */
+[data-theme='dark'] .bank-card,
+.dark .bank-card {
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-card h2,
+.dark .bank-card h2 {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .bank-card-sub,
+.dark .bank-card-sub {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-search,
+.dark .bank-search {
+  background-color: #141f33;
+  border: 1px solid #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-search::placeholder,
+.dark .bank-search::placeholder {
+  color: #64748b;
+}
+
+[data-theme='dark'] .bank-search:focus,
+.dark .bank-search:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+[data-theme='dark'] .bank-action-pill,
+.dark .bank-action-pill {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .bank-risk-row.is-near,
+.dark .bank-risk-row.is-near {
+  background-color: #141f33;
+  border: 1px solid #1e293b;
+}
+
+[data-theme='dark'] .bank-risk-row.is-over,
+.dark .bank-risk-row.is-over {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .bank-risk-agent strong,
+.dark .bank-risk-agent strong {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .bank-risk-agent small,
+.dark .bank-risk-agent small {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-risk-held,
+.dark .bank-risk-held {
+  color: #f59e0b;
+}
+
+[data-theme='dark'] .is-over .bank-risk-held,
+.dark .is-over .bank-risk-held {
+  color: #ef4444;
+}
+
+[data-theme='dark'] .bank-risk-bar,
+.dark .bank-risk-bar {
+  background-color: #1e293b;
+}
+
+[data-theme='dark'] .bank-empty,
+.dark .bank-empty {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-avatar-fallback,
+.dark .bank-avatar-fallback {
+  background-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-kpi-label,
+.dark .bank-kpi-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-kpi-value,
+.dark .bank-kpi-value {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .bank-kpi-value small,
+.dark .bank-kpi-value small {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-kpi-foot,
+.dark .bank-kpi-foot {
+  color: #64748b;
+}
+
+[data-theme='dark'] .bank-kpi-alert,
+.dark .bank-kpi-alert {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .bank-scheme,
+.dark .bank-scheme {
+  background-color: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+[data-theme='dark'] .bank-type-d,
+.dark .bank-type-d {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme='dark'] .bank-type-w,
+.dark .bank-type-w {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .bank-status-confirmed,
+.dark .bank-status-confirmed {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+[data-theme='dark'] .bank-status-pending,
+.dark .bank-status-pending {
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #fde047;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+[data-theme='dark'] .bank-status-cancelled,
+.dark .bank-status-cancelled {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .bank-table td,
+.dark .bank-table td {
+  border-bottom-color: #1e293b;
+  color: #f1f5f9;
+}
+
+[data-theme='dark'] .bank-table small,
+.dark .bank-table small {
+  color: #64748b;
+}
+
+[data-theme='dark'] .bank-table-footer,
+.dark .bank-table-footer {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-pager button,
+.dark .bank-pager button {
+  background-color: #141f33;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .bank-pager button:hover:not(:disabled),
+.dark .bank-pager button:hover:not(:disabled) {
+  background-color: #1e293b;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .bank-pager .is-current,
+.dark .bank-pager .is-current {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+}
+
 
 

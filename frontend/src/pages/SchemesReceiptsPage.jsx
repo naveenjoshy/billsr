@@ -390,7 +390,11 @@ export default function SchemesReceiptsPage({ user, onUserUpdated, onLoggedOut, 
   }
 
   const handlePrintSlip = () => {
+    document.body.classList.add('printing-thermal-slip')
     window.print()
+    setTimeout(() => {
+      document.body.classList.remove('printing-thermal-slip')
+    }, 1500)
   }
 
   const bankDisplayName = dashboard?.bank?.name || 'Devicolam Taluk Agrl & Rural Development Bank'

@@ -526,14 +526,14 @@
 }
 
 @media print {
-  .am-modal-overlay {
+  body.printing-audit-log .am-modal-overlay {
     position: static !important;
     background: transparent !important;
     padding: 0 !important;
     display: block !important;
   }
 
-  .audit-modal-content {
+  body.printing-audit-log .audit-modal-content {
     max-width: 100% !important;
     width: 100% !important;
     box-shadow: none !important;
@@ -542,19 +542,19 @@
     color: #0f172a !important;
   }
 
-  .am-modal-close,
-  .ael-controls-bar,
-  .ael-print-btn,
-  .am-modal-btn-cancel {
+  body.printing-audit-log .am-modal-close,
+  body.printing-audit-log .ael-controls-bar,
+  body.printing-audit-log .ael-print-btn,
+  body.printing-audit-log .am-modal-btn-cancel {
     display: none !important;
   }
 
-  .ael-events-list {
+  body.printing-audit-log .ael-events-list {
     max-height: none !important;
     overflow: visible !important;
   }
 
-  .ael-event-card {
+  body.printing-audit-log .ael-event-card {
     page-break-inside: avoid !important;
     border: 1px solid #cbd5e1 !important;
     background: #ffffff !important;

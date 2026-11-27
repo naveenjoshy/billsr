@@ -1,8 +1,10 @@
 /* Toast Container */
 .toast-container {
   position: fixed;
-  top: 24px;
-  right: 24px;
+  bottom: 24px;
+  left: 24px;
+  top: auto;
+  right: auto;
   z-index: 99999;
   display: flex;
   flex-direction: column;
@@ -10,6 +12,15 @@
   max-width: 420px;
   width: calc(100vw - 32px);
   pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
 }
 
 /* Base Toast Item */
@@ -51,7 +62,7 @@
 @keyframes toastSlideIn {
   from {
     opacity: 0;
-    transform: translateX(30px) scale(0.96);
+    transform: translateX(-30px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -70,7 +81,7 @@
   }
   to {
     opacity: 0;
-    transform: translateX(30px) scale(0.95);
+    transform: translateX(-30px) scale(0.95);
   }
 }
 

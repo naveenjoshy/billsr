@@ -18,7 +18,7 @@
     "doc": "../docs"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "dev:api": "npm --prefix ../backend run dev",
     "build": "vite build",
     "lint": "eslint src",

@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import '../pages/BankHomePage.css'
 import UserMenu from './UserMenu'
 import { dateText, licenseLabels } from './bankShellUtils'
+import { getPendingCancellationsCount } from '../services/bankService'
 
 export default function BankShell({
   active,
@@ -16,6 +18,48 @@ export default function BankShell({
   onLoggedOut,
   children,
 }) {
+  const [polledCount, setPolledCount] = useState(null)
+
+  useEffect(() => {
+    let activePoll = true
+
+    const fetchCount = async () => {
+      try {
+        const res = await getPendingCancellationsCount()
+        if (activePoll && res && typeof res.count === 'number') {
+          setPolledCount(res.count)
+        }
+      } catch {
+        // Silently ignore background poll errors
+      }
+    }
+
+    fetchCount()
+
+    // Poll every 5s so when field agents submit cancellations, the count refreshes automatically
+    const timer = setInterval(fetchCount, 5000)
+
+    const handleFocus = () => fetchCount()
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+    window.addEventListener('bank:cancellations-updated', handleFocus)
+
+    return () => {
+      activePoll = false
+      clearInterval(timer)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+      window.removeEventListener('bank:cancellations-updated', handleFocus)
+    }
+  }, [])
+
+  const displayCount =
+    polledCount !== null
+      ? polledCount
+      : typeof pendingCancellationsCount === 'number'
+      ? pendingCancellationsCount
+      : 0
+
   const navItems = [
     {
       group: 'DAILY OPERATIONS',
@@ -25,7 +69,7 @@ export default function BankShell({
         {
           label: 'Transaction and Cancellation',
           view: 'cancellations',
-          badge: pendingCancellationsCount != null ? pendingCancellationsCount : undefined,
+          badge: displayCount > 0 ? displayCount : undefined,
         },
         { label: 'Schemes & Receipts', view: 'schemes' },
       ],

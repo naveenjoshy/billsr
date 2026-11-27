@@ -49,10 +49,10 @@ app.use('/api/agent', agentRoutes);
 // ROUTE REGISTRATION POINT
 // ==========================================
 app.get('/health', (req, res) => {
-  res.status(HTTP_STATUS.OK).json({ 
-    status: 'healthy', 
+  res.status(HTTP_STATUS.OK).json({
+    status: 'healthy',
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    timestamp: new Date() 
+    timestamp: new Date()
   });
 });
 
@@ -85,7 +85,7 @@ app.use((err, req, res, _next) => {
 // ==========================================
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`System server runtime initialized on port ${PORT}`);
 });
 

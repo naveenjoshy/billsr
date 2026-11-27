@@ -8,6 +8,7 @@ import {
   deleteScheme,
   getAuditEvents,
   getDashboard,
+  getPendingCancellationsCount,
   listAgentCustomers,
   listAgents,
   listSchemes,
@@ -33,6 +34,7 @@ router.post('/agents/:id/suspension', setAgentSuspension)
 router.get('/agents/:id/customers', listAgentCustomers)
 router.post('/agents/reallocate-customers', reallocateAgentCustomers)
 router.get('/transactions', listTransactions)
+router.get('/cancellations/pending-count', getPendingCancellationsCount)
 router.post('/transactions/:id/approve', approveTransaction)
 router.post('/transactions/:id/cancel', cancelTransaction)
 router.post('/transactions/:id/reject-cancellation', rejectCancellation)
