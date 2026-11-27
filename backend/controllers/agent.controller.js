@@ -128,8 +128,30 @@ export async function getAgentHome(req, res) {
   // Also fetch assigned route customers and available schemes
   const [assignedCustomers, bankSchemes] = await Promise.all([
     Customer.find({ agent_id: agent._id }).select('name shop_name address phone location').lean(),
-    Scheme.find({ bank_id: agent.bank_id, status: 'A' }).select('scheme_name').lean(),
+    Scheme.find({ bank_id: agent.bank_id, status: 'A' })
+      .select('scheme_name scheme_description receipt_config permitted_operation')
+      .lean(),
   ])
+
+  // Get active customer schemes and latest balances for assigned customers
+  const customerIds = assignedCustomers.map((c) => c._id)
+  const [customerSchemes, latestTxs] = await Promise.all([
+    CustomerScheme.find({ customer_id: { $in: customerIds } }).populate('scheme_id').lean(),
+    Transaction.find({ customer_id: { $in: customerIds } }).sort({ collect_date: -1, _id: -1 }).lean(),
+  ])
+
+  const custSchemeMap = new Map()
+  customerSchemes.forEach((cs) => {
+    custSchemeMap.set(String(cs.customer_id), cs)
+  })
+
+  const custBalanceMap = new Map()
+  latestTxs.forEach((tx) => {
+    const cid = String(tx.customer_id)
+    if (!custBalanceMap.has(cid) && tx.balance_snapshot?.new_balance != null) {
+      custBalanceMap.set(cid, Number(tx.balance_snapshot.new_balance))
+    }
+  })
 
   // Build combined route queue: transactions already made + unvisited stops
   const completedTxItems = todayDocs.map((t) => ({
@@ -197,16 +219,31 @@ export async function getAgentHome(req, res) {
       allStops: [...completedTxItems, ...unvisitedStops],
     },
     todayTransactions: completedTxItems,
-    customers: assignedCustomers.map((c) => ({
-      _id: String(c._id),
-      name: c.name,
-      shopName: c.shop_name,
-      address: c.address,
-      phone: c.phone,
-    })),
+    customers: assignedCustomers.map((c) => {
+      const cs = custSchemeMap.get(String(c._id))
+      const bal = custBalanceMap.get(String(c._id)) ?? (cs ? Number(cs.scheme_opening_amount) : 3210.0)
+      const target = cs?.monthly_target ? Number(cs.monthly_target) : 15000
+      return {
+        _id: String(c._id),
+        name: c.name,
+        shopName: c.shop_name,
+        address: c.address,
+        phone: c.phone,
+        accountNo: `#1042-${String(c._id).slice(-4)}-01`,
+        balance: bal,
+        monthlyTarget: target,
+        collectedMonth: Math.round(target * 0.653),
+        schemeId: cs?.scheme_id?._id ? String(cs.scheme_id._id) : null,
+        schemeName: cs?.scheme_id?.scheme_name || 'MBS Daily Pigmy',
+        receiptConfig: cs?.scheme_id?.receipt_config || null,
+      }
+    }),
     schemes: bankSchemes.map((s) => ({
       _id: String(s._id),
       name: s.scheme_name,
+      description: s.scheme_description,
+      permittedOperation: s.permitted_operation,
+      receiptConfig: s.receipt_config,
     })),
   })
 }
@@ -228,9 +265,20 @@ export async function createAgentTransaction(req, res) {
     finalSchemeId = scheme._id
   }
 
-  const randomReceipt = `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`
-  const openingBal = 5000.0
+  const lastTx = await Transaction.findOne({ customer_id: customerId })
+    .sort({ collect_date: -1, _id: -1 })
+    .lean()
+  let openingBal = 3210.0
+  if (lastTx && lastTx.balance_snapshot?.new_balance != null) {
+    openingBal = Number(lastTx.balance_snapshot.new_balance)
+  } else {
+    const custScheme = await CustomerScheme.findOne({ customer_id: customerId, scheme_id: finalSchemeId }).lean()
+    if (custScheme && custScheme.scheme_opening_amount != null) {
+      openingBal = Number(custScheme.scheme_opening_amount)
+    }
+  }
   const newBalance = type === 'D' ? openingBal + transactAmount : Math.max(openingBal - transactAmount, 0)
+  const randomReceipt = `REC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
 
   const transaction = await Transaction.create({
     receipt_no: randomReceipt,
@@ -250,8 +298,8 @@ export async function createAgentTransaction(req, res) {
   })
 
   const populated = await Transaction.findById(transaction._id)
-    .populate('customer_id', 'name shop_name')
-    .populate('scheme_id', 'scheme_name')
+    .populate('customer_id', 'name shop_name phone address')
+    .populate('scheme_id', 'scheme_name scheme_description receipt_config')
     .lean()
 
   res.status(HTTP_STATUS.CREATED).json({
@@ -260,9 +308,15 @@ export async function createAgentTransaction(req, res) {
       _id: String(populated._id),
       receiptNo: populated.receipt_no,
       customer: populated.customer_id?.name || populated.customer_id?.shop_name || 'Customer',
+      shopName: populated.customer_id?.shop_name || '',
+      phone: populated.customer_id?.phone || '',
       scheme: populated.scheme_id?.scheme_name || 'Scheme',
+      receiptConfig: populated.scheme_id?.receipt_config || null,
       amount: Number(populated.transact_amt),
       type: populated.transact_type,
+      mode: populated.transact_mode,
+      openingBalance: openingBal,
+      newBalance: newBalance,
       status: populated.transaction_status,
       at: populated.collect_date,
     },

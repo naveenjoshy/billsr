@@ -36,6 +36,8 @@ export const notifyCancellationsChanged = () => {
   }
 }
 
+export const broadcastCancellationsChanged = notifyCancellationsChanged
+
 export const cancelBankTransaction = (id, reason) =>
   post(`/api/bank/transactions/${id}/cancel`, { reason })
 

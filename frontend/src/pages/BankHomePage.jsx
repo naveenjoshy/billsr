@@ -4,6 +4,7 @@ import BankShell from '../components/BankShell'
 import { initials, money } from '../components/bankShellUtils'
 import {
   approveTransaction,
+  broadcastCancellationsChanged,
   getBankDashboard,
   getBankTransactions,
 } from '../services/bankService'
@@ -92,6 +93,7 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
     setIsRefreshing(true)
     try {
       await Promise.all([loadTransactions(), loadDashboard()])
+      broadcastCancellationsChanged()
       setNotice('Live transactions and metrics reloaded.')
     } catch (error) {
       setNotice(error?.message || 'Failed to refresh transactions.')

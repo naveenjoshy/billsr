@@ -2,13 +2,13 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { logoutUser } from '../services/authService'
 import {
   getAgentHome,
-  createAgentTransaction,
   requestTransactionCancellation,
   withdrawCancellationRequest,
 } from '../services/agentService'
 import { useTheme } from '../context/ThemeContext'
 import { useToast } from '../context/ToastContext'
 import CustomerOnboardingPage from './CustomerOnboardingPage'
+import AgentTransactionpage from './AgentTransactionpage'
 import './AgentHome.css'
 
 import cashLimitIcon from '../assets/agent/cash-limit.svg'
@@ -17,7 +17,6 @@ import payoutsIcon from '../assets/agent/payouts.svg'
 import cashInHandIcon from '../assets/agent/cash-in-hand.svg'
 import scanQrIcon from '../assets/agent/scan-qr.svg'
 import transactActionIcon from '../assets/agent/transact-action.svg'
-import depositIcon from '../assets/agent/deposit.svg'
 import payoutIcon from '../assets/agent/payout.svg'
 import printSlipIcon from '../assets/agent/print-slip.svg'
 import handoverIcon from '../assets/agent/handover.svg'
@@ -54,14 +53,9 @@ export default function AgentHome({ user, onLoggedOut }) {
   const [activeTab, setActiveTab] = useState('home')
   const [menuOpen, setMenuOpen] = useState(false)
 
-  // Quick Operation Modal State
-  const [transactModalOpen, setTransactModalOpen] = useState(false)
+  // Transact Screen Pre-selection State
   const [transactType, setTransactType] = useState('D')
-  const [transactMode, setTransactMode] = useState('C')
   const [selectedCustomerId, setSelectedCustomerId] = useState('')
-  const [selectedSchemeId, setSelectedSchemeId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [isSubmittingTx, setIsSubmittingTx] = useState(false)
 
   // Section 4 View State (Today's Transactions LIFO vs Route Queue)
   const [sectionView, setSectionView] = useState('transactions')
@@ -169,9 +163,6 @@ export default function AgentHome({ user, onLoggedOut }) {
         if (res.customers?.length > 0) {
           setSelectedCustomerId((prev) => prev || res.customers[0]._id)
         }
-        if (res.schemes?.length > 0) {
-          setSelectedSchemeId((prev) => prev || res.schemes[0]._id)
-        }
       })
       .catch((err) => {
         if (!isMounted) return
@@ -223,52 +214,16 @@ export default function AgentHome({ user, onLoggedOut }) {
     }
   }
 
-  const handleTransactSubmit = async (e) => {
-    e.preventDefault()
-    if (!selectedCustomerId) {
-      toast.error('Please select an enrolled vendor / customer.', 'Transaction Error')
-      return
-    }
-    const parsedAmount = parseFloat(amount)
-    if (!parsedAmount || parsedAmount <= 0) {
-      toast.error('Please enter a valid numeric transaction amount.', 'Transaction Error')
-      return
-    }
-
-    setIsSubmittingTx(true)
-    try {
-      const res = await createAgentTransaction({
-        customerId: selectedCustomerId,
-        schemeId: selectedSchemeId || undefined,
-        amount: parsedAmount,
-        type: transactType,
-        mode: transactMode,
-      })
-      toast.success(
-        `Receipt #${res.transaction?.receiptNo || 'REC'} for ₹${parsedAmount.toLocaleString('en-IN')} (${transactMode === 'C' ? 'Cash' : 'Transfer'}) confirmed.`,
-        `${transactType === 'D' ? 'Deposit' : 'Payout'} Recorded`,
-        3000,
-      )
-      setTransactModalOpen(false)
-      setAmount('')
-      await reloadHomeData()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Transaction submission failed.', 'Failed')
-    } finally {
-      setIsSubmittingTx(false)
-    }
-  }
-
   const handleAction = (actionKey) => {
     if (actionKey === 'transact' || actionKey === 'deposit') {
       setTransactType('D')
-      setTransactModalOpen(true)
+      setActiveTab('transact')
     } else if (actionKey === 'payout') {
       setTransactType('W')
-      setTransactModalOpen(true)
+      setActiveTab('transact')
     } else if (actionKey === 'qr') {
       setTransactType('D')
-      setTransactModalOpen(true)
+      setActiveTab('transact')
       toast.info('QR Code terminal active: select customer to complete collection', 'Scanner Ready', 2200)
     } else if (actionKey === 'print') {
       const latestTx = homeData?.todayTransactions?.[0] || homeData?.queue?.items?.[0]
@@ -308,6 +263,27 @@ export default function AgentHome({ user, onLoggedOut }) {
         user={user}
         onNavigateHome={() => {
           setActiveTab('home')
+          reloadHomeData()
+        }}
+      />
+    )
+  }
+
+  if (activeTab === 'transact') {
+    return (
+      <AgentTransactionpage
+        user={user}
+        initialCustomerId={selectedCustomerId}
+        initialType={transactType}
+        initialMode="C"
+        onNavigateHome={() => {
+          setActiveTab('home')
+          reloadHomeData()
+        }}
+        onNavigateOnboard={() => {
+          setActiveTab('onboard')
+        }}
+        onTransactionSuccess={() => {
           reloadHomeData()
         }}
       />
@@ -747,7 +723,7 @@ export default function AgentHome({ user, onLoggedOut }) {
                               if (item.customerId) {
                                 setSelectedCustomerId(item.customerId)
                                 setTransactType(item.type === 'W' ? 'W' : 'D')
-                                setTransactModalOpen(true)
+                                setActiveTab('transact')
                               }
                             }}
                             data-node-id={`stop-${index}`}
@@ -819,7 +795,6 @@ export default function AgentHome({ user, onLoggedOut }) {
             className={`agent-nav-link ${activeTab === 'transact' ? 'is-active' : ''}`}
             onClick={() => {
               setActiveTab('transact')
-              setTransactModalOpen(true)
             }}
             data-node-id="4:1928"
           >
@@ -861,174 +836,6 @@ export default function AgentHome({ user, onLoggedOut }) {
           </button>
         </nav>
       </div>
-
-      {/* Instant Transact Modal Dialog */}
-      {transactModalOpen && (
-        <div
-          className="agent-modal-backdrop"
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isSubmittingTx) {
-              setTransactModalOpen(false)
-            }
-          }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="agent-modal-card">
-            <div className="agent-modal-head">
-              <h3>
-                {transactType === 'D'
-                  ? `New ${transactMode === 'C' ? 'Cash' : 'Transfer'} Deposit`
-                  : `New ${transactMode === 'C' ? 'Cash' : 'Transfer'} Payout Voucher`}
-              </h3>
-              <button
-                type="button"
-                className="agent-modal-close"
-                onClick={() => setTransactModalOpen(false)}
-                disabled={isSubmittingTx}
-              >
-                ×
-              </button>
-            </div>
-
-            <form className="agent-modal-form" onSubmit={handleTransactSubmit}>
-              {/* Type Switcher: Deposit vs Payout */}
-              <div className="agent-transact-type-toggle" role="group" aria-label="Transaction Type">
-                <button
-                  type="button"
-                  className={`agent-type-btn ${transactType === 'D' ? 'active-deposit' : ''}`}
-                  onClick={() => setTransactType('D')}
-                  disabled={isSubmittingTx}
-                >
-                  <img src={depositIcon} alt="" width="14" height="14" className="type-icon" />
-                  <span>Deposit (D)</span>
-                </button>
-                <button
-                  type="button"
-                  className={`agent-type-btn ${transactType === 'W' ? 'active-payout' : ''}`}
-                  onClick={() => setTransactType('W')}
-                  disabled={isSubmittingTx}
-                >
-                  <img src={payoutIcon} alt="" width="14" height="14" className="type-icon" />
-                  <span>Payout (W)</span>
-                </button>
-              </div>
-
-              <div className="agent-form-field">
-                <label htmlFor="tx-customer">Select Vendor / Customer</label>
-                <select
-                  id="tx-customer"
-                  value={selectedCustomerId}
-                  onChange={(e) => setSelectedCustomerId(e.target.value)}
-                  required
-                  disabled={isSubmittingTx}
-                >
-                  {homeData?.customers?.length ? (
-                    homeData.customers.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.name} {c.shopName ? `(${c.shopName})` : ''}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">No vendors found</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="agent-form-field">
-                <label htmlFor="tx-scheme">Scheme Profile</label>
-                <select
-                  id="tx-scheme"
-                  value={selectedSchemeId}
-                  onChange={(e) => setSelectedSchemeId(e.target.value)}
-                  disabled={isSubmittingTx}
-                >
-                  {homeData?.schemes?.length ? (
-                    homeData.schemes.map((s) => (
-                      <option key={s._id} value={s._id}>
-                        {s.name}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="">Default Scheme</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="agent-form-field">
-                <label>Transaction Mode</label>
-                <div className="agent-transact-mode-toggle" role="radiogroup" aria-label="Transaction Mode">
-                  <button
-                    type="button"
-                    className={`agent-mode-btn ${transactMode === 'C' ? 'active' : ''}`}
-                    onClick={() => setTransactMode('C')}
-                    disabled={isSubmittingTx}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="6" width="20" height="12" rx="2" />
-                      <circle cx="12" cy="12" r="2" />
-                      <path d="M6 12h.01M18 12h.01" />
-                    </svg>
-                    <span>Cash (C)</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`agent-mode-btn ${transactMode === 'T' ? 'active' : ''}`}
-                    onClick={() => setTransactMode('T')}
-                    disabled={isSubmittingTx}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="17 1 21 5 17 9" />
-                      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                      <polyline points="7 23 3 19 7 15" />
-                      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-                    </svg>
-                    <span>Transfer (T)</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="agent-form-field">
-                <label htmlFor="tx-amount">Amount (₹)</label>
-                <input
-                  id="tx-amount"
-                  type="number"
-                  min="1"
-                  step="any"
-                  placeholder="e.g. 500"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
-                  disabled={isSubmittingTx}
-                  autoFocus
-                />
-              </div>
-
-              <div className="agent-modal-actions">
-                <button
-                  type="button"
-                  className="agent-btn-cancel"
-                  onClick={() => setTransactModalOpen(false)}
-                  disabled={isSubmittingTx}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className={`agent-btn-submit ${transactType === 'W' ? 'is-payout' : 'is-deposit'}`}
-                  disabled={isSubmittingTx}
-                >
-                  {isSubmittingTx
-                    ? 'Recording...'
-                    : transactType === 'D'
-                      ? 'Submit Deposit (D)'
-                      : 'Submit Payout (W)'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* Transaction Details & Cancellation Action Popup Menu */}
       {selectedTx && (

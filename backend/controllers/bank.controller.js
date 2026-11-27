@@ -596,7 +596,7 @@ export async function getPendingCancellationsCount(req, res) {
       transaction_status: 'P',
     })
 
-    res.json({ count })
+    res.json({ count, pendingCount: count })
   } catch (error) {
     console.error('Get pending cancellations count error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: error.message })

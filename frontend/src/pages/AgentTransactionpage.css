@@ -1,0 +1,1126 @@
+/* ==========================================================================
+   AgentTransactionpage.css
+   Figma Node 4:4856 ("Receipt Mode & Print Receipt - Billsr")
+   Mobile-Constrained High-Fidelity Agent Transact & Receipt Screen
+   ========================================================================== */
+
+:root {
+  --tx-bg-canvas: #f8fafc;
+  --tx-card-bg: #ffffff;
+  --tx-card-border: #e2e8f0;
+  --tx-primary: #ff633b;
+  --tx-primary-hover: #e04f28;
+  --tx-navy: #182232;
+  --tx-navy-dark: #0f172a;
+  --tx-emerald: #10b981;
+  --tx-emerald-bg: #d1fae5;
+  --tx-rust: #ef4444;
+  --tx-rust-bg: #fee2e2;
+  --tx-peach: #ffdad2;
+  --tx-peach-text: #7a2b00;
+  --tx-purple: #7c3aed;
+  --tx-purple-light: #f5f3ff;
+  --tx-text-main: #0f172a;
+  --tx-text-muted: #64748b;
+  --tx-thermal-bg: #fdfbf7;
+  --tx-thermal-ink: #1e293b;
+  --tx-thermal-highlight: rgba(220, 233, 255, 0.45);
+}
+
+[data-theme='dark'],
+.dark {
+  --tx-bg-canvas: #090d16;
+  --tx-card-bg: #131b2a;
+  --tx-card-border: #1e293b;
+  --tx-navy: #1e293b;
+  --tx-navy-dark: #090d16;
+  --tx-text-main: #f1f5f9;
+  --tx-text-muted: #94a3b8;
+  --tx-purple-light: #1e1b4b;
+  --tx-thermal-bg: #1a2232;
+  --tx-thermal-ink: #f8fafc;
+  --tx-thermal-highlight: rgba(30, 58, 138, 0.45);
+}
+
+/* Outer viewport wrapper */
+.agent-tx-shell {
+  min-height: 100vh;
+  background-color: var(--tx-bg-canvas);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--tx-text-main);
+  box-sizing: border-box;
+}
+
+/* Mobile-constrained app container (390px - 440px) */
+.agent-tx-container {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  background: var(--tx-bg-canvas);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+  padding-bottom: 74px; /* Space for bottom nav */
+}
+
+/* Top Navigation Header */
+.agent-tx-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--tx-card-bg);
+  border-bottom: 1px solid var(--tx-card-border);
+  backdrop-filter: blur(8px);
+}
+
+.agent-tx-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-tx-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--tx-card-border);
+  background: var(--tx-bg-canvas);
+  color: var(--tx-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-tx-back-btn:hover {
+  background: #e2e8f0;
+  transform: translateX(-1px);
+}
+
+.agent-tx-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-tx-brand-mark {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #ff633b 0%, #182232 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.agent-tx-brand-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.agent-tx-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-tx-brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--tx-text-main);
+}
+
+.agent-tx-role-pill {
+  background: #ffdad2;
+  color: #812800;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.agent-tx-brand-sub {
+  font-size: 10.5px;
+  color: var(--tx-text-muted);
+  font-weight: 500;
+}
+
+.agent-tx-agent-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.agent-tx-agent-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--tx-text-main);
+}
+
+.agent-tx-agent-id {
+  font-size: 9.5px;
+  color: var(--tx-text-muted);
+}
+
+/* Main Content Body */
+.agent-tx-main {
+  flex: 1;
+  padding: 12px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Loading & Error States */
+.agent-tx-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  gap: 12px;
+  color: var(--tx-text-muted);
+  font-size: 13px;
+}
+
+.agent-tx-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--tx-primary);
+  border-radius: 50%;
+  animation: tx-spin 0.8s linear infinite;
+}
+
+@keyframes tx-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.agent-tx-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+
+/* Standard Agent Card */
+.agent-tx-card {
+  background: var(--tx-card-bg);
+  border: 1px solid var(--tx-card-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* 1. Merchant Card (4:4876) */
+.merchant-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.merchant-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.merchant-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.merchant-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .merchant-icon-wrap,
+.dark .merchant-icon-wrap {
+  background: #1e293b;
+}
+
+.merchant-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.merchant-select-wrap {
+  width: 100%;
+}
+
+.merchant-select {
+  width: 100%;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--tx-text-main);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 2px 4px;
+  cursor: pointer;
+  outline: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.merchant-select:hover,
+.merchant-select:focus {
+  border-color: var(--tx-card-border);
+  background: var(--tx-bg-canvas);
+}
+
+.merchant-acct-row {
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--tx-text-muted);
+  padding-left: 4px;
+  margin-top: 1px;
+}
+
+.merchant-acct-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.merchant-balance-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.merchant-bal-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--tx-text-muted);
+  letter-spacing: 0.4px;
+}
+
+.merchant-bal-amount {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--tx-emerald);
+  letter-spacing: -0.3px;
+}
+
+.merchant-sub-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed var(--tx-card-border);
+  font-size: 11px;
+}
+
+.merchant-scheme-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tx-text-muted);
+}
+
+.merchant-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.merchant-scheme-name {
+  font-weight: 600;
+  color: var(--tx-text-main);
+}
+
+.merchant-scheme-select-wrap {
+  font-size: 11px;
+}
+
+.merchant-scheme-select {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--tx-card-border);
+  background: var(--tx-bg-canvas);
+  color: var(--tx-text-muted);
+  cursor: pointer;
+}
+
+/* 2. Dual Mode Switchers (4:4903) */
+.agent-tx-switchers-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.agent-tx-toggle-group {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 3px;
+}
+
+[data-theme='dark'] .agent-tx-toggle-group,
+.dark .agent-tx-toggle-group {
+  background: #1e293b;
+}
+
+.agent-tx-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.agent-tx-toggle-btn.inactive-type,
+.agent-tx-toggle-btn.inactive-channel {
+  background: transparent;
+  color: var(--tx-text-muted);
+}
+
+.agent-tx-toggle-btn.inactive-type:hover,
+.agent-tx-toggle-btn.inactive-channel:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Active Type States */
+.agent-tx-toggle-btn.active-deposit {
+  background: #182232;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.agent-tx-toggle-btn.active-withdraw {
+  background: #7f1d1d;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Active Channel States */
+.agent-tx-toggle-btn.active-cash {
+  background: #ffdad2;
+  color: #7a2b00;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.agent-tx-toggle-btn.active-transfer {
+  background: #dbeafe;
+  color: #1e40af;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* 3. Momentum & Target Tracker (4:4927) */
+.momentum-card {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-color: #e9d5ff;
+}
+
+[data-theme='dark'] .momentum-card,
+.dark .momentum-card {
+  background: linear-gradient(135deg, #1e1b4b 0%, #2e1065 100%);
+  border-color: #3b0764;
+}
+
+.momentum-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.momentum-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #6b21a8;
+}
+
+[data-theme='dark'] .momentum-metrics,
+.dark .momentum-metrics {
+  color: #d8b4fe;
+}
+
+.momentum-metrics strong {
+  font-weight: 700;
+}
+
+.momentum-streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 20px;
+}
+
+[data-theme='dark'] .momentum-streak-badge,
+.dark .momentum-streak-badge {
+  background: #4c1d95;
+  color: #ede9fe;
+}
+
+.momentum-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(109, 40, 217, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.momentum-progress-fill {
+  height: 100%;
+  background: #7c3aed;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* 4. Collection Amount Card (4:4951) */
+.amount-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.amount-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.amount-header-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.amount-header-title h2 {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--tx-text-muted);
+  margin: 0;
+}
+
+.amount-mode-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.amount-mode-tag.tag-deposit {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.amount-mode-tag.tag-withdraw {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Large currency input box */
+.amount-input-box {
+  display: flex;
+  align-items: center;
+  background: var(--tx-bg-canvas);
+  border: 2px solid var(--tx-card-border);
+  border-radius: 12px;
+  padding: 6px 14px;
+  transition: border-color 0.15s ease;
+}
+
+.amount-input-box:focus-within {
+  border-color: var(--tx-primary);
+}
+
+.currency-prefix {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--tx-text-main);
+  margin-right: 6px;
+}
+
+.amount-number-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--tx-text-main);
+  outline: none;
+  font-family: inherit;
+}
+
+.projected-bal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.projected-bal-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tx-text-muted);
+}
+
+.projected-bal-left strong {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.amount-reset-btn {
+  background: none;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.amount-reset-btn:hover {
+  background: #fee2e2;
+}
+
+/* Quick Chips */
+.quick-chips-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.quick-chip-btn {
+  background: var(--tx-bg-canvas);
+  border: 1px solid var(--tx-card-border);
+  border-radius: 8px;
+  padding: 7px 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tx-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.quick-chip-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+/* Denomination Tally */
+.denomination-tally-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--tx-card-border);
+}
+
+.tally-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tally-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tally-title-wrap h3 {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tx-text-muted);
+  margin: 0;
+}
+
+.tally-status {
+  font-size: 11px;
+  color: var(--tx-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tally-status strong {
+  color: var(--tx-text-main);
+}
+
+.tally-mismatch-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+.denominations-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.denom-chip {
+  background: var(--tx-bg-canvas);
+  border: 1px solid var(--tx-card-border);
+  border-radius: 8px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.denom-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--tx-text-main);
+}
+
+.denom-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--tx-text-muted);
+}
+
+.denom-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.denom-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--tx-card-border);
+  background: var(--tx-card-bg);
+  color: var(--tx-text-main);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.denom-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.denom-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 5. 58mm Thermal ESC/POS Receipt Live Preview (4:5047) */
+.agent-tx-receipt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receipt-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.receipt-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receipt-title-wrap h2 {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tx-text-muted);
+  margin: 0;
+}
+
+.receipt-state-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.receipt-state-badge.is-preview {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.receipt-state-badge.is-confirmed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Thermal Paper Styling */
+.thermal-paper-slip {
+  background-color: var(--tx-thermal-bg);
+  color: var(--tx-thermal-ink);
+  border-left: 1px dashed var(--tx-card-border);
+  border-right: 1px dashed var(--tx-card-border);
+  border-radius: 4px;
+  padding: 16px 14px;
+  font-family: 'Courier New', Courier, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+/* Serrated top & bottom tear effect */
+.thermal-tear-edge {
+  height: 6px;
+  background-size: 12px 6px;
+  background-repeat: repeat-x;
+}
+
+.thermal-tear-edge.top-tear {
+  background-image: radial-gradient(circle, transparent 4px, var(--tx-thermal-bg) 4px);
+  margin-top: -16px;
+  margin-left: -14px;
+  margin-right: -14px;
+  margin-bottom: 10px;
+}
+
+.thermal-tear-edge.bottom-tear {
+  background-image: radial-gradient(circle, transparent 4px, var(--tx-thermal-bg) 4px);
+  margin-bottom: -16px;
+  margin-left: -14px;
+  margin-right: -14px;
+  margin-top: 12px;
+}
+
+.thermal-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.thermal-bank-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.thermal-system-tag {
+  font-size: 9.5px;
+  color: var(--tx-text-muted);
+  margin-top: 2px;
+}
+
+.thermal-voucher-mode {
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.thermal-divider-dashed {
+  border-top: 1px dashed #94a3b8;
+  margin: 8px 0;
+}
+
+.thermal-meta-grid,
+.thermal-fields-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.thermal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.thermal-label {
+  font-weight: 600;
+  color: var(--tx-text-muted);
+  flex-shrink: 0;
+}
+
+.thermal-val {
+  text-align: right;
+  word-break: break-all;
+}
+
+.thermal-val.bold,
+.thermal-row.bold .thermal-val,
+.thermal-row.bold .thermal-label {
+  font-weight: 800;
+}
+
+.thermal-row.muted {
+  font-size: 10px;
+  color: var(--tx-text-muted);
+}
+
+.thermal-amount-highlight {
+  background: var(--tx-thermal-highlight);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 4px;
+  padding: 5px 6px;
+  margin: 4px 0;
+}
+
+.thermal-amount-highlight .thermal-row.large {
+  font-size: 12px;
+}
+
+.thermal-balance-block {
+  padding: 4px 0;
+}
+
+.thermal-footer {
+  text-align: center;
+  font-size: 9.5px;
+  color: var(--tx-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thermal-footer-line.bold {
+  font-weight: 700;
+  color: var(--tx-thermal-ink);
+}
+
+/* 6. Action Controls: Collect & Print, Share WhatsApp, Share SMS (4:5137) */
+.agent-tx-actions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.agent-tx-submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(255, 99, 59, 0.3);
+}
+
+.agent-tx-submit-btn.is-deposit {
+  background: #ff633b;
+}
+
+.agent-tx-submit-btn.is-deposit:hover:not(:disabled) {
+  background: #e04f28;
+  transform: translateY(-1px);
+}
+
+.agent-tx-submit-btn.is-withdraw {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.agent-tx-submit-btn.is-withdraw:hover:not(:disabled) {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.agent-tx-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.agent-tx-share-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.agent-tx-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--tx-card-border);
+  background: var(--tx-card-bg);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-tx-share-btn.btn-whatsapp {
+  color: #15803d;
+}
+
+.agent-tx-share-btn.btn-whatsapp:hover {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.agent-tx-share-btn.btn-sms {
+  color: #0369a1;
+}
+
+.agent-tx-share-btn.btn-sms:hover {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+/* Bottom Navigation (Fixed at bottom) */
+.agent-tx-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 440px;
+  height: 64px;
+  background: var(--tx-card-bg);
+  border-top: 1px solid var(--tx-card-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+}
+
+.agent-tx-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--tx-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.agent-tx-nav-btn:hover {
+  color: var(--tx-primary);
+}
+
+.agent-tx-nav-btn.is-active {
+  color: var(--tx-primary);
+}
+
+.agent-tx-nav-btn.is-active img {
+  filter: drop-shadow(0 2px 4px rgba(255, 99, 59, 0.4));
+}
+
+/* Helpers */
+.text-emerald {
+  color: var(--tx-emerald);
+}
+
+.text-rust {
+  color: var(--tx-rust);
+}
+
+/* ESC/POS Thermal Printing Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .thermal-tear-edge {
+    display: none;
+  }
+}
