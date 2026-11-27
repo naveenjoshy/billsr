@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddAgent from '../components/AddAgent'
+import AuditEventLog from '../components/AuditEventLog'
 import ReallocateCustomers from '../components/ReallocateCustomers'
 import SuspendAgent from '../components/SuspendAgent'
 import BankShell from '../components/BankShell'
@@ -57,6 +58,7 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
   // Suspend & Reallocate modal state
   const [suspendingAgent, setSuspendingAgent] = useState(null)
   const [reallocatingAgent, setReallocatingAgent] = useState(null)
+  const [showAuditModal, setShowAuditModal] = useState(false)
 
   // Adjust limit modal state
   const [adjustingAgent, setAdjustingAgent] = useState(null)
@@ -276,6 +278,23 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                 </button>
               )}
             </div>
+
+            {/* View Audit Event Log Button */}
+            <button
+              type="button"
+              className="am-btn-audit"
+              onClick={() => setShowAuditModal(true)}
+              title="Open Audit and System Event Log popup with date range filter"
+            >
+              <svg className="am-btn-svg" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000-16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Audit &amp; Event Log
+            </button>
 
             {/* Export Audit Feed Button */}
             <button
@@ -918,102 +937,29 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
                   </button>
                 </div>
 
-                {/* Audit & System Event Log */}
-                <div className="telemetry-section telemetry-log-section">
+                {/* Audit & System Event Log Launch Card */}
+                <div className="telemetry-section telemetry-log-trigger-card">
                   <div className="telemetry-log-heading-row">
                     <h4 className="telemetry-subheading">AUDIT &amp; SYSTEM EVENT LOG</h4>
-                    <span className="live-feed-tag">Live Feed</span>
+                    <span className="live-feed-tag">Protected Feed</span>
                   </div>
-
-                  <div className="telemetry-event-list">
-                    {auditEvents.length > 0 ? (
-                      auditEvents.map((evt) => (
-                        <div key={evt.id} className="telemetry-event-item">
-                          <div className={`event-icon-circle icon-${evt.type || 'info'}`}>
-                            {evt.type === 'settlement' ? (
-                              <svg viewBox="0 0 20 20" fill="currentColor">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            ) : (
-                              <svg viewBox="0 0 20 20" fill="currentColor">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="event-content">
-                            <p className="event-desc">{evt.description}</p>
-                            <span className="event-meta">
-                              {evt.time} • {evt.source}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <>
-                        <div className="telemetry-event-item">
-                          <div className="event-icon-circle icon-warning">
-                            <svg viewBox="0 0 20 20" fill="currentColor">
-                              <path
-                                fillRule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                          <div className="event-content">
-                            <p className="event-desc">
-                              Threshold Warning: AGT-1092 breached ₹3,000 threshold (₹4,850 recorded) - Supervisor Alert Sent
-                            </p>
-                            <span className="event-meta">14:22:09 • System Core</span>
-                          </div>
-                        </div>
-
-                        <div className="telemetry-event-item">
-                          <div className="event-icon-circle icon-warning">
-                            <svg viewBox="0 0 20 20" fill="currentColor">
-                              <path
-                                fillRule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                          <div className="event-content">
-                            <p className="event-desc">
-                              Warning Alert: AGT-1044 exceeded 90% limit ceiling
-                            </p>
-                            <span className="event-meta">13:48:11 • Auto Watchdog</span>
-                          </div>
-                        </div>
-
-                        <div className="telemetry-event-item">
-                          <div className="event-icon-circle icon-settlement">
-                            <svg viewBox="0 0 20 20" fill="currentColor">
-                              <path
-                                fillRule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </div>
-                          <div className="event-content">
-                            <p className="event-desc">
-                              Vault Settlement: ACT-0988 deposited ₹1,980.00 cash to teller #2
-                            </p>
-                            <span className="event-meta">11:15:48 • Teller Central</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  <p className="telemetry-log-desc">
+                    Audit logs are hidden from the main screen by default. Click below to inspect the event report with date range filtering.
+                  </p>
+                  <button
+                    type="button"
+                    className="telemetry-btn-open-audit"
+                    onClick={() => setShowAuditModal(true)}
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000-16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    View Audit &amp; Event Logs ({auditEvents.length})
+                  </button>
                 </div>
               </div>
             ) : (
@@ -1067,6 +1013,13 @@ export default function AgentManagementPage({ user, onUserUpdated, onLoggedOut, 
           }}
         />
       )}
+
+      {/* Audit & System Event Log Popup Modal */}
+      <AuditEventLog
+        isOpen={showAuditModal}
+        onClose={() => setShowAuditModal(false)}
+        initialEvents={auditEvents}
+      />
 
       {/* Adjust Custom Limit Modal */}
       {adjustingAgent && (

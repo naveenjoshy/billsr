@@ -706,14 +706,19 @@ export async function listAgents(req, res) {
 
     const [recentAuditLogs, recentSettlements] = await Promise.all([
       AuditLog.find({
-        $or: [{ collection_name: 'agents' }, { collection_name: 'transactions' }],
+        $or: [
+          { collection_name: 'agents' },
+          { collection_name: 'customers' },
+          { collection_name: 'schemes' },
+          { collection_name: 'transactions' },
+        ],
       })
         .sort({ updated_date: -1 })
-        .limit(6)
+        .limit(30)
         .lean(),
       Transaction.find({ bank_id: bank._id, transact_type: 'D' })
         .sort({ collect_date: -1 })
-        .limit(4)
+        .limit(20)
         .populate('agent_id', 'user_id')
         .populate({ path: 'agent_id', populate: { path: 'user_id', select: 'userID name' } })
         .lean(),
@@ -723,21 +728,25 @@ export async function listAgents(req, res) {
       ...recentAuditLogs.map((log) => ({
         id: String(log._id),
         description: log.description || `Event logged in ${log.collection_name}`,
+        timestamp: log.updated_date ? new Date(log.updated_date).toISOString() : new Date().toISOString(),
+        date: log.updated_date ? new Date(log.updated_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         time: log.updated_date ? new Date(log.updated_date).toLocaleTimeString('en-GB') : '14:22:09',
-        source: log.collection_name === 'transactions' ? 'System Core' : 'Audit Watchdog',
+        source: log.collection_name === 'transactions' ? 'System Core' : log.collection_name === 'customers' ? 'Route Manager' : 'Audit Watchdog',
         type:
           log.description?.toLowerCase().includes('breach') || log.description?.toLowerCase().includes('warn')
             ? 'warning'
-            : 'info',
+            : log.action === 'SUSPEND' ? 'danger' : 'info',
       })),
       ...recentSettlements.map((tx) => ({
         id: String(tx._id),
         description: `Vault Settlement: ${tx.agent_id?.user_id?.userID || 'ACT-0988'} deposited ${money(tx.transact_amt)} cash to teller #2`,
+        timestamp: tx.collect_date ? new Date(tx.collect_date).toISOString() : new Date().toISOString(),
+        date: tx.collect_date ? new Date(tx.collect_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         time: tx.collect_date ? new Date(tx.collect_date).toLocaleTimeString('en-GB') : '11:15:48',
         source: 'Teller Central',
         type: 'settlement',
       })),
-    ].slice(0, 5)
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30)
 
     const { daysLeft, status } = licenseState(bank)
     const limits = rows.map((agent) => agent.limit)
@@ -1253,5 +1262,89 @@ export async function deleteScheme(req, res) {
   } catch (error) {
     console.error('Delete scheme error:', error)
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: MESSAGES.SCHEME.DELETE_FAILED })
+  }
+}
+
+export async function getAuditEvents(req, res) {
+  try {
+    const bank = await findOwnBank(req, res)
+    if (!bank) return
+
+    const { startDate, endDate, type } = req.query ?? {}
+
+    const dateQuery = {}
+    if (startDate) {
+      dateQuery.$gte = new Date(startDate)
+    }
+    if (endDate) {
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+      dateQuery.$lte = end
+    }
+
+    const auditFilter = {
+      $or: [
+        { collection_name: 'agents' },
+        { collection_name: 'customers' },
+        { collection_name: 'schemes' },
+        { collection_name: 'transactions' },
+      ],
+    }
+    if (Object.keys(dateQuery).length > 0) {
+      auditFilter.updated_date = dateQuery
+    }
+
+    const txFilter = { bank_id: bank._id, transact_type: 'D' }
+    if (Object.keys(dateQuery).length > 0) {
+      txFilter.collect_date = dateQuery
+    }
+
+    const [auditLogs, settlements] = await Promise.all([
+      AuditLog.find(auditFilter)
+        .sort({ updated_date: -1 })
+        .limit(100)
+        .populate('updated_by', 'name userID')
+        .lean(),
+      Transaction.find(txFilter)
+        .sort({ collect_date: -1 })
+        .limit(50)
+        .populate({ path: 'agent_id', populate: { path: 'user_id', select: 'userID name' } })
+        .lean(),
+    ])
+
+    let events = [
+      ...auditLogs.map((log) => ({
+        id: String(log._id),
+        description: log.description || `Event logged in ${log.collection_name}`,
+        timestamp: log.updated_date ? new Date(log.updated_date).toISOString() : new Date().toISOString(),
+        date: log.updated_date ? new Date(log.updated_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        time: log.updated_date ? new Date(log.updated_date).toLocaleTimeString('en-GB') : '14:22:09',
+        source: log.collection_name === 'transactions' ? 'System Core' : log.collection_name === 'customers' ? 'Route Manager' : 'Audit Watchdog',
+        type:
+          log.description?.toLowerCase().includes('breach') || log.description?.toLowerCase().includes('warn')
+            ? 'warning'
+            : log.action === 'SUSPEND' ? 'danger' : 'info',
+        user: log.updated_by?.name || null,
+      })),
+      ...settlements.map((tx) => ({
+        id: String(tx._id),
+        description: `Vault Settlement: ${tx.agent_id?.user_id?.userID || 'ACT-0988'} deposited ${money(tx.transact_amt)} cash to teller #2`,
+        timestamp: tx.collect_date ? new Date(tx.collect_date).toISOString() : new Date().toISOString(),
+        date: tx.collect_date ? new Date(tx.collect_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        time: tx.collect_date ? new Date(tx.collect_date).toLocaleTimeString('en-GB') : '11:15:48',
+        source: 'Teller Central',
+        type: 'settlement',
+        user: tx.agent_id?.user_id?.name || null,
+      })),
+    ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+
+    if (type && type !== 'all') {
+      events = events.filter((e) => e.type === type)
+    }
+
+    res.json({ events })
+  } catch (error) {
+    console.error('Get audit events error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to load audit events' })
   }
 }

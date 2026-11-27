@@ -6,6 +6,7 @@ import {
   createAgent,
   createScheme,
   deleteScheme,
+  getAuditEvents,
   getDashboard,
   listAgentCustomers,
   listAgents,
@@ -23,6 +24,7 @@ const router = Router()
 
 router.use(requireAuth, requireRole('Bank'))
 router.get('/dashboard', getDashboard)
+router.get('/audit-events', getAuditEvents)
 router.get('/agents', listAgents)
 router.post('/agents', validateAddAgent, createAgent)
 router.put('/agents/:id/limit', updateAgentLimit)

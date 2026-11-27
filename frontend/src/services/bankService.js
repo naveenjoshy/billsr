@@ -50,6 +50,15 @@ export const getAgentCustomers = (id) =>
 export const reallocateCustomers = ({ sourceAgentId, targetAgentId, customerIds, reason }) =>
   post('/api/bank/agents/reallocate-customers', { sourceAgentId, targetAgentId, customerIds, reason })
 
+export const getBankAuditEvents = (query = {}) => {
+  const params = new URLSearchParams()
+  if (query.startDate) params.set('startDate', query.startDate)
+  if (query.endDate) params.set('endDate', query.endDate)
+  if (query.type && query.type !== 'all') params.set('type', query.type)
+  const qs = params.toString()
+  return request(`/api/bank/audit-events${qs ? `?${qs}` : ''}`)
+}
+
 export const getBankSchemes = () => request('/api/bank/schemes')
 
 export const createBankScheme = (payload) => post('/api/bank/schemes', payload)
