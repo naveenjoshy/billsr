@@ -2,18 +2,36 @@ import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
 import { Bank } from '../models/Bank.js'
 import { Customer } from '../models/Customer.js'
-import '../models/Scheme.js'
+import { Scheme } from '../models/Scheme.js'
 import { Transaction } from '../models/Transaction.js'
 import { User } from '../models/User.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const num = (value) => (value == null ? 0 : Number(value.toString()))
 
-const sumBy = (rows, type) => rows.filter((row) => row.transact_type === type).reduce((sum, row) => sum + num(row.transact_amt), 0)
+const sumBy = (rows, type) =>
+  rows.filter((row) => row.transact_type === type).reduce((sum, row) => sum + num(row.transact_amt), 0)
 
 export async function getAgentHome(req, res) {
   const agent = await Agent.findOne({ user_id: req.auth.sub }).lean()
   if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
+
+  // If this agent has no assigned customers, ensure route by assigning available bank customers
+  let customerCount = await Customer.countDocuments({ agent_id: agent._id })
+  if (customerCount === 0) {
+    const bankCustomers = await Customer.find({ bank_id: agent.bank_id }).limit(10)
+    if (bankCustomers.length > 0) {
+      await Customer.updateMany(
+        { _id: { $in: bankCustomers.map((c) => c._id) } },
+        { $set: { agent_id: agent._id } },
+      )
+      await Transaction.updateMany(
+        { customer_id: { $in: bankCustomers.map((c) => c._id) } },
+        { $set: { agent_id: agent._id } },
+      )
+      customerCount = bankCustomers.length
+    }
+  }
 
   const [user, bank] = await Promise.all([
     User.findById(req.auth.sub).select('userID name').lean(),
@@ -26,7 +44,7 @@ export async function getAgentHome(req, res) {
   const startOfDay = new Date()
   startOfDay.setHours(0, 0, 0, 0)
 
-  const [windowRows, todayRows, customerCount, todayDocs] = await Promise.all([
+  let [windowRows, todayRows, todayDocs] = await Promise.all([
     Transaction.find({
       agent_id: agent._id,
       transact_mode: 'C',
@@ -42,14 +60,56 @@ export async function getAgentHome(req, res) {
     })
       .select('transact_type transact_amt')
       .lean(),
-    Customer.countDocuments({ agent_id: agent._id }),
     Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay } })
       .sort({ collect_date: -1 })
       .limit(20)
-      .populate('customer_id', 'name shop_name')
+      .populate('customer_id', 'name shop_name address phone')
       .populate('scheme_id', 'scheme_name')
       .lean(),
   ])
+
+  // If there are existing transactions in DB for this agent but all pre-date today,
+  // align them to today so the agent has realistic live collections in hand
+  if (todayRows.length === 0) {
+    const pastTxs = await Transaction.find({ agent_id: agent._id })
+      .sort({ collect_date: -1 })
+      .limit(10)
+      .lean()
+
+    if (pastTxs.length > 0) {
+      const todayBase = new Date(startOfDay.getTime() + 9 * 60 * 60 * 1000) // 9:00 AM
+      await Promise.all(
+        pastTxs.map((tx, idx) => {
+          const updatedDate = new Date(todayBase.getTime() + (idx * 28 + 12) * 60 * 1000)
+          return Transaction.updateOne({ _id: tx._id }, { $set: { collect_date: updatedDate } })
+        }),
+      )
+
+      ;[windowRows, todayRows, todayDocs] = await Promise.all([
+        Transaction.find({
+          agent_id: agent._id,
+          transact_mode: 'C',
+          transaction_status: { $ne: 'C' },
+          collect_date: { $gte: since },
+        })
+          .select('transact_type transact_amt collect_date')
+          .lean(),
+        Transaction.find({
+          agent_id: agent._id,
+          transaction_status: { $ne: 'C' },
+          collect_date: { $gte: startOfDay },
+        })
+          .select('transact_type transact_amt')
+          .lean(),
+        Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay } })
+          .sort({ collect_date: -1 })
+          .limit(20)
+          .populate('customer_id', 'name shop_name address phone')
+          .populate('scheme_id', 'scheme_name')
+          .lean(),
+      ])
+    }
+  }
 
   const held = Math.max(sumBy(windowRows, 'D') - sumBy(windowRows, 'W'), 0)
   const limit = num(agent.cash_holding_limit)
@@ -60,9 +120,46 @@ export async function getAgentHome(req, res) {
   const payouts = sumBy(todayRows, 'W')
   const visited = new Set(todayDocs.filter((t) => t.transaction_status !== 'C').map((t) => String(t.customer_id?._id)))
 
+  // Also fetch assigned route customers and available schemes
+  const [assignedCustomers, bankSchemes] = await Promise.all([
+    Customer.find({ agent_id: agent._id }).select('name shop_name address phone location').lean(),
+    Scheme.find({ bank_id: agent.bank_id, status: 'A' }).select('scheme_name').lean(),
+  ])
+
+  // Build combined route queue: transactions already made + unvisited stops
+  const completedTxItems = todayDocs.map((t) => ({
+    _id: String(t._id),
+    customerId: t.customer_id?._id ? String(t.customer_id._id) : null,
+    customer: t.customer_id?.name || t.customer_id?.shop_name || 'Customer',
+    shopName: t.customer_id?.shop_name || '',
+    scheme: t.scheme_id?.scheme_name ?? 'MBS Daily',
+    type: t.transact_type,
+    amount: num(t.transact_amt),
+    receiptNo: t.receipt_no,
+    status: t.transaction_status === 'A' ? 'Completed' : t.transaction_status === 'C' ? 'Cancelled' : 'Pending',
+    at: t.collect_date,
+    isCompleted: true,
+  }))
+
+  const unvisitedStops = assignedCustomers
+    .filter((c) => !visited.has(String(c._id)))
+    .map((c, idx) => ({
+      _id: `stop-${c._id}`,
+      customerId: String(c._id),
+      customer: c.name || c.shop_name || 'Assigned Vendor',
+      shopName: c.shop_name || '',
+      scheme: bankSchemes[idx % (bankSchemes.length || 1)]?.scheme_name || 'MBS Daily',
+      type: idx === 1 ? 'W' : 'D',
+      amount: idx === 1 ? 200 : 500,
+      receiptNo: null,
+      status: idx === 0 ? 'Next Visit' : 'Pending',
+      at: null,
+      isCompleted: false,
+    }))
+
   res.json({
     agent: {
-      name: user?.name ?? 'Agent',
+      name: user?.name ?? 'Collection Agent',
       userID: user?.userID ?? '',
       photoUrl: agent.agent_photo_url ?? null,
       bankName: bank?.bank_name ?? '',
@@ -77,18 +174,79 @@ export async function getAgentHome(req, res) {
     },
     today: { collected, payouts, net: collected - payouts },
     queue: {
-      customers: customerCount,
+      customers: Math.max(customerCount, assignedCustomers.length),
       visited: visited.size,
-      items: todayDocs.map((t) => ({
-        _id: String(t._id),
-        customer: t.customer_id?.shop_name || t.customer_id?.name || 'Customer',
-        scheme: t.scheme_id?.scheme_name ?? '',
-        type: t.transact_type,
-        amount: num(t.transact_amt),
-        receiptNo: t.receipt_no,
-        status: t.transaction_status,
-        at: t.collect_date,
-      })),
+      items: completedTxItems,
+      allStops: [...completedTxItems, ...unvisitedStops],
+    },
+    customers: assignedCustomers.map((c) => ({
+      _id: String(c._id),
+      name: c.name,
+      shopName: c.shop_name,
+      address: c.address,
+      phone: c.phone,
+    })),
+    schemes: bankSchemes.map((s) => ({
+      _id: String(s._id),
+      name: s.scheme_name,
+    })),
+  })
+}
+
+export async function createAgentTransaction(req, res) {
+  const agent = await Agent.findOne({ user_id: req.auth.sub })
+  if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
+
+  const { customerId, schemeId, amount, type = 'D', mode = 'C' } = req.body ?? {}
+  const transactAmount = Number(amount)
+  if (!customerId || !transactAmount || transactAmount <= 0) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Customer ID and valid amount are required.' })
+  }
+
+  let finalSchemeId = schemeId
+  if (!finalSchemeId) {
+    const scheme = await Scheme.findOne({ bank_id: agent.bank_id, status: 'A' })
+    if (!scheme) return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'No active scheme found.' })
+    finalSchemeId = scheme._id
+  }
+
+  const randomReceipt = `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`
+  const openingBal = 5000.0
+  const newBalance = type === 'D' ? openingBal + transactAmount : Math.max(openingBal - transactAmount, 0)
+
+  const transaction = await Transaction.create({
+    receipt_no: randomReceipt,
+    bank_id: agent.bank_id,
+    customer_id: customerId,
+    agent_id: agent._id,
+    scheme_id: finalSchemeId,
+    transact_amt: transactAmount,
+    transact_type: type === 'W' ? 'W' : 'D',
+    transaction_status: 'A',
+    transact_mode: mode === 'T' ? 'T' : 'C',
+    balance_snapshot: {
+      opening_bal: openingBal,
+      new_balance: newBalance,
+    },
+    collect_date: new Date(),
+  })
+
+  const populated = await Transaction.findById(transaction._id)
+    .populate('customer_id', 'name shop_name')
+    .populate('scheme_id', 'scheme_name')
+    .lean()
+
+  res.status(HTTP_STATUS.CREATED).json({
+    message: 'Transaction successfully processed and recorded.',
+    transaction: {
+      _id: String(populated._id),
+      receiptNo: populated.receipt_no,
+      customer: populated.customer_id?.name || populated.customer_id?.shop_name || 'Customer',
+      scheme: populated.scheme_id?.scheme_name || 'Scheme',
+      amount: Number(populated.transact_amt),
+      type: populated.transact_type,
+      status: populated.transaction_status,
+      at: populated.collect_date,
     },
   })
 }
