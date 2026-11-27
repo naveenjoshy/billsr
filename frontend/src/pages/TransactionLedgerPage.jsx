@@ -68,7 +68,6 @@ export default function TransactionLedgerPage({
   const [actionNotice, setActionNotice] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [forensicTxn, setForensicTxn] = useState(null)
-  const [reviewModalTxn, setReviewModalTxn] = useState(null)
   const [copiedId, setCopiedId] = useState(null)
 
   // Load Dashboard metadata for the shell
@@ -78,7 +77,17 @@ export default function TransactionLedgerPage({
       .catch((err) => console.error('Dashboard load error:', err))
   }, [])
 
-  // Debounce search input
+  // Close review popup on Escape key
+  useEffect(() => {
+    if (!reviewTxn) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !actionLoading) {
+        setReviewTxn(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [reviewTxn, actionLoading])
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim())
@@ -104,17 +113,6 @@ export default function TransactionLedgerPage({
       })
       setTxData(data)
       setError('')
-
-      // If we don't have a currently selected reviewTxn, pick the first pending transaction if available
-      if (data.transactions && data.transactions.length > 0) {
-        const firstPending = data.transactions.find((t) => t.status === 'P')
-        setReviewTxn((prev) => {
-          if (prev && data.transactions.some((t) => t._id === prev._id && t.status === 'P')) {
-            return prev
-          }
-          return firstPending || null
-        })
-      }
     } catch (err) {
       setError(err.message || 'Unable to load transaction ledger')
     } finally {
@@ -172,10 +170,12 @@ export default function TransactionLedgerPage({
   // Approve Cancellation handler
   const handleApproveCancellation = async () => {
     if (!reviewTxn) return
+    const targetTxn = reviewTxn
     setActionLoading(true)
     try {
-      const res = await cancelBankTransaction(reviewTxn._id, reviewTxn.cancellationReason || 'Admin approved cancellation')
-      setActionNotice({ type: 'success', text: res.message || `Cancellation approved for receipt ${reviewTxn.receiptNo}. Funds reversed.` })
+      const res = await cancelBankTransaction(targetTxn._id, targetTxn.cancellationReason || 'Admin approved cancellation')
+      setActionNotice({ type: 'success', text: res.message || `Cancellation approved for receipt ${targetTxn.receiptNo}. Funds reversed.` })
+      setReviewTxn(null)
       await fetchLedger()
     } catch (err) {
       setActionNotice({ type: 'error', text: err.message || 'Failed to approve cancellation' })
@@ -187,10 +187,12 @@ export default function TransactionLedgerPage({
   // Reject Cancellation handler
   const handleRejectCancellation = async () => {
     if (!reviewTxn) return
+    const targetTxn = reviewTxn
     setActionLoading(true)
     try {
-      const res = await rejectBankCancellation(reviewTxn._id)
-      setActionNotice({ type: 'info', text: res.message || `Cancellation rejected. Receipt ${reviewTxn.receiptNo} marked accepted.` })
+      const res = await rejectBankCancellation(targetTxn._id)
+      setActionNotice({ type: 'info', text: res.message || `Cancellation rejected. Receipt ${targetTxn.receiptNo} marked accepted.` })
+      setReviewTxn(null)
       await fetchLedger()
     } catch (err) {
       setActionNotice({ type: 'error', text: err.message || 'Failed to reject cancellation' })
@@ -466,83 +468,6 @@ export default function TransactionLedgerPage({
           </div>
         )}
 
-        {/* Pending Cancellation Review Card */}
-        {reviewTxn && reviewTxn.status === 'P' && (
-          <section className="pending-review-panel" aria-labelledby="review-card-heading">
-            <div className="review-panel-header">
-              <span className="review-header-tag" id="review-card-heading">
-                PENDING CANCELLATION REVIEW • RECEIPT: {reviewTxn.receiptNo}
-              </span>
-              <button
-                type="button"
-                className="review-dismiss-link"
-                onClick={() => setReviewTxn(null)}
-              >
-                Dismiss Review Pane
-              </button>
-            </div>
-
-            <div className="review-panel-body">
-              {/* Left Column: Customer & Operator Justification */}
-              <div className="review-left-col">
-                <div className="review-cust-header">
-                  <h3 className="review-cust-name">{reviewTxn.customer}</h3>
-                  <p className="review-cust-meta">
-                    A/C #{reviewTxn.customerId || '—'} • {reviewTxn.agentName} ({reviewTxn.agentCode || '—'})
-                  </p>
-                </div>
-
-                <div className="review-justification-box">
-                  <div className="justification-heading">
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="justification-icon">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    OPERATOR JUSTIFICATION
-                  </div>
-                  <p className="justification-text">
-                    "{reviewTxn.cancellationReason || 'No justification provided by operator.'}"
-                  </p>
-                </div>
-              </div>
-
-              {/* Right Column: Reversal Amount & Decisions */}
-              <div className="review-right-col">
-                <div className="reversal-amount-box">
-                  <span className="reversal-amount-label">REVERSAL AMOUNT</span>
-                  <div className="reversal-amount-val">
-                    {money(reviewTxn.amount)}
-                    <span className="reversal-type-tag">
-                      ({reviewTxn.type === 'D' ? 'Deposit' : 'Withdrawal'})
-                    </span>
-                  </div>
-                </div>
-
-                <div className="review-decision-actions">
-                  <button
-                    type="button"
-                    className="review-btn-reject"
-                    disabled={actionLoading}
-                    onClick={handleRejectCancellation}
-                  >
-                    Reject
-                  </button>
-                  <button
-                    type="button"
-                    className="review-btn-approve"
-                    disabled={actionLoading}
-                    onClick={handleApproveCancellation}
-                  >
-                    <svg viewBox="0 0 20 20" fill="currentColor" className="btn-icon">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    {actionLoading ? 'Processing…' : 'Approve Cancellation (C)'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Filter Toolbar */}
         <div className="ledger-filter-toolbar">
           <div className="filter-dropdowns-row">
@@ -809,11 +734,7 @@ export default function TransactionLedgerPage({
                             <button
                               type="button"
                               className="btn-table-review"
-                              onClick={() => {
-                                setReviewTxn(txn)
-                                const el = document.getElementById('review-card-heading')
-                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                              }}
+                              onClick={() => setReviewTxn(txn)}
                             >
                               Review
                             </button>
@@ -924,14 +845,94 @@ export default function TransactionLedgerPage({
         />
       )}
 
-      {/* Transaction Review Modal */}
-      {reviewModalTxn && (
-        <TransactionForensic
-          transaction={reviewModalTxn}
-          title="Transaction Review"
-          closeLabel="Close Review Pane"
-          onClose={() => setReviewModalTxn(null)}
-        />
+      {/* Pending Cancellation Review Modal Popup */}
+      {reviewTxn && reviewTxn.status === 'P' && (
+        <div
+          className="review-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-card-heading"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !actionLoading) setReviewTxn(null)
+          }}
+        >
+          <div className="review-modal-container">
+            <section className="pending-review-panel" aria-labelledby="review-card-heading">
+              <div className="review-panel-header">
+                <span className="review-header-tag" id="review-card-heading">
+                  PENDING CANCELLATION REVIEW • RECEIPT: {reviewTxn.receiptNo}
+                </span>
+                <button
+                  type="button"
+                  className="review-dismiss-link"
+                  disabled={actionLoading}
+                  onClick={() => setReviewTxn(null)}
+                >
+                  Dismiss Review Pane
+                </button>
+              </div>
+
+              <div className="review-panel-body">
+                {/* Left Column: Customer & Operator Justification */}
+                <div className="review-left-col">
+                  <div className="review-cust-header">
+                    <h3 className="review-cust-name">{reviewTxn.customer}</h3>
+                    <p className="review-cust-meta">
+                      A/C #{reviewTxn.customerId || '—'} • {reviewTxn.agentName} ({reviewTxn.agentCode || '—'})
+                    </p>
+                  </div>
+
+                  <div className="review-justification-box">
+                    <div className="justification-heading">
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="justification-icon">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      OPERATOR JUSTIFICATION
+                    </div>
+                    <p className="justification-text">
+                      "{reviewTxn.cancellationReason || 'No justification provided by operator.'}"
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column: Reversal Amount & Decisions */}
+                <div className="review-right-col">
+                  <div className="reversal-amount-box">
+                    <span className="reversal-amount-label">REVERSAL AMOUNT</span>
+                    <div className="reversal-amount-val">
+                      {money(reviewTxn.amount)}
+                      <span className="reversal-type-tag">
+                        ({reviewTxn.type === 'D' ? 'Deposit' : 'Withdrawal'})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="review-decision-actions">
+                    <button
+                      type="button"
+                      className="review-btn-reject"
+                      disabled={actionLoading}
+                      onClick={handleRejectCancellation}
+                    >
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      className="review-btn-approve"
+                      disabled={actionLoading}
+                      onClick={handleApproveCancellation}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="btn-icon">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      {actionLoading ? 'Processing…' : 'Approve Cancellation (C)'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
       )}
     </BankShell>
   )
