@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './SuperAdminHomePage.css'
 import UserMenu from '../components/UserMenu'
 import OnboardBank from '../components/OnboardBank'
+import GlobalSecurityLogs from '../components/GlobalSecurityLogs'
 import { extendBankLicense, getBanks, setBankSuspension } from '../services/adminService'
 import onboardIcon from '../assets/super-admin/onboard.svg'
 import bankStatIcon from '../assets/super-admin/stat-banks.svg'
@@ -122,6 +123,23 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
   const [notice, setNotice] = useState('')
   const [customDateOpen, setCustomDateOpen] = useState(false)
   const [customDate, setCustomDate] = useState('')
+  const [activeNav, setActiveNav] = useState(() => {
+    return typeof window !== 'undefined' && window.location.hash === '#security'
+      ? 'security'
+      : 'banks'
+  })
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#security') {
+        setActiveNav('security')
+      } else if (window.location.hash === '#banks' || !window.location.hash) {
+        setActiveNav('banks')
+      }
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
 
   const applyBanks = useCallback((data) => {
     setBanks(data.banks)
@@ -265,7 +283,16 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <a className="admin-brand" href="/" aria-label="Billsr Console home">
+        <a
+          className="admin-brand"
+          href="#banks"
+          onClick={(e) => {
+            e.preventDefault()
+            setActiveNav('banks')
+            window.location.hash = '#banks'
+          }}
+          aria-label="Billsr Console home"
+        >
           <span className="admin-brand-mark">
             B
           </span>
@@ -277,11 +304,27 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
 
         <p className="admin-nav-label">GOVERNANCE &amp; OPS</p>
         <nav className="admin-navigation" aria-label="Governance and operations">
-          <a className="admin-nav-item admin-nav-active" href="#banks">
+          <a
+            className={`admin-nav-item ${activeNav === 'banks' ? 'admin-nav-active' : ''}`}
+            href="#banks"
+            onClick={(e) => {
+              e.preventDefault()
+              setActiveNav('banks')
+              window.location.hash = '#banks'
+            }}
+          >
             <img src={banksIcon} alt="" />
             <span>Banks &amp; Licenses</span>
           </a>
-          <a className="admin-nav-item" href="#registry">
+          <a
+            className="admin-nav-item"
+            href="#registry"
+            onClick={(e) => {
+              e.preventDefault()
+              setActiveNav('banks')
+              window.location.hash = '#registry'
+            }}
+          >
             <img src={complianceIcon} alt="" />
             <span>License Audit &amp; Compliance</span>
           </a>
@@ -293,7 +336,15 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
             <img src={telemetryIcon} alt="" />
             <span>System Telemetry &amp; Health</span>
           </a>
-          <a className="admin-nav-item" href="#security">
+          <a
+            className={`admin-nav-item ${activeNav === 'security' ? 'admin-nav-active' : ''}`}
+            href="#security"
+            onClick={(e) => {
+              e.preventDefault()
+              setActiveNav('security')
+              window.location.hash = '#security'
+            }}
+          >
             <img src={securityIcon} alt="" />
             <span>Global Security Logs</span>
           </a>
@@ -337,6 +388,10 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
       </header>
 
       <main className="admin-main">
+        {activeNav === 'security' ? (
+          <GlobalSecurityLogs initialBanks={banks} />
+        ) : (
+          <>
         <section className="admin-page-heading">
           <div>
             <h1>Billsr - Banks &amp; License Management</h1>
@@ -573,6 +628,8 @@ export default function SuperAdminHomePage({ user, onUserUpdated, onLoggedOut })
             </div>
           </div>
         </section>
+          </>
+        )}
       </main>
 
       {authorityModalOpen && selectedBank && (

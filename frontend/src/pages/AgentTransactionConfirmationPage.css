@@ -1,0 +1,1078 @@
+/* ==========================================================================
+   AgentTransactionConfirmationPage.css
+   Figma Node 4:4389 - Transaction Success Confirmation - Billsr
+   High-Fidelity Mobile Design System (Max-width: 440px)
+   ========================================================================== */
+
+:root {
+  --succ-bg: #f8f9ff;
+  --succ-card-bg: #ffffff;
+  --succ-card-border: #e2e8f0;
+  --succ-text-main: #0f172a;
+  --succ-text-muted: #64748b;
+  --succ-text-sub: #94a3b8;
+  --succ-primary: #ff633b;
+  --succ-primary-hover: #e04f28;
+  --succ-primary-glow: rgba(255, 99, 59, 0.25);
+  --succ-navy: #0f172a;
+  --succ-emerald: #059669;
+  --succ-emerald-light: #ecfdf5;
+  --succ-emerald-border: #a7f3d0;
+  --succ-blue-light: #eff6ff;
+  --succ-blue-border: #bfdbfe;
+  --succ-plate-bg: #f8fafc;
+  --succ-thermal-bg: #ffffff;
+  --succ-thermal-ink: #1e293b;
+  --succ-thermal-highlight: #f1f5f9;
+  --succ-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --succ-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+[data-theme='dark'] {
+  --succ-bg: #090d16;
+  --succ-card-bg: #131b2a;
+  --succ-card-border: #1e293b;
+  --succ-text-main: #f8fafc;
+  --succ-text-muted: #94a3b8;
+  --succ-text-sub: #64748b;
+  --succ-plate-bg: #172133;
+  --succ-emerald-light: rgba(5, 150, 105, 0.15);
+  --succ-emerald-border: rgba(16, 185, 129, 0.35);
+  --succ-blue-light: rgba(30, 58, 138, 0.2);
+  --succ-blue-border: rgba(59, 130, 246, 0.3);
+  --succ-thermal-bg: #111827;
+  --succ-thermal-ink: #f3f4f6;
+  --succ-thermal-highlight: #1f2937;
+  --succ-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --succ-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Page Shell & Constrained Container */
+.succ-page-shell {
+  min-height: 100vh;
+  background-color: var(--succ-bg);
+  color: var(--succ-text-main);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.succ-container {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--succ-bg);
+  padding-bottom: 84px; /* Space for fixed bottom nav */
+}
+
+/* --------------------------------------------------------------------------
+   Top Sticky Header (Figma Node 4:4565)
+   -------------------------------------------------------------------------- */
+.succ-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background-color: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--succ-card-border);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+[data-theme='dark'] .succ-header {
+  background-color: rgba(19, 27, 42, 0.92);
+}
+
+.succ-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.succ-back-btn {
+  background: transparent;
+  border: none;
+  color: var(--succ-text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 6px;
+  margin-left: -6px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.succ-back-btn:hover {
+  background: var(--succ-card-border);
+}
+
+.succ-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.succ-brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #ff633b 0%, #ff8c42 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(255, 99, 59, 0.35);
+}
+
+.succ-brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.succ-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.succ-brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--succ-text-main);
+}
+
+.succ-role-pill {
+  font-size: 9px;
+  font-weight: 800;
+  background: rgba(255, 99, 59, 0.12);
+  color: var(--succ-primary);
+  padding: 2px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.succ-brand-sub {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--succ-text-muted);
+  margin-top: 2px;
+}
+
+.succ-agent-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 11px;
+}
+
+.succ-agent-name {
+  font-weight: 700;
+  color: var(--succ-text-main);
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.succ-agent-id {
+  font-size: 9.5px;
+  color: var(--succ-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Main Content Area
+   -------------------------------------------------------------------------- */
+.succ-main {
+  flex: 1;
+  padding: 14px 16px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   1. Micro-Celebration & Live Synced Banner (Figma Node 4:4518)
+   -------------------------------------------------------------------------- */
+.succ-banner-card {
+  position: relative;
+  background: var(--succ-card-bg);
+  border: 1px solid var(--succ-card-border);
+  border-radius: 20px;
+  padding: 22px 18px 20px;
+  text-align: center;
+  overflow: hidden;
+  box-shadow: var(--succ-shadow-sm);
+}
+
+.succ-ambient-glow {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0) 70%);
+  pointer-events: none;
+}
+
+.succ-badge-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.succ-animated-badge {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+  animation: succPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes succPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 10px 26px rgba(16, 185, 129, 0.5);
+  }
+}
+
+.succ-cbs-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--succ-emerald-light);
+  border: 1px solid var(--succ-emerald-border);
+  color: var(--succ-emerald);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.succ-cbs-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--succ-emerald);
+  animation: succBlink 1.4s infinite ease-in-out;
+}
+
+@keyframes succBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.succ-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--succ-text-main);
+  margin: 0 0 4px 0;
+}
+
+.succ-subtitle {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--succ-text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* --------------------------------------------------------------------------
+   2. Primary Transaction Receipt Slip Card (Figma Node 4:4393)
+   -------------------------------------------------------------------------- */
+.succ-receipt-card {
+  background: var(--succ-card-bg);
+  border: 1px solid var(--succ-card-border);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--succ-shadow-sm);
+}
+
+.succ-merchant-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.succ-merchant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.succ-merchant-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.succ-merchant-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--succ-text-main);
+}
+
+.succ-cust-id {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--succ-text-muted);
+}
+
+.succ-scheme-badge {
+  background: var(--succ-blue-light);
+  border: 1px solid var(--succ-blue-border);
+  color: #2563eb;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+[data-theme='dark'] .succ-scheme-badge {
+  color: #60a5fa;
+}
+
+/* Amount Hero Plate (Node 4:4405) */
+.succ-amount-plate {
+  background: var(--succ-plate-bg);
+  border: 1px solid var(--succ-card-border);
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.succ-mode-subline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--succ-text-muted);
+}
+
+.succ-hero-amount {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.succ-hero-amount.text-emerald {
+  color: var(--succ-emerald);
+}
+
+.succ-hero-amount.text-navy {
+  color: #2563eb;
+}
+
+.succ-time-ref-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--succ-text-muted);
+  flex-wrap: wrap;
+}
+
+.succ-ref-bullet {
+  color: var(--succ-text-sub);
+}
+
+/* Balance Delta Step (Node 4:4424) */
+.succ-balance-delta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px dashed var(--succ-card-border);
+  border-bottom: 1px dashed var(--succ-card-border);
+}
+
+.succ-balance-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.succ-balance-col.text-right {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.succ-bal-caption {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--succ-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.succ-bal-caption.text-emerald {
+  color: var(--succ-emerald);
+}
+
+.succ-old-balance {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--succ-text-sub);
+  text-decoration: line-through;
+}
+
+.succ-new-balance {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--succ-emerald);
+}
+
+/* Audit Footer (Node 4:4435) */
+.succ-audit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--succ-text-muted);
+}
+
+.succ-agent-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.succ-bank-tag {
+  font-weight: 500;
+  color: var(--succ-text-sub);
+  text-align: right;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --------------------------------------------------------------------------
+   3. Thermal Slip & Digital Notification Bento Matrix (Figma Node 4:4444)
+   -------------------------------------------------------------------------- */
+.succ-bento-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A. Print Slip Card with Action Button on the Right Side (Node 4:4445) */
+.succ-print-slip-card {
+  background: var(--succ-card-bg);
+  border: 1px solid var(--succ-card-border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: var(--succ-shadow-sm);
+}
+
+.succ-print-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.succ-printer-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme='dark'] .succ-printer-icon-wrap {
+  background: #1e293b;
+}
+
+.succ-print-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.succ-card-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--succ-text-main);
+  margin: 0;
+}
+
+.succ-card-sub {
+  font-size: 10.5px;
+  color: var(--succ-text-muted);
+}
+
+/* Print Slip Action Button (placed next to Print Slip div on the right side) */
+.succ-print-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  flex-shrink: 0;
+}
+
+[data-theme='dark'] .succ-print-action-btn {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.succ-print-action-btn:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .succ-print-action-btn:hover {
+  background: #475569;
+}
+
+/* Thermal Paper Slip (Moved Below Print Slip Option) */
+.succ-thermal-slip-wrapper {
+  margin: 2px 0;
+}
+
+.thermal-paper-slip {
+  background-color: var(--succ-thermal-bg);
+  color: var(--succ-thermal-ink);
+  border-left: 1px dashed var(--succ-card-border);
+  border-right: 1px dashed var(--succ-card-border);
+  border-radius: 4px;
+  padding: 16px 14px;
+  font-family: 'Courier New', Courier, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+/* Serrated top & bottom tear effect */
+.thermal-tear-edge {
+  height: 6px;
+  background-size: 12px 6px;
+  background-repeat: repeat-x;
+}
+
+.thermal-tear-edge.top-tear {
+  background-image: radial-gradient(circle, transparent 4px, var(--succ-thermal-bg) 4px);
+  margin-top: -16px;
+  margin-left: -14px;
+  margin-right: -14px;
+  margin-bottom: 10px;
+}
+
+.thermal-tear-edge.bottom-tear {
+  background-image: radial-gradient(circle, transparent 4px, var(--succ-thermal-bg) 4px);
+  margin-bottom: -16px;
+  margin-left: -14px;
+  margin-right: -14px;
+  margin-top: 12px;
+}
+
+.thermal-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.thermal-bank-name {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.thermal-system-tag {
+  font-size: 9px;
+  color: var(--succ-text-muted);
+  margin-top: 2px;
+}
+
+.thermal-voucher-mode {
+  font-size: 9.5px;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  display: inline-block;
+}
+
+[data-theme='dark'] .thermal-voucher-mode {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.thermal-divider-dashed {
+  border-top: 1px dashed #94a3b8;
+  margin: 8px 0;
+}
+
+.thermal-meta-grid,
+.thermal-fields-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.thermal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.thermal-label {
+  font-weight: 600;
+  color: var(--succ-text-muted);
+  flex-shrink: 0;
+}
+
+.thermal-val {
+  text-align: right;
+  word-break: break-all;
+}
+
+.thermal-val.bold,
+.thermal-row.bold .thermal-val,
+.thermal-row.bold .thermal-label {
+  font-weight: 800;
+}
+
+.thermal-row.muted {
+  font-size: 10px;
+  color: var(--succ-text-muted);
+}
+
+.thermal-amount-highlight {
+  background: var(--succ-thermal-highlight);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 4px;
+  padding: 5px 6px;
+  margin: 4px 0;
+}
+
+.thermal-amount-highlight .thermal-row.large {
+  font-size: 11.5px;
+}
+
+.thermal-balance-block {
+  padding: 4px 0;
+}
+
+.thermal-footer {
+  text-align: center;
+  font-size: 9px;
+  color: var(--succ-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thermal-footer-line.bold {
+  font-weight: 700;
+  color: var(--succ-thermal-ink);
+}
+
+/* --------------------------------------------------------------------------
+   B. Digital Receipt Dispatch / Messaging Card (Node 4:4463)
+   -------------------------------------------------------------------------- */
+.succ-digital-receipt-card {
+  background: var(--succ-card-bg);
+  border: 1px solid var(--succ-card-border);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--succ-shadow-sm);
+}
+
+.succ-digital-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.succ-digital-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.succ-digital-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme='dark'] .succ-digital-icon-wrap {
+  background: rgba(16, 185, 129, 0.15);
+}
+
+/* Phone Number Row (Figma Node 4:4476) */
+.succ-phone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--succ-plate-bg);
+  border: 1px solid var(--succ-card-border);
+  border-radius: 10px;
+}
+
+.succ-phone-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--succ-text-main);
+  flex: 1;
+}
+
+.succ-phone-input {
+  background: transparent;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--succ-text-main);
+  width: 100%;
+  outline: none;
+  padding: 0;
+}
+
+.succ-phone-text {
+  letter-spacing: 0.2px;
+}
+
+.succ-phone-edit-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--succ-primary);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.succ-phone-edit-btn:hover {
+  opacity: 0.8;
+}
+
+/* Message Preview Box (live preview of the message being sent) */
+.succ-message-preview-box {
+  background: #f8fafc;
+  border: 1px solid var(--succ-card-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-theme='dark'] .succ-message-preview-box {
+  background: #0f172a;
+}
+
+.succ-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--succ-text-muted);
+}
+
+.succ-copy-preview-btn {
+  background: transparent;
+  border: 1px solid var(--succ-card-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--succ-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.succ-copy-preview-btn:hover {
+  color: var(--succ-text-main);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] .succ-copy-preview-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.succ-message-preview-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--succ-text-main);
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Share Buttons Row (Send WhatsApp & Send SMS e-Slip) */
+.succ-share-buttons-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.succ-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.succ-share-btn.btn-whatsapp {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+[data-theme='dark'] .succ-share-btn.btn-whatsapp {
+  background: rgba(21, 128, 61, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+
+.succ-share-btn.btn-whatsapp:hover {
+  background: #dcfce7;
+  transform: translateY(-1px);
+}
+
+.succ-share-btn.btn-sms {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+}
+
+[data-theme='dark'] .succ-share-btn.btn-sms {
+  background: rgba(3, 105, 161, 0.15);
+  border-color: rgba(14, 165, 233, 0.35);
+  color: #38bdf8;
+}
+
+.succ-share-btn.btn-sms:hover {
+  background: #e0f2fe;
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   4. Action CTAs (Figma Node 4:4546)
+   -------------------------------------------------------------------------- */
+.succ-ctas-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.succ-primary-cta {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: none;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff633b 0%, #ff7a52 100%);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(255, 99, 59, 0.35);
+}
+
+.succ-primary-cta:hover {
+  background: linear-gradient(135deg, #e04f28 0%, #ff633b 100%);
+  transform: translateY(-1px);
+}
+
+.succ-secondary-ctas-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.succ-secondary-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--succ-card-border);
+  background: var(--succ-card-bg);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--succ-text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.succ-secondary-cta:hover {
+  background: var(--succ-plate-bg);
+  border-color: #cbd5e1;
+}
+
+[data-theme='dark'] .succ-secondary-cta:hover {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+/* --------------------------------------------------------------------------
+   Fixed Bottom Navigation (Figma Node 4:4589)
+   -------------------------------------------------------------------------- */
+.succ-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 440px;
+  height: 64px;
+  background: var(--succ-card-bg);
+  border-top: 1px solid var(--succ-card-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  z-index: 50;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.succ-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--succ-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.succ-nav-btn:hover {
+  color: var(--succ-primary);
+}
+
+.succ-nav-btn.is-active {
+  color: var(--succ-primary);
+}
+
+.succ-nav-btn.is-active img {
+  filter: drop-shadow(0 2px 4px rgba(255, 99, 59, 0.4));
+}
+
+/* --------------------------------------------------------------------------
+   ESC/POS Thermal Printing Media Queries
+   -------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm !important;
+    max-width: 58mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .thermal-tear-edge {
+    display: none !important;
+  }
+}

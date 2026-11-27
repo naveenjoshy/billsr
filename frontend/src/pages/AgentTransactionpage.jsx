@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { getAgentHome, createAgentTransaction } from '../services/agentService'
 import { useToast } from '../context/ToastContext'
+import AgentTransactionConfirmationPage from './AgentTransactionConfirmationPage'
 import './AgentTransactionpage.css'
 
 // Agent Transaction Figma Assets
@@ -13,10 +14,7 @@ import txStreakIcon from '../assets/agent/tx-streak-icon.svg'
 import txAmountIcon from '../assets/agent/tx-amount-icon.svg'
 import txProjectedIcon from '../assets/agent/tx-projected-icon.svg'
 import txTallyIcon from '../assets/agent/tx-tally-icon.svg'
-import txThermalPrinterIcon from '../assets/agent/tx-thermal-printer.svg'
 import txCollectPrintIcon from '../assets/agent/tx-collect-print.svg'
-import txShareWhatsappIcon from '../assets/agent/tx-share-whatsapp.svg'
-import txShareSmsIcon from '../assets/agent/tx-share-sms.svg'
 
 // Bottom Nav Icons
 import navHomeIcon from '../assets/agent/nav-home.svg'
@@ -34,33 +32,6 @@ const moneyShort = (val) =>
   `₹${Number(val || 0).toLocaleString('en-IN', {
     maximumFractionDigits: 0,
   })}`
-
-const formatFullDate = (d) => {
-  const dt = d ? new Date(d) : new Date()
-  return dt
-    .toLocaleString('en-IN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    })
-    .toUpperCase()
-}
-
-const DEFAULT_THERMAL_FIELDS = [
-  { field_name: 'Bank Header & Branch', data_type: 'string', is_mandatory: true, print_order: 1 },
-  { field_name: 'Transaction Date & Time', data_type: 'date', is_mandatory: true, print_order: 2 },
-  { field_name: 'Receipt Reference Number', data_type: 'string', is_mandatory: true, print_order: 3 },
-  { field_name: 'Customer ID & Shop Name', data_type: 'string', is_mandatory: true, print_order: 4 },
-  { field_name: 'Financial Scheme Code', data_type: 'string', is_mandatory: true, print_order: 5 },
-  { field_name: 'Transaction Amount & Mode', data_type: 'currency', is_mandatory: true, print_order: 6 },
-  { field_name: 'Ledger Balance Snapshot', data_type: 'currency', is_mandatory: true, print_order: 7 },
-  { field_name: 'Field Agent ID & GPS Tag', data_type: 'string', is_mandatory: false, print_order: 8 },
-  { field_name: 'Thermal Footer Disclaimer', data_type: 'string', is_mandatory: false, print_order: 9 },
-]
 
 const DENOMINATION_ROWS = [
   [500, 200, 100],
@@ -102,8 +73,7 @@ export default function AgentTransactionpage({
 
   // Submission & Confirmation State
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [confirmedTx, setConfirmedTx] = useState(null)
-  const [previewTxTime, setPreviewTxTime] = useState(() => new Date())
+  const [completedTx, setCompletedTx] = useState(null)
 
   // Load Live Data
   useEffect(() => {
@@ -139,16 +109,6 @@ export default function AgentTransactionpage({
     }
   }, [initialCustomerId])
 
-  // Timer for preview timestamp
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!confirmedTx) {
-        setPreviewTxTime(new Date())
-      }
-    }, 10000)
-    return () => clearInterval(timer)
-  }, [confirmedTx])
-
   // Active Customer Object
   const currentCustomer = useMemo(() => {
     if (!agentData?.customers) return null
@@ -176,7 +136,7 @@ export default function AgentTransactionpage({
   // Update selected scheme when customer changes if customer has a specific scheme
   const handleCustomerChange = (customerId) => {
     setSelectedCustomerId(customerId)
-    setConfirmedTx(null)
+    setCompletedTx(null)
     const cust = agentData?.customers?.find((c) => c._id === customerId)
     if (cust?.schemeId) {
       setSelectedSchemeId(cust.schemeId)
@@ -211,7 +171,7 @@ export default function AgentTransactionpage({
   // Handle Amount Input Change
   const handleAmountChange = (newVal) => {
     setAmount(newVal)
-    setConfirmedTx(null)
+    setCompletedTx(null)
     const numeric = parseFloat(newVal)
     if (!isNaN(numeric) && numeric > 0) {
       autoSplitDenominations(numeric)
@@ -235,7 +195,7 @@ export default function AgentTransactionpage({
       }
       return nextCounts
     })
-    setConfirmedTx(null)
+    setCompletedTx(null)
   }
 
   // Denominations Subtotal
@@ -272,7 +232,7 @@ export default function AgentTransactionpage({
       const k = e.key?.toLowerCase()
       if (k === 'd') {
         setTransactType('D')
-        setConfirmedTx(null)
+        setCompletedTx(null)
       } else if (k === 'w') {
         if (!isWithdrawalEnabled) {
           toast.info(
@@ -283,13 +243,13 @@ export default function AgentTransactionpage({
           return
         }
         setTransactType('W')
-        setConfirmedTx(null)
+        setCompletedTx(null)
       } else if (k === 'c') {
         setTransactMode('C')
-        setConfirmedTx(null)
+        setCompletedTx(null)
       } else if (k === 't') {
         setTransactMode('T')
-        setConfirmedTx(null)
+        setCompletedTx(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -304,17 +264,6 @@ export default function AgentTransactionpage({
   const monthlyTarget = currentCustomer?.monthlyTarget || 15000
   const collectedMonth = currentCustomer?.collectedMonth || Math.round(monthlyTarget * 0.653)
   const targetPct = Math.min(Math.round((collectedMonth / monthlyTarget) * 100), 100)
-
-  // Receipt Fields from Scheme Receipt Config
-  const receiptFields = useMemo(() => {
-    if (confirmedTx?.receiptConfig?.fields && confirmedTx.receiptConfig.fields.length > 0) {
-      return [...confirmedTx.receiptConfig.fields].sort((a, b) => (a.print_order || 0) - (b.print_order || 0))
-    }
-    if (currentScheme?.receiptConfig?.fields && currentScheme.receiptConfig.fields.length > 0) {
-      return [...currentScheme.receiptConfig.fields].sort((a, b) => (a.print_order || 0) - (b.print_order || 0))
-    }
-    return DEFAULT_THERMAL_FIELDS
-  }, [currentScheme, confirmedTx])
 
   // Submit Transaction
   const handleCollectAndPrint = async (e) => {
@@ -355,7 +304,7 @@ export default function AgentTransactionpage({
       })
 
       const tx = res.transaction
-      setConfirmedTx(tx)
+      setCompletedTx(tx)
 
       // Update current customer's balance locally for immediate feedback
       if (agentData?.customers) {
@@ -379,11 +328,6 @@ export default function AgentTransactionpage({
       if (onTransactionSuccess) {
         onTransactionSuccess(tx)
       }
-
-      // Small delay before opening print preview dialog so DOM reflects confirmed receipt
-      setTimeout(() => {
-        window.print()
-      }, 350)
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : 'Transaction submission failed.',
@@ -394,67 +338,28 @@ export default function AgentTransactionpage({
     }
   }
 
-  // Share WhatsApp
-  const handleShareWhatsapp = () => {
-    const bankTitle = agentData?.agent?.bankName || 'Devicolam Taluk Agrl & Rural Development Bank'
-    const recNo = confirmedTx?.receiptNo || 'PREVIEW-REC'
-    const custName = currentCustomer?.name || 'Customer'
-    const bal = confirmedTx ? confirmedTx.newBalance : projectedBalance
-    const phone = currentCustomer?.phone ? currentCustomer.phone.replace(/[^0-9]/g, '') : ''
-
-    const message = `*${bankTitle}*\n` +
-      `--------------------------------\n` +
-      `*FIELD TRANSACTION ACKNOWLEDGEMENT*\n` +
-      `*Receipt No:* #${recNo}\n` +
-      `*Type:* ${isDeposit ? 'DEPOSIT (CREDIT)' : 'PAYOUT (DEBIT)'}\n` +
-      `*Mode:* ${transactMode === 'C' ? 'Cash' : 'Transfer'}\n` +
-      `*Amount:* ${money(parsedAmount)}\n` +
-      `*Customer:* ${custName} (${currentCustomer?.accountNo || '#1042-xxxx-01'})\n` +
-      `*Scheme:* ${currentScheme?.name || 'MBS Daily Pigmy'}\n` +
-      `*Updated Balance:* ${money(bal)}\n` +
-      `*Date/Time:* ${formatFullDate(confirmedTx?.at || new Date())}\n` +
-      `*Agent:* ${agentData?.agent?.name || user?.name || 'Field Agent'}\n` +
-      `--------------------------------\n` +
-      `_Instant CBS committed thermal record via Billsr_`
-
-    const url = phone
-      ? `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`
-      : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`
-
-    window.open(url, '_blank')
-    toast.info('Opening WhatsApp to share e-slip...', 'WhatsApp e-Slip', 2000)
-  }
-
-  // Share SMS e-Slip
-  const handleShareSms = () => {
-    const bankTitle = 'Devicolam Bank'
-    const recNo = confirmedTx?.receiptNo || 'PREVIEW-REC'
-    const bal = confirmedTx ? confirmedTx.newBalance : projectedBalance
-    const phone = currentCustomer?.phone ? currentCustomer.phone.replace(/[^0-9+]/g, '') : ''
-
-    const message = `${bankTitle}: ${isDeposit ? 'Deposit' : 'Payout'} of ${money(parsedAmount)} processed for A/c ${currentCustomer?.accountNo || 'xx'}. Ref: #${recNo}. Bal: ${money(bal)}. Date: ${formatFullDate(confirmedTx?.at || new Date())}.`
-
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(message)
-      toast.success('e-Slip SMS text copied to clipboard.', 'SMS Generated', 2200)
-    }
-
-    if (phone) {
-      window.location.href = `sms:${phone}?body=${encodeURIComponent(message)}`
-    }
-  }
-
   const agentName = agentData?.agent?.name || user?.name || 'Collection Agent'
-  const bankName = agentData?.agent?.bankName || 'Devicolam Taluk Agrl & Rural Development Bank'
   const agentId = agentData?.agent?.userID || user?.userID || 'AGT-1021'
 
-  const activeReceiptNo = confirmedTx?.receiptNo || 'REC-2026-984021'
-  const activeTxId = confirmedTx?._id
-    ? `TXN-${confirmedTx._id.slice(-6).toUpperCase()}`
-    : `TXN-8849-01`
-  const activeTxDate = confirmedTx?.at ? formatFullDate(confirmedTx.at) : formatFullDate(previewTxTime)
-  const activeOldBal = confirmedTx?.openingBalance ?? currentLedgerBalance
-  const activeNewBal = confirmedTx?.newBalance ?? projectedBalance
+  if (completedTx) {
+    return (
+      <AgentTransactionConfirmationPage
+        transaction={completedTx}
+        customer={currentCustomer}
+        scheme={currentScheme}
+        agent={agentData?.agent}
+        user={user}
+        onNavigateHome={onNavigateHome}
+        onNavigateOnboard={onNavigateOnboard}
+        onNavigateLedger={onNavigateHome}
+        onNewTransaction={() => {
+          setCompletedTx(null)
+          setAmount('1000')
+          autoSplitDenominations(1000)
+        }}
+      />
+    )
+  }
 
   return (
     <div className="agent-tx-shell" data-node-id="4:4856">
@@ -574,7 +479,7 @@ export default function AgentTransactionpage({
                         value={selectedSchemeId}
                         onChange={(e) => {
                           setSelectedSchemeId(e.target.value)
-                          setConfirmedTx(null)
+                          setCompletedTx(null)
                         }}
                         disabled={isSubmitting}
                         aria-label="Change Scheme"
@@ -599,7 +504,7 @@ export default function AgentTransactionpage({
                     className={`agent-tx-toggle-btn ${effectiveTransactType === 'D' ? 'active-deposit' : 'inactive-type'}`}
                     onClick={() => {
                       setTransactType('D')
-                      setConfirmedTx(null)
+                      setCompletedTx(null)
                     }}
                     disabled={isSubmitting}
                     data-node-id="4:4904"
@@ -610,10 +515,10 @@ export default function AgentTransactionpage({
                   <button
                     type="button"
                     className={`agent-tx-toggle-btn ${!isWithdrawalEnabled
-                        ? 'disabled-withdraw'
-                        : effectiveTransactType === 'W'
-                          ? 'active-withdraw'
-                          : 'inactive-type'
+                      ? 'disabled-withdraw'
+                      : effectiveTransactType === 'W'
+                        ? 'active-withdraw'
+                        : 'inactive-type'
                       }`}
                     onClick={() => {
                       if (!isWithdrawalEnabled) {
@@ -625,7 +530,7 @@ export default function AgentTransactionpage({
                         return
                       }
                       setTransactType('W')
-                      setConfirmedTx(null)
+                      setCompletedTx(null)
                     }}
                     disabled={isSubmitting || !isWithdrawalEnabled}
                     title={
@@ -652,7 +557,7 @@ export default function AgentTransactionpage({
                     className={`agent-tx-toggle-btn ${transactMode === 'C' ? 'active-cash' : 'inactive-channel'}`}
                     onClick={() => {
                       setTransactMode('C')
-                      setConfirmedTx(null)
+                      setCompletedTx(null)
                     }}
                     disabled={isSubmitting}
                     data-node-id="4:4916"
@@ -665,7 +570,7 @@ export default function AgentTransactionpage({
                     className={`agent-tx-toggle-btn ${transactMode === 'T' ? 'active-transfer' : 'inactive-channel'}`}
                     onClick={() => {
                       setTransactMode('T')
-                      setConfirmedTx(null)
+                      setCompletedTx(null)
                     }}
                     disabled={isSubmitting}
                     data-node-id="4:4921"
@@ -802,167 +707,7 @@ export default function AgentTransactionpage({
                 </div>
               </section>
 
-              {/* 5. 58mm Thermal ESC/POS Receipt Live Preview (Figma Node 4:5047) */}
-              <section className="agent-tx-receipt-section" data-node-id="4:5047">
-                <div className="receipt-section-header">
-                  <div className="receipt-title-wrap">
-                    <img src={txThermalPrinterIcon} alt="" width="16" height="16" />
-                    <h2>ESC/POS Thermal Slip (58mm)</h2>
-                  </div>
-                  <span className={`receipt-state-badge ${confirmedTx ? 'is-confirmed' : 'is-preview'}`}>
-                    {confirmedTx ? '✓ CONFIRMED RECORD' : 'LIVE PREVIEW'}
-                  </span>
-                </div>
-
-                {/* Printable 58mm Thermal Slip Paper */}
-                <div className="thermal-paper-slip print-area" id="thermal-receipt-slip">
-                  <div className="thermal-tear-edge top-tear" />
-
-                  <div className="thermal-header">
-                    <div className="thermal-bank-name">{bankName}</div>
-                    <div className="thermal-system-tag">FIELD TRANS LOG SYSTEM - BILLSR</div>
-                    <div className="thermal-voucher-mode">
-                      {isDeposit
-                        ? `COLLECTION RECEIPT (${transactMode === 'C' ? 'CASH RECEIVED' : 'TRANSFER RECEIVED'})`
-                        : `WITHDRAWAL VOUCHER (${transactMode === 'C' ? 'CASH DISBURSED' : 'TRANSFER DISBURSED'})`}
-                    </div>
-                  </div>
-
-                  <div className="thermal-divider-dashed" />
-
-                  {/* Core Technical Identifiers */}
-                  <div className="thermal-meta-grid">
-                    <div className="thermal-row">
-                      <span className="thermal-label">TXN ID:</span>
-                      <span className="thermal-val">{activeTxId}</span>
-                    </div>
-                    <div className="thermal-row">
-                      <span className="thermal-label">REC NO:</span>
-                      <span className="thermal-val bold">{activeReceiptNo}</span>
-                    </div>
-                    <div className="thermal-row">
-                      <span className="thermal-label">DATE/TIME:</span>
-                      <span className="thermal-val">{activeTxDate}</span>
-                    </div>
-                    <div className="thermal-row">
-                      <span className="thermal-label">AGENT:</span>
-                      <span className="thermal-val">{agentId} ({agentName.slice(0, 15)})</span>
-                    </div>
-                    <div className="thermal-row">
-                      <span className="thermal-label">AUTH CODE:</span>
-                      <span className="thermal-val">AUTH-CBS-{(activeReceiptNo.replace(/[^0-9]/g, '').slice(-4) || '9832')}</span>
-                    </div>
-                  </div>
-
-                  <div className="thermal-divider-dashed" />
-
-                  {/* Scheme Dynamic Report Fields (matches configured receipt fields from scheme design) */}
-                  <div className="thermal-fields-body">
-                    {receiptFields.map((field, idx) => {
-                      const fn = (field.field_name || '').toLowerCase()
-
-                      if (fn.includes('header') || fn.includes('date') || fn.includes('receipt reference') || fn.includes('disclaimer') || fn.includes('footer')) {
-                        // Handled in dedicated header/meta/footer blocks
-                        return null
-                      }
-
-                      if (fn.includes('customer') || fn.includes('shop') || fn.includes('account')) {
-                        return (
-                          <div key={idx} className="thermal-block">
-                            <div className="thermal-row">
-                              <span className="thermal-label">CUSTOMER:</span>
-                              <span className="thermal-val bold">{currentCustomer?.name || 'Customer'}</span>
-                            </div>
-                            {currentCustomer?.shopName && (
-                              <div className="thermal-row muted">
-                                <span className="thermal-label">SHOP:</span>
-                                <span className="thermal-val">{currentCustomer.shopName}</span>
-                              </div>
-                            )}
-                            <div className="thermal-row">
-                              <span className="thermal-label">ACC / ID:</span>
-                              <span className="thermal-val">{currentCustomer?.accountNo || '#1042-9981-01'}</span>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      if (fn.includes('scheme') || fn.includes('product')) {
-                        return (
-                          <div key={idx} className="thermal-row">
-                            <span className="thermal-label">SCHEME:</span>
-                            <span className="thermal-val bold">{currentScheme?.name || 'MBS DAILY PIGMY'}</span>
-                          </div>
-                        )
-                      }
-
-                      if (fn.includes('amount') || fn.includes('mode')) {
-                        return (
-                          <div key={idx} className="thermal-amount-highlight">
-                            <div className="thermal-row bold large">
-                              <span className="thermal-label">{isDeposit ? 'AMOUNT COLLECTED:' : 'AMOUNT DISBURSED:'}</span>
-                              <span className="thermal-val">
-                                {money(parsedAmount)} [{transactMode === 'C' ? 'CASH' : 'TRANSFER'}]
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      if (fn.includes('balance') || fn.includes('ledger')) {
-                        return (
-                          <div key={idx} className="thermal-balance-block">
-                            <div className="thermal-row">
-                              <span className="thermal-label">OLD BALANCE:</span>
-                              <span className="thermal-val">{money(activeOldBal)}</span>
-                            </div>
-                            <div className="thermal-row bold">
-                              <span className="thermal-label">NEW BALANCE:</span>
-                              <span className="thermal-val">{money(activeNewBal)}</span>
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      if (fn.includes('agent') || fn.includes('gps')) {
-                        return (
-                          <div key={idx} className="thermal-row muted">
-                            <span className="thermal-label">GPS PING:</span>
-                            <span className="thermal-val">10.0889°N, 77.0595°E (LOCK: ±3m)</span>
-                          </div>
-                        )
-                      }
-
-                      // Generic dynamic configured field
-                      return (
-                        <div key={idx} className="thermal-row">
-                          <span className="thermal-label">{field.field_name.toUpperCase()}:</span>
-                          <span className="thermal-val">
-                            {field.data_type === 'currency'
-                              ? '₹0.00'
-                              : field.data_type === 'number'
-                                ? '1'
-                                : 'CONFIRMED'}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  <div className="thermal-divider-dashed" />
-
-                  {/* Thermal Footer */}
-                  <div className="thermal-footer">
-                    <div className="thermal-footer-line bold">INSTANT CBS COMMITTED • THERMAL RECORD</div>
-                    <div className="thermal-footer-line">BATTERY: 87% • BT-PRINTER ONLINE • 203 DPI</div>
-                    <div className="thermal-footer-line">*** Thank you for banking with us! ***</div>
-                  </div>
-
-                  <div className="thermal-tear-edge bottom-tear" />
-                </div>
-              </section>
-
-              {/* 6. Action Controls: Collect & Print, Share WhatsApp, Share SMS (Figma Node 4:5137) */}
+              {/* 5. Action Controls: Submit Transaction (Figma Node 4:5137) */}
               <section className="agent-tx-actions-section" data-node-id="4:5137">
                 <button
                   type="button"
@@ -976,32 +721,10 @@ export default function AgentTransactionpage({
                     {isSubmitting
                       ? 'Committing to CBS...'
                       : isDeposit
-                        ? 'Collect & Print Receipt'
-                        : 'Payout & Print Voucher'}
+                        ? 'Collect & Generate Slip'
+                        : 'Disburse & Generate Voucher'}
                   </span>
                 </button>
-
-                <div className="agent-tx-share-row" data-node-id="4:5147">
-                  <button
-                    type="button"
-                    className="agent-tx-share-btn btn-whatsapp"
-                    onClick={handleShareWhatsapp}
-                    data-node-id="4:5148"
-                  >
-                    <img src={txShareWhatsappIcon} alt="" width="18" height="18" />
-                    <span>Share WhatsApp</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="agent-tx-share-btn btn-sms"
-                    onClick={handleShareSms}
-                    data-node-id="4:5153"
-                  >
-                    <img src={txShareSmsIcon} alt="" width="18" height="18" />
-                    <span>SMS e-Slip</span>
-                  </button>
-                </div>
               </section>
             </>
           )}
