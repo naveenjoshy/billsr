@@ -525,6 +525,139 @@
 .bg-navy { background-color: #182232; }
 
 /* --- Route Queue & Scheduled Vendor Visits --- */
+.agent-title-with-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 16px;
+}
+
+.agent-refresh-btn:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.agent-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.agent-refresh-icon {
+  flex-shrink: 0;
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+.agent-refresh-icon.is-spinning {
+  animation: agentRefreshSpin 0.75s linear infinite;
+  color: #ff633b;
+}
+
+@keyframes agentRefreshSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.agent-section-badge {
+  background-color: rgba(255, 99, 59, 0.1);
+  color: #ff633b;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.agent-section-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px 0 8px 0;
+  width: 100%;
+}
+
+.agent-section-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background-color: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-section-tab-btn.is-active {
+  background-color: #182232;
+  color: #ffffff;
+}
+
+.agent-section-tab-badge {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0 5px;
+  line-height: 14px;
+  background-color: rgba(0, 0, 0, 0.1);
+  color: inherit;
+}
+
+.agent-section-tab-btn.is-active .agent-section-tab-badge {
+  background-color: #ff633b;
+  color: #ffffff;
+}
+
+.agent-vendor-shop {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-mode-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  line-height: 12px;
+}
+
+.agent-mode-badge.mode-cash {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.agent-mode-badge.mode-transfer {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
 .agent-map-btn {
   background: none;
   border: 0;
@@ -1325,4 +1458,473 @@
 [data-theme='dark'] .agent-nav-link.is-active .agent-nav-text,
 .dark .agent-nav-link.is-active .agent-nav-text {
   color: #ff633b;
+}
+
+[data-theme='dark'] .agent-refresh-btn,
+.dark .agent-refresh-btn {
+  background-color: #141f33;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .agent-refresh-btn:hover:not(:disabled),
+.dark .agent-refresh-btn:hover:not(:disabled) {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-section-tab-btn,
+.dark .agent-section-tab-btn {
+  background-color: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-section-tab-btn.is-active,
+.dark .agent-section-tab-btn.is-active {
+  background-color: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #334155;
+}
+
+[data-theme='dark'] .agent-mode-badge.mode-cash,
+.dark .agent-mode-badge.mode-cash {
+  background-color: rgba(22, 101, 52, 0.25);
+  color: #86efac;
+  border-color: #166534;
+}
+
+[data-theme='dark'] .agent-mode-badge.mode-transfer,
+.dark .agent-mode-badge.mode-transfer {
+  background-color: rgba(29, 78, 216, 0.25);
+  color: #93c5fd;
+  border-color: #1e40af;
+}
+
+[data-theme='dark'] .agent-vendor-shop,
+.dark .agent-vendor-shop {
+  color: #94a3b8;
+}
+
+/* --- Status Color Coding for Completed, Pending, and Cancelled --- */
+.agent-vendor-item.status-pending-cancel {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.agent-vendor-item.status-cancelled {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  opacity: 0.88;
+}
+
+.bg-amber-light {
+  background-color: #fef3c7;
+}
+
+.bg-red-light {
+  background-color: #fee2e2;
+}
+
+.name-cancelled {
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.text-cancelled {
+  color: #94a3b8 !important;
+  text-decoration: line-through;
+}
+
+.tag-pending-cancel {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+/* --- Transaction Details & Cancellation Action Popup Menu --- */
+.agent-tx-popup-menu {
+  max-width: 420px;
+  padding: 16px;
+  border-radius: 12px;
+  width: 92%;
+}
+
+.agent-tx-popup-ref {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.agent-tx-hero-banner {
+  border-radius: 8px;
+  padding: 12px;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.agent-tx-hero-banner.is-deposit {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.agent-tx-hero-banner.is-payout {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+}
+
+.agent-tx-hero-banner.is-pending-cancel {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.agent-tx-hero-banner.is-cancelled {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.agent-tx-hero-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: "Plus Jakarta Sans", Inter, sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.agent-tx-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-tx-pill-type {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #334155;
+}
+
+.agent-tx-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.agent-tx-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.agent-tx-label {
+  color: #64748b;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.agent-tx-value {
+  color: #0f172a;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  word-break: break-word;
+}
+
+.agent-tx-value.mono-val {
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.agent-cancellation-notice {
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.agent-cancellation-notice.is-pending {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.agent-cancellation-notice.is-voided {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.agent-cancellation-notice-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+.agent-cancellation-reason-text {
+  font-style: italic;
+  margin: 4px 0 6px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.agent-cancellation-notice-sub {
+  font-size: 11px;
+  opacity: 0.85;
+  line-height: 1.3;
+  display: block;
+}
+
+.agent-popup-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.agent-btn-request-cancel {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-btn-request-cancel:hover:not(:disabled) {
+  background-color: #fecaca;
+  border-color: #f87171;
+}
+
+.agent-btn-withdraw-cancel {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-btn-withdraw-cancel:hover:not(:disabled) {
+  background-color: #dbeafe;
+  border-color: #60a5fa;
+}
+
+.agent-btn-close-popup {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-btn-close-popup.w-full {
+  width: 100%;
+}
+
+.agent-btn-close-popup:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.agent-cancel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.agent-cancel-form-head strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.agent-cancel-form-head p {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.agent-textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.agent-textarea:focus {
+  border-color: #ff633b;
+  box-shadow: 0 0 0 2px rgba(255, 99, 59, 0.15);
+}
+
+/* Dark Theme Adaptations */
+[data-theme='dark'] .agent-vendor-item.status-pending-cancel,
+.dark .agent-vendor-item.status-pending-cancel {
+  background-color: rgba(217, 119, 6, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+[data-theme='dark'] .agent-vendor-item.status-cancelled,
+.dark .agent-vendor-item.status-cancelled {
+  background-color: rgba(220, 38, 38, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme='dark'] .bg-amber-light,
+.dark .bg-amber-light {
+  background-color: rgba(217, 119, 6, 0.2) !important;
+}
+
+[data-theme='dark'] .bg-red-light,
+.dark .bg-red-light {
+  background-color: rgba(220, 38, 38, 0.2) !important;
+}
+
+[data-theme='dark'] .tag-pending-cancel,
+.dark .tag-pending-cancel {
+  background-color: rgba(217, 119, 6, 0.25);
+  color: #fcd34d;
+  border-color: #d97706;
+}
+
+[data-theme='dark'] .agent-tx-popup-menu,
+.dark .agent-tx-popup-menu {
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-tx-hero-banner.is-deposit,
+.dark .agent-tx-hero-banner.is-deposit {
+  background: rgba(5, 150, 105, 0.15);
+  border-color: rgba(5, 150, 105, 0.3);
+  color: #6ee7b7;
+}
+
+[data-theme='dark'] .agent-tx-hero-banner.is-payout,
+.dark .agent-tx-hero-banner.is-payout {
+  background: rgba(178, 44, 6, 0.15);
+  border-color: rgba(178, 44, 6, 0.3);
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .agent-tx-hero-banner.is-pending-cancel,
+.dark .agent-tx-hero-banner.is-pending-cancel {
+  background: rgba(217, 119, 6, 0.15);
+  border-color: rgba(217, 119, 6, 0.3);
+  color: #fcd34d;
+}
+
+[data-theme='dark'] .agent-tx-hero-banner.is-cancelled,
+.dark .agent-tx-hero-banner.is-cancelled {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #f87171;
+}
+
+[data-theme='dark'] .agent-tx-details-grid,
+.dark .agent-tx-details-grid {
+  background-color: #141f33;
+  border-color: #1e293b;
+}
+
+[data-theme='dark'] .agent-tx-value,
+.dark .agent-tx-value {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-cancellation-notice.is-pending,
+.dark .agent-cancellation-notice.is-pending {
+  background-color: rgba(217, 119, 6, 0.18);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+}
+
+[data-theme='dark'] .agent-cancellation-notice.is-voided,
+.dark .agent-cancellation-notice.is-voided {
+  background-color: rgba(220, 38, 38, 0.18);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+[data-theme='dark'] .agent-btn-close-popup,
+.dark .agent-btn-close-popup {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .agent-btn-close-popup:hover,
+.dark .agent-btn-close-popup:hover {
+  background-color: #334155;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .agent-textarea,
+.dark .agent-textarea {
+  background-color: #141f33;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-cancel-form-head strong,
+.dark .agent-cancel-form-head strong {
+  color: #f8fafc;
 }

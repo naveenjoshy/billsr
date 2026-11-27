@@ -12,6 +12,7 @@ export const getBankTransactions = (query = {}) => {
   if (query.page) params.set('page', String(query.page))
   if (query.pageSize) params.set('pageSize', String(query.pageSize))
   if (query.search) params.set('search', query.search)
+  if (query.date) params.set('date', query.date)
   if (query.status && query.status !== 'all') params.set('status', query.status)
   if (query.type && query.type !== 'all') params.set('type', query.type)
   if (query.mode && query.mode !== 'all') params.set('mode', query.mode)

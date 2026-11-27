@@ -1,5 +1,7 @@
+import mongoose from 'mongoose'
 import { HTTP_STATUS, MESSAGES } from '../constants/httpConstants.js'
 import { Agent } from '../models/Agent.js'
+import { AuditLog } from '../models/AuditLog.js'
 import { Bank } from '../models/Bank.js'
 import { Customer } from '../models/Customer.js'
 import { CustomerScheme } from '../models/CustomerScheme.js'
@@ -44,6 +46,8 @@ export async function getAgentHome(req, res) {
   const since = new Date(now - holdingDays * DAY_MS)
   const startOfDay = new Date()
   startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date()
+  endOfDay.setHours(23, 59, 59, 999)
 
   let [windowRows, todayRows, todayDocs] = await Promise.all([
     Transaction.find({
@@ -57,13 +61,13 @@ export async function getAgentHome(req, res) {
     Transaction.find({
       agent_id: agent._id,
       transaction_status: { $ne: 'C' },
-      collect_date: { $gte: startOfDay },
+      collect_date: { $gte: startOfDay, $lte: endOfDay },
     })
       .select('transact_type transact_amt')
       .lean(),
-    Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay } })
-      .sort({ collect_date: -1 })
-      .limit(20)
+    Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay, $lte: endOfDay } })
+      .sort({ collect_date: -1, _id: -1 })
+      .limit(100)
       .populate('customer_id', 'name shop_name address phone')
       .populate('scheme_id', 'scheme_name')
       .lean(),
@@ -73,7 +77,7 @@ export async function getAgentHome(req, res) {
   // align them to today so the agent has realistic live collections in hand
   if (todayRows.length === 0) {
     const pastTxs = await Transaction.find({ agent_id: agent._id })
-      .sort({ collect_date: -1 })
+      .sort({ collect_date: -1, _id: -1 })
       .limit(10)
       .lean()
 
@@ -98,13 +102,13 @@ export async function getAgentHome(req, res) {
         Transaction.find({
           agent_id: agent._id,
           transaction_status: { $ne: 'C' },
-          collect_date: { $gte: startOfDay },
+          collect_date: { $gte: startOfDay, $lte: endOfDay },
         })
           .select('transact_type transact_amt')
           .lean(),
-        Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay } })
-          .sort({ collect_date: -1 })
-          .limit(20)
+        Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay, $lte: endOfDay } })
+          .sort({ collect_date: -1, _id: -1 })
+          .limit(100)
           .populate('customer_id', 'name shop_name address phone')
           .populate('scheme_id', 'scheme_name')
           .lean(),
@@ -133,13 +137,25 @@ export async function getAgentHome(req, res) {
     customerId: t.customer_id?._id ? String(t.customer_id._id) : null,
     customer: t.customer_id?.name || t.customer_id?.shop_name || 'Customer',
     shopName: t.customer_id?.shop_name || '',
+    phone: t.customer_id?.phone || '',
+    address: t.customer_id?.address || '',
     scheme: t.scheme_id?.scheme_name ?? 'MBS Daily',
     type: t.transact_type,
+    mode: t.transact_mode || 'C',
     amount: num(t.transact_amt),
     receiptNo: t.receipt_no,
-    status: t.transaction_status === 'A' ? 'Completed' : t.transaction_status === 'C' ? 'Cancelled' : 'Pending',
+    statusCode: t.transaction_status,
+    status:
+      t.transaction_status === 'A'
+        ? 'Completed'
+        : t.transaction_status === 'P'
+          ? 'Pending Cancellation'
+          : t.transaction_status === 'C'
+            ? 'Cancelled'
+            : 'Pending',
+    cancellationReason: t.cancellation_info?.cancellation_reason || null,
     at: t.collect_date,
-    isCompleted: true,
+    isCompleted: t.transaction_status === 'A',
   }))
 
   const unvisitedStops = assignedCustomers
@@ -180,6 +196,7 @@ export async function getAgentHome(req, res) {
       items: completedTxItems,
       allStops: [...completedTxItems, ...unvisitedStops],
     },
+    todayTransactions: completedTxItems,
     customers: assignedCustomers.map((c) => ({
       _id: String(c._id),
       name: c.name,
@@ -362,4 +379,119 @@ export async function onboardCustomer(req, res) {
       receiptNo: randomReceipt,
     },
   })
+}
+
+export async function requestTransactionCancellation(req, res) {
+  try {
+    const agent = await Agent.findOne({ user_id: req.auth.sub })
+    if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid transaction ID format.' })
+    }
+
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : ''
+    if (!reason) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Please provide a valid cancellation reason.' })
+    }
+
+    const transaction = await Transaction.findOne({ _id: id, agent_id: agent._id })
+    if (!transaction) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Transaction not found or not authorized for this agent.' })
+    }
+
+    if (transaction.transaction_status === 'C') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'This transaction has already been cancelled.' })
+    }
+
+    if (transaction.transaction_status === 'P') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Cancellation request is already pending review.' })
+    }
+
+    const previousStatus = transaction.transaction_status
+    transaction.transaction_status = 'P'
+    transaction.cancellation_info = {
+      cancellation_reason: reason,
+      reviewed_by: null,
+    }
+    await transaction.save()
+
+    await AuditLog.create({
+      collection_name: 'transactions',
+      document_id: transaction._id,
+      description: `Agent requested transaction cancellation: "${reason}"`,
+      changed_field: 'transaction_status',
+      previous_value: previousStatus,
+      new_value: 'P',
+      updated_by: req.auth.sub,
+    })
+
+    res.json({
+      message: `Cancellation requested for Receipt #${transaction.receipt_no}. Awaiting bank authorization.`,
+      transaction: {
+        _id: String(transaction._id),
+        receiptNo: transaction.receipt_no,
+        status: 'Pending Cancellation',
+        statusCode: 'P',
+        cancellationReason: reason,
+      },
+    })
+  } catch (error) {
+    console.error('Request transaction cancellation error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to process cancellation request.' })
+  }
+}
+
+export async function withdrawCancellationRequest(req, res) {
+  try {
+    const agent = await Agent.findOne({ user_id: req.auth.sub })
+    if (!agent) return res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.AGENT.NO_PROFILE })
+
+    const { id } = req.params
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'Invalid transaction ID format.' })
+    }
+
+    const transaction = await Transaction.findOne({ _id: id, agent_id: agent._id })
+    if (!transaction) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ message: 'Transaction not found or not authorized for this agent.' })
+    }
+
+    if (transaction.transaction_status !== 'P') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ message: 'This transaction does not have an active pending cancellation request.' })
+    }
+
+    transaction.transaction_status = 'A'
+    const priorReason = transaction.cancellation_info?.cancellation_reason || ''
+    transaction.cancellation_info = {
+      cancellation_reason: null,
+      reviewed_by: null,
+    }
+    await transaction.save()
+
+    await AuditLog.create({
+      collection_name: 'transactions',
+      document_id: transaction._id,
+      description: `Agent withdrew cancellation request (prior reason: "${priorReason}")`,
+      changed_field: 'transaction_status',
+      previous_value: 'P',
+      new_value: 'A',
+      updated_by: req.auth.sub,
+    })
+
+    res.json({
+      message: `Cancellation request for Receipt #${transaction.receipt_no} has been cancelled/withdrawn.`,
+      transaction: {
+        _id: String(transaction._id),
+        receiptNo: transaction.receipt_no,
+        status: 'Completed',
+        statusCode: 'A',
+        cancellationReason: null,
+      },
+    })
+  } catch (error) {
+    console.error('Withdraw cancellation request error:', error)
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ message: 'Unable to withdraw cancellation request.' })
+  }
 }

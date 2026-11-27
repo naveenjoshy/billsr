@@ -12,3 +12,14 @@ export const onboardCustomer = (data) =>
     method: 'POST',
     body: JSON.stringify(data),
   })
+
+export const requestTransactionCancellation = (id, reason) =>
+  request(`/api/agent/transactions/${id}/cancel-request`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  })
+
+export const withdrawCancellationRequest = (id) =>
+  request(`/api/agent/transactions/${id}/withdraw-cancel`, {
+    method: 'POST',
+  })

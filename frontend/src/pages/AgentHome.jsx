@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { logoutUser } from '../services/authService'
-import { getAgentHome, createAgentTransaction } from '../services/agentService'
+import {
+  getAgentHome,
+  createAgentTransaction,
+  requestTransactionCancellation,
+  withdrawCancellationRequest,
+} from '../services/agentService'
 import { useTheme } from '../context/ThemeContext'
 import { useToast } from '../context/ToastContext'
 import CustomerOnboardingPage from './CustomerOnboardingPage'
@@ -58,6 +63,17 @@ export default function AgentHome({ user, onLoggedOut }) {
   const [amount, setAmount] = useState('')
   const [isSubmittingTx, setIsSubmittingTx] = useState(false)
 
+  // Section 4 View State (Today's Transactions LIFO vs Route Queue)
+  const [sectionView, setSectionView] = useState('transactions')
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Transaction Details & Cancellation Action Popup Menu State
+  const [selectedTx, setSelectedTx] = useState(null)
+  const [showCancelForm, setShowCancelForm] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
+  const [isWithdrawingCancel, setIsWithdrawingCancel] = useState(false)
+
   const menuRef = useRef(null)
   const { theme, toggleTheme } = useTheme()
   const { toast } = useToast()
@@ -70,6 +86,79 @@ export default function AgentHome({ user, onLoggedOut }) {
       setError(err instanceof Error ? err.message : 'Unable to connect to live agent dashboard.')
     }
   }, [])
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await reloadHomeData()
+      toast.success('Live transactions reloaded from database.', 'Refreshed', 1800)
+    } catch {
+      toast.error('Failed to reload transactions.', 'Network Error')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  const handleCancelRequestSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedTx?._id) return
+    const trimmedReason = cancelReason.trim()
+    if (!trimmedReason) {
+      toast.error('Please enter a cancellation reason.', 'Reason Required')
+      return
+    }
+
+    setIsSubmittingCancel(true)
+    try {
+      const res = await requestTransactionCancellation(selectedTx._id, trimmedReason)
+      toast.success(
+        res.message || `Cancellation requested for Slip #${selectedTx.receiptNo}.`,
+        'Cancellation Requested',
+        3000,
+      )
+      try {
+        localStorage.setItem('billsr:cancellations-updated', Date.now().toString())
+        window.dispatchEvent(new CustomEvent('bank:cancellations-updated'))
+      } catch {
+        // Safe fallback
+      }
+      setSelectedTx(null)
+      setShowCancelForm(false)
+      setCancelReason('')
+      await reloadHomeData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to submit cancellation request.', 'Error')
+    } finally {
+      setIsSubmittingCancel(false)
+    }
+  }
+
+  const handleWithdrawCancellation = async () => {
+    if (!selectedTx?._id) return
+    setIsWithdrawingCancel(true)
+    try {
+      const res = await withdrawCancellationRequest(selectedTx._id)
+      toast.success(
+        res.message || `Cancellation request for Slip #${selectedTx.receiptNo} has been withdrawn.`,
+        'Request Cancelled',
+        3000,
+      )
+      try {
+        localStorage.setItem('billsr:cancellations-updated', Date.now().toString())
+        window.dispatchEvent(new CustomEvent('bank:cancellations-updated'))
+      } catch {
+        // Safe fallback
+      }
+      setSelectedTx(null)
+      setShowCancelForm(false)
+      setCancelReason('')
+      await reloadHomeData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to withdraw cancellation request.', 'Error')
+    } finally {
+      setIsWithdrawingCancel(false)
+    }
+  }
 
   useEffect(() => {
     let isMounted = true
@@ -182,7 +271,7 @@ export default function AgentHome({ user, onLoggedOut }) {
       setTransactModalOpen(true)
       toast.info('QR Code terminal active: select customer to complete collection', 'Scanner Ready', 2200)
     } else if (actionKey === 'print') {
-      const latestTx = homeData?.queue?.items?.[0]
+      const latestTx = homeData?.todayTransactions?.[0] || homeData?.queue?.items?.[0]
       if (latestTx) {
         toast.info(
           `Thermal Slip #${latestTx.receiptNo} generated for ${latestTx.customer} (${money(latestTx.amount)})`,
@@ -207,7 +296,9 @@ export default function AgentHome({ user, onLoggedOut }) {
   const hold = homeData?.cashHold
   const today = homeData?.today
   const queue = homeData?.queue
-  const stops = queue?.allStops || queue?.items || []
+  const todayTransactions = homeData?.todayTransactions || queue?.items || []
+  const allStops = queue?.allStops || []
+  const unvisitedStops = allStops.filter((s) => !s.isCompleted)
   const utilization = hold ? Number(hold.utilization || 0) : 0
   const barWidth = Math.min(Math.max(utilization, 0), 100)
 
@@ -444,119 +535,264 @@ export default function AgentHome({ user, onLoggedOut }) {
                 </div>
               </section>
 
-              {/* 4. Assigned Route & Scheduled Vendor Visits */}
+              {/* 4. Transactions Occurred Today (Last Entry First) & Route Queue */}
               <section className="agent-card route-queue-card" data-node-id="4:1820">
                 <div className="agent-card-top" data-node-id="4:1821">
                   <div>
-                    <h2 className="agent-card-title" data-node-id="4:1824">Sector 4 Market Queue</h2>
+                    <div className="agent-title-with-action">
+                      <h2 className="agent-card-title" data-node-id="4:1824">
+                        {sectionView === 'transactions' ? "Today's Transactions" : 'Sector 4 Market Queue'}
+                      </h2>
+                      <button
+                        type="button"
+                        className="agent-refresh-btn"
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        title="Reload live transactions"
+                      >
+                        <svg
+                          className={`agent-refresh-icon ${isRefreshing ? 'is-spinning' : ''}`}
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="23 4 23 10 17 10" />
+                          <polyline points="1 20 1 14 7 14" />
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                        <span>{isRefreshing ? 'Refreshing…' : 'Refresh'}</span>
+                      </button>
+                    </div>
                     <p className="agent-card-subtitle" data-node-id="4:1826">
-                      Route #CM-04 • {queue?.visited ?? 0} of {queue?.customers ?? 0} Vendors
+                      {sectionView === 'transactions'
+                        ? `Last entry on first basis • ${todayTransactions.length} transaction${todayTransactions.length === 1 ? '' : 's'}`
+                        : `Route #CM-04 • ${unvisitedStops.length} stops remaining`}
                     </p>
                   </div>
+
+                  {sectionView === 'queue' ? (
+                    <button
+                      type="button"
+                      className="agent-map-btn"
+                      onClick={() => toast.info('Geographic GPS route map displayed.', 'Route View')}
+                      data-node-id="4:1827"
+                    >
+                      <span>Map View</span>
+                      <img src={mapArrowIcon} alt="" width="4.32" height="7" data-node-id="4:1829" />
+                    </button>
+                  ) : (
+                    <span className="agent-section-badge">
+                      {todayTransactions.length} Today
+                    </span>
+                  )}
+                </div>
+
+                {/* Section View Tabs */}
+                <div className="agent-section-tabs" role="tablist" aria-label="Transaction and Route views">
                   <button
                     type="button"
-                    className="agent-map-btn"
-                    onClick={() => toast.info('Geographic GPS route map displayed.', 'Route View')}
-                    data-node-id="4:1827"
+                    role="tab"
+                    aria-selected={sectionView === 'transactions'}
+                    className={`agent-section-tab-btn ${sectionView === 'transactions' ? 'is-active' : ''}`}
+                    onClick={() => setSectionView('transactions')}
                   >
-                    <span>Map View</span>
-                    <img src={mapArrowIcon} alt="" width="4.32" height="7" data-node-id="4:1829" />
+                    <span>Today's Transactions</span>
+                    <span className="agent-section-tab-badge">{todayTransactions.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sectionView === 'queue'}
+                    className={`agent-section-tab-btn ${sectionView === 'queue' ? 'is-active' : ''}`}
+                    onClick={() => setSectionView('queue')}
+                  >
+                    <span>Route Queue</span>
+                    <span className="agent-section-tab-badge">{unvisitedStops.length}</span>
                   </button>
                 </div>
 
                 <div className="agent-vendor-list" data-node-id="4:1831">
-                  {stops.length === 0 ? (
-                    <div className="agent-empty-queue">No collection route stops assigned for today.</div>
-                  ) : (
-                    stops.map((item, index) => {
-                      const isCompleted = item.status === 'Completed'
-                      const isNext = item.status === 'Next Visit'
-                      const isCancelled = item.status === 'Cancelled'
+                  {sectionView === 'transactions' ? (
+                    todayTransactions.length === 0 ? (
+                      <div className="agent-empty-queue">No transactions recorded yet today. Tap Transact to record a collection.</div>
+                    ) : (
+                      todayTransactions.map((item, index) => {
+                        const isDeposit = item.type === 'D'
+                        const isCompleted = item.statusCode === 'A' || item.status === 'Completed'
+                        const isPendingCancel = item.statusCode === 'P' || item.status === 'Pending Cancellation'
+                        const isCancelled = item.statusCode === 'C' || item.status === 'Cancelled'
 
-                      const iconBg = isCompleted
-                        ? 'bg-emerald-light'
-                        : isNext
-                          ? 'bg-peach'
-                          : 'bg-white'
-                      const iconSrc = isCompleted
-                        ? storeCheckIcon
-                        : isNext
+                        const itemRowClass = isPendingCancel
+                          ? 'status-pending-cancel'
+                          : isCancelled
+                            ? 'status-cancelled'
+                            : 'status-completed'
+
+                        const iconBg = isPendingCancel
+                          ? 'bg-amber-light'
+                          : isCancelled
+                            ? 'bg-red-light'
+                            : isDeposit
+                              ? 'bg-emerald-light'
+                              : 'bg-peach'
+
+                        const iconSrc = isPendingCancel
                           ? storeNextIcon
-                          : storePendingIcon
+                          : isCancelled
+                            ? payoutIcon
+                            : isDeposit
+                              ? storeCheckIcon
+                              : payoutIcon
 
-                      const schemeTagClass =
-                        item.scheme?.includes('RD')
-                          ? 'tag-cyan'
-                          : item.scheme?.includes('Savings')
-                            ? 'tag-teal'
-                            : 'tag-purple'
+                        const schemeTagClass =
+                          item.scheme?.includes('RD')
+                            ? 'tag-cyan'
+                            : item.scheme?.includes('Savings')
+                              ? 'tag-teal'
+                              : 'tag-purple'
 
-                      return (
-                        <div
-                          key={item._id || index}
-                          className={`agent-vendor-item is-clickable ${
-                            isCompleted ? 'status-completed' : isNext ? 'status-next' : 'status-pending'
-                          }`}
-                          onClick={() => {
-                            if (item.customerId) {
-                              setSelectedCustomerId(item.customerId)
-                              setTransactType(item.type === 'W' ? 'W' : 'D')
-                              setTransactModalOpen(true)
-                            }
-                          }}
-                          data-node-id={`stop-${index}`}
-                          title="Click to transact with vendor"
-                        >
-                          <div className="agent-vendor-left">
-                            <div className={`agent-vendor-icon-bg ${iconBg}`}>
-                              <img src={iconSrc} alt="" width="15" height="15" />
-                            </div>
-                            <div className="agent-vendor-details">
-                              <div className="agent-vendor-name-row">
-                                <span className="agent-vendor-name">{item.customer}</span>
-                                {isNext && <span className="agent-pulse-dot" />}
+                        const amountClass = isCancelled
+                          ? 'text-cancelled'
+                          : isPendingCancel
+                            ? 'text-amber'
+                            : !isDeposit
+                              ? 'text-rust'
+                              : 'text-emerald'
+
+                        return (
+                          <div
+                            key={item._id || `tx-${index}`}
+                            className={`agent-vendor-item is-clickable ${itemRowClass}`}
+                            onClick={() => {
+                              setSelectedTx(item)
+                              setShowCancelForm(false)
+                              setCancelReason('')
+                            }}
+                            data-node-id={`tx-${index}`}
+                            title="Click to view transaction details & options"
+                          >
+                            <div className="agent-vendor-left">
+                              <div className={`agent-vendor-icon-bg ${iconBg}`}>
+                                <img src={iconSrc} alt="" width="15" height="15" />
                               </div>
-                              <div className="agent-vendor-tags">
-                                <span className={`agent-scheme-tag ${schemeTagClass}`}>
-                                  {item.scheme}
-                                </span>
-                                <span className="agent-vendor-meta">
-                                  {item.receiptNo ? `Slip #${item.receiptNo}` : 'Due Collection'}
-                                </span>
+                              <div className="agent-vendor-details">
+                                <div className="agent-vendor-name-row">
+                                  <span className={`agent-vendor-name ${isCancelled ? 'name-cancelled' : ''}`}>{item.customer}</span>
+                                  {item.shopName && <small className="agent-vendor-shop">({item.shopName})</small>}
+                                </div>
+                                <div className="agent-vendor-tags">
+                                  <span className={`agent-scheme-tag ${schemeTagClass}`}>
+                                    {item.scheme}
+                                  </span>
+                                  <span className={`agent-mode-badge ${item.mode === 'T' ? 'mode-transfer' : 'mode-cash'}`}>
+                                    {item.mode === 'T' ? 'Transfer' : 'Cash'}
+                                  </span>
+                                  <span className="agent-vendor-meta">
+                                    {item.receiptNo ? `Slip #${item.receiptNo}` : '—'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="agent-vendor-right">
+                              <span className={`agent-vendor-amount ${amountClass}`}>
+                                {isDeposit ? '+' : '-'}{money(item.amount)}
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {/* Hide Completed status badge on agent home page as requested */}
+                                {!isCompleted && (
+                                  <span
+                                    className={`agent-status-tag ${
+                                      isPendingCancel
+                                        ? 'tag-pending-cancel'
+                                        : isCancelled
+                                          ? 'tag-cancelled'
+                                          : 'tag-pending'
+                                    }`}
+                                  >
+                                    {isPendingCancel ? 'Pending' : item.status}
+                                  </span>
+                                )}
+                                {item.at && (
+                                  <span className="agent-vendor-time">{formatTime(item.at)}</span>
+                                )}
                               </div>
                             </div>
                           </div>
-                          <div className="agent-vendor-right">
-                            <span
-                              className={`agent-vendor-amount ${
-                                item.type === 'W' ? 'text-rust' : ''
-                              }`}
-                            >
-                              {item.type === 'W' ? '-' : '+'}
-                              {money(item.amount)}
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        )
+                      })
+                    )
+                  ) : (
+                    unvisitedStops.length === 0 ? (
+                      <div className="agent-empty-queue">All assigned vendor visits for today have been completed!</div>
+                    ) : (
+                      unvisitedStops.map((item, index) => {
+                        const isNext = item.status === 'Next Visit'
+                        const schemeTagClass =
+                          item.scheme?.includes('RD')
+                            ? 'tag-cyan'
+                            : item.scheme?.includes('Savings')
+                              ? 'tag-teal'
+                              : 'tag-purple'
+
+                        return (
+                          <div
+                            key={item._id || index}
+                            className={`agent-vendor-item is-clickable ${isNext ? 'status-next' : 'status-pending'}`}
+                            onClick={() => {
+                              if (item.customerId) {
+                                setSelectedCustomerId(item.customerId)
+                                setTransactType(item.type === 'W' ? 'W' : 'D')
+                                setTransactModalOpen(true)
+                              }
+                            }}
+                            data-node-id={`stop-${index}`}
+                            title="Click to transact with vendor"
+                          >
+                            <div className="agent-vendor-left">
+                              <div className={`agent-vendor-icon-bg ${isNext ? 'bg-peach' : 'bg-white'}`}>
+                                <img src={isNext ? storeNextIcon : storePendingIcon} alt="" width="15" height="15" />
+                              </div>
+                              <div className="agent-vendor-details">
+                                <div className="agent-vendor-name-row">
+                                  <span className="agent-vendor-name">{item.customer}</span>
+                                  {isNext && <span className="agent-pulse-dot" />}
+                                </div>
+                                <div className="agent-vendor-tags">
+                                  <span className={`agent-scheme-tag ${schemeTagClass}`}>
+                                    {item.scheme}
+                                  </span>
+                                  <span className="agent-vendor-meta">Due Collection</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="agent-vendor-right">
                               <span
-                                className={`agent-status-tag ${
-                                  isCompleted
-                                    ? 'tag-completed'
-                                    : isNext
-                                      ? 'tag-next'
-                                      : isCancelled
-                                        ? 'tag-cancelled'
-                                        : 'tag-pending'
+                                className={`agent-vendor-amount ${
+                                  item.type === 'W' ? 'text-rust' : ''
                                 }`}
                               >
-                                {item.status}
+                                {item.type === 'W' ? '-' : '+'}
+                                {money(item.amount)}
                               </span>
-                              {item.at && (
-                                <span className="agent-vendor-time">{formatTime(item.at)}</span>
-                              )}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span
+                                  className={`agent-status-tag ${
+                                    isNext ? 'tag-next' : 'tag-pending'
+                                  }`}
+                                >
+                                  {item.status}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })
+                        )
+                      })
+                    )
                   )}
                 </div>
               </section>
@@ -612,8 +848,9 @@ export default function AgentHome({ user, onLoggedOut }) {
             type="button"
             className={`agent-nav-link ${activeTab === 'ledger' ? 'is-active' : ''}`}
             onClick={() => {
-              setActiveTab('ledger')
-              toast.info('Daily agent passbook ledger opened.', 'Ledger Passbook')
+              setActiveTab('home')
+              setSectionView('transactions')
+              toast.info("Viewing today's transactions ledger (last entry first).", "Today's Transactions", 2000)
             }}
             data-node-id="4:1938"
           >
@@ -789,6 +1026,274 @@ export default function AgentHome({ user, onLoggedOut }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Details & Cancellation Action Popup Menu */}
+      {selectedTx && (
+        <div
+          className="agent-modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmittingCancel && !isWithdrawingCancel) {
+              setSelectedTx(null)
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tx-popup-title"
+        >
+          <div className="agent-modal-card agent-tx-popup-menu">
+            {/* Header */}
+            <div className="agent-modal-head">
+              <div>
+                <h3 id="tx-popup-title">Transaction Details</h3>
+                <span className="agent-tx-popup-ref">Receipt #{selectedTx.receiptNo}</span>
+              </div>
+              <button
+                type="button"
+                className="agent-modal-close"
+                onClick={() => setSelectedTx(null)}
+                disabled={isSubmittingCancel || isWithdrawingCancel}
+                aria-label="Close menu"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Hero Amount Banner - Color-coded by state */}
+            <div
+              className={`agent-tx-hero-banner ${
+                selectedTx.statusCode === 'P' || selectedTx.status === 'Pending Cancellation'
+                  ? 'is-pending-cancel'
+                  : selectedTx.statusCode === 'C' || selectedTx.status === 'Cancelled'
+                    ? 'is-cancelled'
+                    : selectedTx.type === 'W'
+                      ? 'is-payout'
+                      : 'is-deposit'
+              }`}
+            >
+              <div className="agent-tx-hero-amount">
+                <span className="agent-tx-hero-sign">{selectedTx.type === 'W' ? '-' : '+'}</span>
+                <span className="agent-tx-hero-val">{money(selectedTx.amount)}</span>
+              </div>
+              <div className="agent-tx-hero-badges">
+                <span className="agent-tx-pill-type">
+                  {selectedTx.type === 'W' ? 'Payout Voucher' : 'Deposit Collection'}
+                </span>
+                <span className={`agent-mode-badge ${selectedTx.mode === 'T' ? 'mode-transfer' : 'mode-cash'}`}>
+                  {selectedTx.mode === 'T' ? 'Bank Transfer' : 'Cash in Hand'}
+                </span>
+                <span
+                  className={`agent-status-tag ${
+                    selectedTx.statusCode === 'P' || selectedTx.status === 'Pending Cancellation'
+                      ? 'tag-pending-cancel'
+                      : selectedTx.statusCode === 'C' || selectedTx.status === 'Cancelled'
+                        ? 'tag-cancelled'
+                        : 'tag-completed'
+                  }`}
+                >
+                  {selectedTx.statusCode === 'P' || selectedTx.status === 'Pending Cancellation'
+                    ? 'Pending Cancellation'
+                    : selectedTx.statusCode === 'C' || selectedTx.status === 'Cancelled'
+                      ? 'Cancelled'
+                      : 'Completed'}
+                </span>
+              </div>
+            </div>
+
+            {/* Details Breakdown */}
+            <div className="agent-tx-details-grid">
+              <div className="agent-tx-detail-row">
+                <span className="agent-tx-label">Customer / Trade</span>
+                <span className="agent-tx-value">
+                  <strong>{selectedTx.customer}</strong>
+                  {selectedTx.shopName && <small>{selectedTx.shopName}</small>}
+                </span>
+              </div>
+
+              {(selectedTx.phone || selectedTx.address) && (
+                <div className="agent-tx-detail-row">
+                  <span className="agent-tx-label">Contact / Location</span>
+                  <span className="agent-tx-value">
+                    {selectedTx.phone && <span>{selectedTx.phone}</span>}
+                    {selectedTx.address && <small>{selectedTx.address}</small>}
+                  </span>
+                </div>
+              )}
+
+              <div className="agent-tx-detail-row">
+                <span className="agent-tx-label">Deposit Scheme</span>
+                <span className="agent-tx-value font-medium">{selectedTx.scheme}</span>
+              </div>
+
+              <div className="agent-tx-detail-row">
+                <span className="agent-tx-label">Date &amp; Time</span>
+                <span className="agent-tx-value">
+                  {selectedTx.at
+                    ? new Date(selectedTx.at).toLocaleString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })
+                    : '—'}
+                </span>
+              </div>
+
+              <div className="agent-tx-detail-row">
+                <span className="agent-tx-label">Receipt Slip</span>
+                <span className="agent-tx-value mono-val">#{selectedTx.receiptNo}</span>
+              </div>
+            </div>
+
+            {/* If Cancellation Notice applies */}
+            {(selectedTx.statusCode === 'P' || selectedTx.status === 'Pending Cancellation') && (
+              <div className="agent-cancellation-notice is-pending">
+                <div className="agent-cancellation-notice-head">
+                  <span className="agent-notice-icon">⚠️</span>
+                  <strong>Cancellation Request Pending</strong>
+                </div>
+                {selectedTx.cancellationReason && (
+                  <p className="agent-cancellation-reason-text">
+                    &ldquo;{selectedTx.cancellationReason}&rdquo;
+                  </p>
+                )}
+                <small className="agent-cancellation-notice-sub">
+                  Awaiting review and approval by branch bank admin. You can withdraw this request below to keep the transaction active.
+                </small>
+              </div>
+            )}
+
+            {(selectedTx.statusCode === 'C' || selectedTx.status === 'Cancelled') && (
+              <div className="agent-cancellation-notice is-voided">
+                <div className="agent-cancellation-notice-head">
+                  <span className="agent-notice-icon">🛑</span>
+                  <strong>Transaction Cancelled / Voided</strong>
+                </div>
+                {selectedTx.cancellationReason && (
+                  <p className="agent-cancellation-reason-text">
+                    Reason: &ldquo;{selectedTx.cancellationReason}&rdquo;
+                  </p>
+                )}
+                <small className="agent-cancellation-notice-sub">
+                  This transaction has been voided and funds have been reversed.
+                </small>
+              </div>
+            )}
+
+            {/* Action Buttons based on status */}
+            {/* 1. If Active / Completed: Option to Request Cancellation */}
+            {(selectedTx.statusCode === 'A' || selectedTx.status === 'Completed') && (
+              <>
+                {!showCancelForm ? (
+                  <div className="agent-popup-actions">
+                    <button
+                      type="button"
+                      className="agent-btn-request-cancel"
+                      onClick={() => setShowCancelForm(true)}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
+                      <span>Request Cancellation</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="agent-btn-close-popup"
+                      onClick={() => setSelectedTx(null)}
+                    >
+                      Close
+                    </button>
+                  </div>
+                ) : (
+                  <form
+                    className="agent-cancel-form"
+                    onSubmit={handleCancelRequestSubmit}
+                  >
+                    <div className="agent-cancel-form-head">
+                      <strong>Reason for Cancellation</strong>
+                      <p>State why this collection must be voided for branch manager review.</p>
+                    </div>
+
+                    <div className="agent-modal-field">
+                      <textarea
+                        rows="3"
+                        className="agent-textarea"
+                        placeholder="e.g., Wrong amount collected, duplicate entry, vendor cancelled deposit..."
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        disabled={isSubmittingCancel}
+                        autoFocus
+                        required
+                      />
+                    </div>
+
+                    <div className="agent-popup-actions">
+                      <button
+                        type="button"
+                        className="agent-btn-cancel"
+                        onClick={() => setShowCancelForm(false)}
+                        disabled={isSubmittingCancel}
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="submit"
+                        className="agent-btn-submit is-payout"
+                        disabled={isSubmittingCancel || !cancelReason.trim()}
+                      >
+                        {isSubmittingCancel ? 'Submitting…' : 'Submit Cancellation'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
+
+            {/* 2. If Pending Cancellation: Option to Cancel/Withdraw the Cancellation Request */}
+            {(selectedTx.statusCode === 'P' || selectedTx.status === 'Pending Cancellation') && (
+              <div className="agent-popup-actions">
+                <button
+                  type="button"
+                  className="agent-btn-withdraw-cancel"
+                  onClick={handleWithdrawCancellation}
+                  disabled={isWithdrawingCancel}
+                  title="Withdraw this cancellation request and keep the transaction active"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1 4 1 10 7 10" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  </svg>
+                  <span>{isWithdrawingCancel ? 'Withdrawing…' : 'Cancel Cancellation Request'}</span>
+                </button>
+                <button
+                  type="button"
+                  className="agent-btn-close-popup"
+                  onClick={() => setSelectedTx(null)}
+                  disabled={isWithdrawingCancel}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+
+            {/* 3. If Cancelled: Only Close */}
+            {(selectedTx.statusCode === 'C' || selectedTx.status === 'Cancelled') && (
+              <div className="agent-popup-actions">
+                <button
+                  type="button"
+                  className="agent-btn-close-popup w-full"
+                  onClick={() => setSelectedTx(null)}
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

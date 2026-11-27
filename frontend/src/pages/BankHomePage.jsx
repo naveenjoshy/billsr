@@ -74,14 +74,19 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   const loadTransactions = useCallback(async () => {
     setTxLoading(true)
     try {
-      setTxState(await getBankTransactions({ page, search }))
+      setTxState(await getBankTransactions({ page, search, date: selectedDate }))
       setTxError('')
     } catch (error) {
       setTxError(error.message)
     } finally {
       setTxLoading(false)
     }
-  }, [page, search])
+  }, [page, search, selectedDate])
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate)
+    setPage(1)
+  }
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -134,6 +139,15 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   const to = (page - 1) * txState.pageSize + txState.transactions.length
   const pendingTx = txState.transactions.filter((tx) => tx.status === 'P').length
 
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const isToday = selectedDate === todayStr
+  const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  const dateLabel = isToday ? 'Today' : formattedDate
+
   return (
     <BankShell
       active="dashboard"
@@ -141,7 +155,7 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
       designation={dashboard?.user.designation}
       displayName={displayName}
       isRefreshing={isRefreshing || txLoading}
-      onDateChange={setSelectedDate}
+      onDateChange={handleDateChange}
       onLoggedOut={onLoggedOut}
       onNavigate={onNavigate}
       onRefresh={handleRefresh}
@@ -240,6 +254,9 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
               <div className="bank-card-title-wrap">
                 <h2 id="receipts-title">
                   Live Receipts &amp; Approvals
+                  <span className="bank-date-indicator">
+                    • {dateLabel}
+                  </span>
                   {pendingTx > 0 && <span className="bank-action-pill">{pendingTx} Action Items</span>}
                 </h2>
                 <button
@@ -344,7 +361,9 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
                   {!txLoading && !txError && txState.transactions.length === 0 && (
                     <tr>
                       <td className="bank-empty" colSpan="8">
-                        {search ? 'No transactions match this search.' : 'No transactions have been recorded yet.'}
+                        {search
+                          ? 'No transactions match this search.'
+                          : `No transactions recorded for ${isToday ? 'today' : formattedDate}.`}
                       </td>
                     </tr>
                   )}
@@ -357,7 +376,7 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
 
             <div className="bank-table-footer">
               <span>
-                Showing {from === 0 ? 0 : `${from}–${to}`} of {txState.total} transactions
+                Showing {from === 0 ? 0 : `${from}–${to}`} of {txState.total} transactions ({dateLabel})
                 <span className="bank-dot">•</span> Page {page} of {pageCount}
               </span>
               <div className="bank-pager">

@@ -397,6 +397,13 @@
   flex-wrap: wrap;
 }
 
+.bank-date-indicator {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 2px;
+}
+
 .bank-search {
   background: #f1f5f9;
   border: 0;
@@ -476,6 +483,11 @@
 
 @keyframes bankSpin {
   to { transform: rotate(360deg); }
+}
+
+[data-theme='dark'] .bank-date-indicator,
+.dark .bank-date-indicator {
+  color: #94a3b8;
 }
 
 [data-theme='dark'] .bank-btn-refresh,
