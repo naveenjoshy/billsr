@@ -16,6 +16,29 @@ const num = (value) => (value == null ? 0 : Number(value.toString()))
 const money = (val) => '₹' + Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
+export function parseDateBounds(dateStr) {
+  let targetDate
+  if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) {
+    const [year, month, day] = dateStr.trim().split('-').map(Number)
+    targetDate = new Date(year, month - 1, day)
+  } else if (dateStr && dateStr !== 'today') {
+    targetDate = new Date(dateStr)
+  } else {
+    targetDate = new Date()
+  }
+
+  if (Number.isNaN(targetDate.getTime())) {
+    targetDate = new Date()
+  }
+
+  const startOfDay = new Date(targetDate)
+  startOfDay.setHours(0, 0, 0, 0)
+  const endOfDay = new Date(targetDate)
+  endOfDay.setHours(23, 59, 59, 999)
+
+  return { startOfDay, endOfDay, targetDate }
+}
+
 async function findOwnBank(req, res) {
   const bank = await Bank.findOne({ user_id: req.auth.sub }).lean()
   if (!bank) res.status(HTTP_STATUS.NOT_FOUND).json({ message: MESSAGES.BANK.NO_BANK_LINKED })
@@ -83,12 +106,7 @@ export async function getDashboard(req, res) {
     const bank = await findOwnBank(req, res)
     if (!bank) return
 
-    const baseDate = req.query.date ? new Date(req.query.date) : new Date()
-    const targetDate = Number.isNaN(baseDate.getTime()) ? new Date() : baseDate
-    const startOfDay = new Date(targetDate)
-    startOfDay.setHours(0, 0, 0, 0)
-    const endOfDay = new Date(targetDate)
-    endOfDay.setHours(23, 59, 59, 999)
+    const { startOfDay, endOfDay } = parseDateBounds(req.query.date)
 
     const [today, todayModes, pending, holdings, owner] = await Promise.all([
       Transaction.aggregate([
@@ -134,7 +152,13 @@ export async function getDashboard(req, res) {
         },
       ]),
       Transaction.aggregate([
-        { $match: { bank_id: bank._id, transaction_status: 'P' } },
+        {
+          $match: {
+            bank_id: bank._id,
+            transaction_status: 'P',
+            collect_date: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
         { $group: { _id: null, total: { $sum: { $toDouble: '$transact_amt' } }, count: { $sum: 1 } } },
       ]),
       agentHoldings(bank._id),
@@ -255,18 +279,11 @@ export async function listTransactions(req, res) {
         filter.collect_date = dateFilter
       }
     } else if (req.query.date) {
-      const selectedDate = new Date(req.query.date)
-      if (!Number.isNaN(selectedDate.getTime())) {
-        const startOfDay = new Date(selectedDate)
-        startOfDay.setHours(0, 0, 0, 0)
-        const endOfDay = new Date(selectedDate)
-        endOfDay.setHours(23, 59, 59, 999)
-        filter.collect_date = { $gte: startOfDay, $lte: endOfDay }
-      }
+      const { startOfDay, endOfDay } = parseDateBounds(req.query.date)
+      filter.collect_date = { $gte: startOfDay, $lte: endOfDay }
     } else if (req.query.dateRange === 'today') {
-      const startOfDay = new Date()
-      startOfDay.setHours(0, 0, 0, 0)
-      filter.collect_date = { $gte: startOfDay }
+      const { startOfDay, endOfDay } = parseDateBounds('today')
+      filter.collect_date = { $gte: startOfDay, $lte: endOfDay }
     } else if (req.query.dateRange === 'week') {
       const pastWeek = new Date(Date.now() - 7 * DAY_MS)
       filter.collect_date = { $gte: pastWeek }
@@ -306,7 +323,7 @@ export async function listTransactions(req, res) {
     const [total, rows, todayStats, pendingStats, approvedCancellationsMTD, totalAgents, schemes, bankAgents] = await Promise.all([
       Transaction.countDocuments(filter),
       Transaction.find(filter)
-        .sort({ collect_date: -1 })
+        .sort({ transact_time: -1, collect_date: -1, _id: -1 })
         .skip((page - 1) * pageSize)
         .limit(pageSize)
         .populate('customer_id', 'name shop_name address phone')
@@ -420,6 +437,8 @@ export async function listTransactions(req, res) {
       status: row.transaction_status,
       mode: row.transact_mode,
       collectDate: row.collect_date,
+      transactTime: row.transact_time || row.collect_date,
+      transactionTime: row.transaction_time || row.transact_time || row.collect_date,
       openingBal: num(row.balance_snapshot?.opening_bal),
       newBalance: num(row.balance_snapshot?.new_balance),
       cancellationReason: row.cancellation_info?.cancellation_reason ?? null,
@@ -677,7 +696,7 @@ export async function listAgents(req, res) {
           Transaction.countDocuments(base),
           Customer.countDocuments({ agent_id: agent._id }),
           Transaction.find({ agent_id: agent._id, bank_id: bank._id })
-            .sort({ collect_date: -1 })
+            .sort({ transact_time: -1, collect_date: -1, _id: -1 })
             .limit(4)
             .populate('customer_id', 'name')
             .lean(),

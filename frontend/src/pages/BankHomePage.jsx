@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './BankHomePage.css'
 import BankShell from '../components/BankShell'
-import { initials, money } from '../components/bankShellUtils'
+import { money } from '../components/bankShellUtils'
 import {
   approveTransaction,
   broadcastCancellationsChanged,
@@ -15,41 +15,28 @@ const statusMeta = {
   C: { label: 'Cancelled', tone: 'cancelled' },
 }
 
-function Avatar({ name, photoUrl }) {
-  return photoUrl ? (
-    <img className="bank-avatar" src={photoUrl} alt="" />
-  ) : (
-    <span className="bank-avatar bank-avatar-fallback">{initials(name)}</span>
-  )
+const getTodayLocalDate = () => {
+  const now = new Date()
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-')
 }
 
-function RiskRow({ agent }) {
-  const percent = Math.round(agent.ratio * 100)
-  const over = agent.ratio > 1
-  const fill = Math.min(percent, 100)
-  return (
-    <div className={`bank-risk-row ${over ? 'is-over' : 'is-near'}`}>
-      <div className="bank-risk-agent">
-        <Avatar name={agent.name} photoUrl={agent.photoUrl} />
-        <div>
-          <strong>{agent.name}</strong>
-          <small>
-            {agent.agentCode} • Holding {agent.holdingDays} {agent.holdingDays === 1 ? 'Day' : 'Days'}
-          </small>
-        </div>
-      </div>
-      <div className="bank-risk-meta">
-        <span className="bank-risk-held">{money(agent.held)} in hand</span>
-        <span>Limit: {money(agent.limit)} ({percent}%)</span>
-      </div>
-      <div className="bank-risk-bar" role="img" aria-label={`${percent}% of limit`}>
-        <span style={{ width: `${fill}%` }} />
-      </div>
-    </div>
-  )
+const formatTxTime = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
 }
 
 export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavigate }) {
+  const todayStr = getTodayLocalDate()
   const [dashboard, setDashboard] = useState(null)
   const [dashboardError, setDashboardError] = useState('')
   const [txState, setTxState] = useState({ transactions: [], total: 0, pageSize: 5 })
@@ -61,7 +48,7 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   const [notice, setNotice] = useState('')
   const [approvingId, setApprovingId] = useState(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [selectedDate, setSelectedDate] = useState(todayStr)
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -85,7 +72,8 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   }, [page, search, selectedDate])
 
   const handleDateChange = (newDate) => {
-    setSelectedDate(newDate)
+    const val = newDate || todayStr
+    setSelectedDate(val)
     setPage(1)
   }
 
@@ -136,18 +124,35 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
   const kpis = dashboard?.kpis
   const bank = dashboard?.bank
   const displayName = dashboard?.user.name || user?.name || ''
+
+  const sortedTransactions = useMemo(() => {
+    return [...(txState.transactions || [])].sort((a, b) => {
+      const timeA = a.transactTime || a.collectDate ? new Date(a.transactTime || a.collectDate).getTime() : 0
+      const timeB = b.transactTime || b.collectDate ? new Date(b.transactTime || b.collectDate).getTime() : 0
+      if (timeB !== timeA) return timeB - timeA
+      return String(b._id || '').localeCompare(String(a._id || ''))
+    })
+  }, [txState.transactions])
+
   const pageCount = Math.max(1, Math.ceil(txState.total / txState.pageSize))
   const from = txState.total ? (page - 1) * txState.pageSize + 1 : 0
-  const to = (page - 1) * txState.pageSize + txState.transactions.length
-  const pendingTx = txState.transactions.filter((tx) => tx.status === 'P').length
+  const to = (page - 1) * txState.pageSize + sortedTransactions.length
+  const pendingTx = sortedTransactions.filter((tx) => tx.status === 'P').length
 
-  const todayStr = new Date().toISOString().slice(0, 10)
   const isToday = selectedDate === todayStr
-  const formattedDate = new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  const formattedDate = (() => {
+    if (!selectedDate) return 'Today'
+    const parts = selectedDate.split('-').map(Number)
+    if (parts.length === 3 && !parts.some(Number.isNaN)) {
+      const d = new Date(parts[0], parts[1] - 1, parts[2])
+      return d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    }
+    return selectedDate
+  })()
   const dateLabel = isToday ? 'Today' : formattedDate
 
   return (
@@ -157,238 +162,293 @@ export default function BankHomePage({ user, onUserUpdated, onLoggedOut, onNavig
       designation={dashboard?.user.designation}
       displayName={displayName}
       isRefreshing={isRefreshing || txLoading}
-      onDateChange={handleDateChange}
       onLoggedOut={onLoggedOut}
       onNavigate={onNavigate}
       onRefresh={handleRefresh}
       onUserUpdated={onUserUpdated}
       pendingCancellationsCount={kpis?.pendingCount ?? 0}
-      selectedDate={selectedDate}
       user={user}
     >
-        <main className="bank-main">
-          {dashboardError && (
-            <p className="bank-error" role="alert">
-              {dashboardError} <button type="button" onClick={loadDashboard}>Retry</button>
-            </p>
-          )}
+      <main className="bank-main">
+        {dashboardError && (
+          <p className="bank-error" role="alert">
+            {dashboardError} <button type="button" onClick={loadDashboard}>Retry</button>
+          </p>
+        )}
 
-          <section className="bank-kpis" aria-label="Key metrics">
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">NET COLLECTIONS (TOTAL)</p>
-              <p className="bank-kpi-value">{kpis ? money(kpis.netCollections) : '—'}</p>
-              {kpis && (
-                <ul>
-                  <li><span>Deposits</span><b>{money(kpis.deposits)}</b></li>
-                  <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.withdrawals)}</b></li>
-                  <li className="bank-kpi-foot">{kpis.transactionCount} txns processed</li>
-                </ul>
-              )}
-            </article>
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">CASH COLLECTIONS</p>
-              <p className="bank-kpi-value">{kpis ? money(kpis.cashMode?.net ?? 0) : '—'}</p>
-              {kpis && (
-                <ul>
-                  <li><span>Deposits</span><b>{money(kpis.cashMode?.deposits ?? 0)}</b></li>
-                  <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.cashMode?.withdrawals ?? 0)}</b></li>
-                  <li className="bank-kpi-foot">{kpis.cashMode?.count ?? 0} cash txns</li>
-                </ul>
-              )}
-            </article>
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">TRANSFER COLLECTIONS</p>
-              <p className="bank-kpi-value">{kpis ? money(kpis.transferMode?.net ?? 0) : '—'}</p>
-              {kpis && (
-                <ul>
-                  <li><span>Deposits</span><b>{money(kpis.transferMode?.deposits ?? 0)}</b></li>
-                  <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.transferMode?.withdrawals ?? 0)}</b></li>
-                  <li className="bank-kpi-foot">{kpis.transferMode?.count ?? 0} transfer txns</li>
-                </ul>
-              )}
-            </article>
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">ACTIVE AGENTS</p>
-              <p className="bank-kpi-value">
-                {kpis ? kpis.agentsOnDuty : '—'}
-                {kpis && <small> / {kpis.totalAgents} on duty</small>}
-              </p>
-            </article>
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">CASH IN FIELD</p>
-              <p className="bank-kpi-value">{kpis ? money(kpis.cashInField) : '—'}</p>
-              {kpis?.overLimitCount > 0 && (
-                <p className="bank-kpi-alert">
-                  {kpis.overLimitCount} Agent{kpis.overLimitCount === 1 ? '' : 's'} Over Limit ({money(kpis.maxLimit)} max)
-                </p>
-              )}
-            </article>
-            <article className="bank-kpi">
-              <p className="bank-kpi-label">PENDING APPROVALS <b className="bank-count">{kpis?.pendingCount ?? 0}</b></p>
-              <p className="bank-kpi-value is-amber">{kpis ? money(kpis.pendingAmount) : '—'}</p>
-              <p className="bank-kpi-foot-row">
-                <span>Awaiting Approval</span>
-                <a
-                  href="#cancellations"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onNavigate?.('cancellations')
-                  }}
-                >
-                  Transaction &amp; Cancellation Queue →
-                </a>
-              </p>
-            </article>
-          </section>
-
-          {dashboard && Array.isArray(dashboard.risk) && dashboard.risk.length > 0 && (
-            <section className="bank-card" aria-labelledby="risk-title">
-              <h2 id="risk-title">Risk Surveillance</h2>
-              <p className="bank-card-sub">
-                Monitoring agent cash holding limits to prevent unbanked cash float risk.
-              </p>
-              {dashboard.risk.map((agent) => <RiskRow agent={agent} key={agent._id} />)}
-            </section>
-          )}
-
-          <section className="bank-card" id="approvals" aria-labelledby="receipts-title">
-            <div className="bank-card-head">
-              <div className="bank-card-title-wrap">
-                <h2 id="receipts-title">
-                  Live Receipts &amp; Approvals
-                  <span className="bank-date-indicator">
-                    • {dateLabel}
-                  </span>
-                  {pendingTx > 0 && <span className="bank-action-pill">{pendingTx} Action Items</span>}
-                </h2>
-                <button
-                  type="button"
-                  className="bank-btn-refresh"
-                  onClick={handleRefresh}
-                  disabled={isRefreshing || txLoading}
-                  title="Reload live transactions & metrics"
-                >
-                  <svg
-                    className={`bank-refresh-icon ${isRefreshing || txLoading ? 'is-spinning' : ''}`}
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polyline points="23 4 23 10 17 10" />
-                    <polyline points="1 20 1 14 7 14" />
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
-                  <span>{isRefreshing || txLoading ? 'Refreshing…' : 'Refresh'}</span>
-                </button>
-              </div>
+        {/* Operational Date Selector Bar on top of Cards */}
+        <section className="bank-date-bar" aria-label="Operational date selector">
+          <div className="bank-date-bar-left">
+            <div className="bank-date-picker-wrap">
+              <label htmlFor="bank-dashboard-date-input" className="bank-date-picker-label">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>Date:</span>
+              </label>
               <input
-                aria-label="Search transactions"
-                className="bank-search"
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search customer, receipt, or ID..."
-                value={searchInput}
+                id="bank-dashboard-date-input"
+                type="date"
+                className="bank-date-picker-input"
+                value={selectedDate}
+                onChange={(e) => handleDateChange(e.target.value)}
+                aria-label="Select date to show transactions and metrics"
               />
             </div>
 
-            {notice && <p className="bank-notice" role="status">{notice}</p>}
-            {txError && (
-              <p className="bank-error" role="alert">
-                {txError} <button type="button" onClick={loadTransactions}>Retry</button>
-              </p>
-            )}
+            <button
+              type="button"
+              className={`bank-date-today-btn ${isToday ? 'is-active' : ''}`}
+              onClick={() => handleDateChange(todayStr)}
+              title="Switch to today's transactions and metrics"
+            >
+              Today
+            </button>
 
-            <div className="bank-table-scroll">
-              <table className="bank-table">
-                <thead>
-                  <tr>
-                    <th>TXN REF / RECEIPT</th>
-                    <th>SCHEME</th>
-                    <th>CUSTOMER &amp; COMMERCIAL UNIT</th>
-                    <th>AGENT</th>
-                    <th className="is-right">AMOUNT</th>
-                    <th>TYPE</th>
-                    <th>AUDIT STATUS</th>
-                    <th className="is-right">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {txState.transactions.map((tx) => {
-                    const status = statusMeta[tx.status]
-                    const withdrawal = tx.type === 'W'
-                    return (
-                      <tr key={tx._id}>
-                        <td><strong className="bank-mono">{tx.receiptNo}</strong></td>
-                        <td><span className="bank-scheme">{tx.scheme}</span></td>
-                        <td>
-                          <strong>{tx.customer}</strong>
-                          <small>{tx.customerDetail}</small>
-                        </td>
-                        <td>
-                          {tx.agentName}
-                          <small>{tx.agentCode}</small>
-                        </td>
-                        <td className={`is-right bank-amount ${withdrawal ? 'is-negative' : ''}`}>
-                          {withdrawal ? '-' : ''}{money(tx.amount)}
-                        </td>
-                        <td>
-                          <span className={`bank-type bank-type-${withdrawal ? 'w' : 'd'}`}>
-                            {withdrawal ? 'WDL' : 'DEP'}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`bank-status bank-status-${status.tone}`} title={tx.cancellationReason ?? undefined}>
-                            {status.label}
-                          </span>
-                        </td>
-                        <td className="is-right">
-                          {tx.status === 'P' && (
-                            <button
-                              className="bank-approve"
-                              disabled={approvingId === tx._id}
-                              onClick={() => approve(tx)}
-                              type="button"
-                            >
-                              {approvingId === tx._id ? 'Approving…' : 'Approve'}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                  {!txLoading && !txError && txState.transactions.length === 0 && (
-                    <tr>
-                      <td className="bank-empty" colSpan="8">
-                        {search
-                          ? 'No transactions match this search.'
-                          : `No transactions recorded for ${isToday ? 'today' : formattedDate}.`}
+            <div className="bank-date-status-tag">
+              <span className="bank-date-display-text">
+                Showing data for <strong>{isToday ? ` (${formattedDate})` : formattedDate}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="bank-date-bar-right">
+            <button
+              type="button"
+              className="bank-btn-refresh bank-date-refresh-btn"
+              onClick={handleRefresh}
+              disabled={isRefreshing || txLoading}
+              title="Reload live transactions & metrics for this date"
+            >
+              <svg
+                className={`bank-refresh-icon ${isRefreshing || txLoading ? 'is-spinning' : ''}`}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+              <span>{isRefreshing || txLoading ? 'Refreshing…' : 'Refresh'}</span>
+            </button>
+          </div>
+        </section>
+
+        <section className="bank-kpis" aria-label="Key metrics">
+          <article className="bank-kpi">
+            <p className="bank-kpi-label">TOTAL COLLECTIONS (NET)</p>
+            <p className="bank-kpi-value">{kpis ? money(kpis.netCollections) : '—'}</p>
+            {kpis && (
+              <ul>
+                <li><span>Deposits</span><b>{money(kpis.deposits)}</b></li>
+                <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.withdrawals)}</b></li>
+                <li className="bank-kpi-foot">{kpis.transactionCount} txns processed</li>
+              </ul>
+            )}
+          </article>
+          <article className="bank-kpi">
+            <p className="bank-kpi-label">CASH COLLECTIONS</p>
+            <p className="bank-kpi-value">{kpis ? money(kpis.cashMode?.net ?? 0) : '—'}</p>
+            {kpis && (
+              <ul>
+                <li><span>Deposits</span><b>{money(kpis.cashMode?.deposits ?? 0)}</b></li>
+                <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.cashMode?.withdrawals ?? 0)}</b></li>
+                <li className="bank-kpi-foot">{kpis.cashMode?.count ?? 0} cash txns</li>
+              </ul>
+            )}
+          </article>
+          <article className="bank-kpi">
+            <p className="bank-kpi-label">TRANSFER COLLECTIONS</p>
+            <p className="bank-kpi-value">{kpis ? money(kpis.transferMode?.net ?? 0) : '—'}</p>
+            {kpis && (
+              <ul>
+                <li><span>Deposits</span><b>{money(kpis.transferMode?.deposits ?? 0)}</b></li>
+                <li><span>Withdrawals</span><b className="is-negative">-{money(kpis.transferMode?.withdrawals ?? 0)}</b></li>
+                <li className="bank-kpi-foot">{kpis.transferMode?.count ?? 0} transfer txns</li>
+              </ul>
+            )}
+          </article>
+          <article className="bank-kpi">
+            <p className="bank-kpi-label">ACTIVE AGENTS</p>
+            <p className="bank-kpi-value">
+              {kpis ? kpis.agentsOnDuty : '—'}
+              {kpis && <small> / {kpis.totalAgents} on duty</small>}
+            </p>
+            {kpis && (
+              <ul>
+                <li><span>Active on date</span><b>{kpis.agentsOnDuty}</b></li>
+                <li><span>Total Agents</span><b>{kpis.totalAgents}</b></li>
+                <li className="bank-kpi-foot">
+                  {kpis.agentsOnDuty > 0
+                    ? `${Math.round((kpis.agentsOnDuty / (kpis.totalAgents || 1)) * 100)}% route coverage`
+                    : 'No agent activity'}
+                </li>
+              </ul>
+            )}
+          </article>
+          <article className="bank-kpi">
+            <p className="bank-kpi-label">CASH IN FIELD</p>
+            <p className="bank-kpi-value">{kpis ? money(kpis.cashInField) : '—'}</p>
+            {kpis && (
+              <ul>
+                <li><span>Float In Hand</span><b>{money(kpis.cashInField)}</b></li>
+                <li><span>Max Limit</span><b>{money(kpis.maxLimit)}</b></li>
+                <li className="bank-kpi-foot">
+                  {kpis.overLimitCount > 0 ? (
+                    <span className="is-negative">{kpis.overLimitCount} Agent{kpis.overLimitCount === 1 ? '' : 's'} Over Limit</span>
+                  ) : (
+                    'All limits compliant'
+                  )}
+                </li>
+              </ul>
+            )}
+          </article>
+          <article className="bank-kpi">
+            <p className="bank-kpi-label">PENDING APPROVALS <b className="bank-count">{kpis?.pendingCount ?? 0}</b></p>
+            <p className="bank-kpi-value is-amber">{kpis ? money(kpis.pendingAmount) : '—'}</p>
+            <p className="bank-kpi-foot-row">
+              <span>Awaiting Review</span>
+              <a
+                href="#cancellations"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onNavigate?.('cancellations')
+                }}
+              >
+                Queue →
+              </a>
+            </p>
+          </article>
+        </section>
+
+        <section className="bank-card" id="approvals" aria-labelledby="receipts-title">
+          <div className="bank-card-head">
+            <div className="bank-card-title-wrap">
+              <h2 id="receipts-title">
+                {isToday ? "Today's Transactions" : `Transactions for ${formattedDate}`}
+                <span className="bank-date-indicator">
+                  • {dateLabel}
+                </span>
+                {pendingTx > 0 && <span className="bank-action-pill">{pendingTx} Action Items</span>}
+              </h2>
+            </div>
+            <input
+              aria-label="Search transactions"
+              className="bank-search"
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search customer, receipt, or ID..."
+              value={searchInput}
+            />
+          </div>
+
+          {notice && <p className="bank-notice" role="status">{notice}</p>}
+          {txError && (
+            <p className="bank-error" role="alert">
+              {txError} <button type="button" onClick={loadTransactions}>Retry</button>
+            </p>
+          )}
+
+          <div className="bank-table-scroll">
+            <table className="bank-table">
+              <thead>
+                <tr>
+                  <th>TXN REF / RECEIPT</th>
+                  <th>SCHEME</th>
+                  <th>CUSTOMER &amp; COMMERCIAL UNIT</th>
+                  <th>AGENT</th>
+                  <th className="is-right">AMOUNT</th>
+                  <th>TYPE</th>
+                  <th>AUDIT STATUS</th>
+                  <th className="is-right">ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedTransactions.map((tx) => {
+                  const status = statusMeta[tx.status]
+                  const withdrawal = tx.type === 'W'
+                  return (
+                    <tr key={tx._id}>
+                      <td>
+                        <strong className="bank-mono">{tx.receiptNo}</strong>
+                        {(tx.transactTime || tx.collectDate) && (
+                          <small>{formatTxTime(tx.transactTime || tx.collectDate)}</small>
+                        )}
+                      </td>
+                      <td><span className="bank-scheme">{tx.scheme}</span></td>
+                      <td>
+                        <strong>{tx.customer}</strong>
+                        <small>{tx.customerDetail}</small>
+                      </td>
+                      <td>
+                        {tx.agentName}
+                        <small>{tx.agentCode}</small>
+                      </td>
+                      <td className={`is-right bank-amount ${withdrawal ? 'is-negative' : ''}`}>
+                        {withdrawal ? '-' : ''}{money(tx.amount)}
+                      </td>
+                      <td>
+                        <span className={`bank-type bank-type-${withdrawal ? 'w' : 'd'}`}>
+                          {withdrawal ? 'WDL' : 'DEP'}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`bank-status bank-status-${status.tone}`} title={tx.cancellationReason ?? undefined}>
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="is-right">
+                        {tx.status === 'P' && (
+                          <button
+                            className="bank-approve"
+                            disabled={approvingId === tx._id}
+                            onClick={() => approve(tx)}
+                            type="button"
+                          >
+                            {approvingId === tx._id ? 'Approving…' : 'Approve'}
+                          </button>
+                        )}
                       </td>
                     </tr>
-                  )}
-                  {txLoading && txState.transactions.length === 0 && (
-                    <tr><td className="bank-empty" colSpan="8">Loading transactions…</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  )
+                })}
+                {!txLoading && !txError && sortedTransactions.length === 0 && (
+                  <tr>
+                    <td className="bank-empty" colSpan="8">
+                      {search
+                        ? 'No transactions match this search.'
+                        : `No transactions recorded for ${isToday ? 'today' : formattedDate}.`}
+                    </td>
+                  </tr>
+                )}
+                {txLoading && sortedTransactions.length === 0 && (
+                  <tr><td className="bank-empty" colSpan="8">Loading transactions…</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="bank-table-footer">
-              <span>
-                Showing {from === 0 ? 0 : `${from}–${to}`} of {txState.total} transactions ({dateLabel})
-                <span className="bank-dot">•</span> Page {page} of {pageCount}
-              </span>
-              <div className="bank-pager">
-                <button disabled={page <= 1} onClick={() => setPage(page - 1)} type="button">Previous</button>
-                <button className="is-current" type="button" aria-current="page">{page}</button>
-                <button disabled={page >= pageCount} onClick={() => setPage(page + 1)} type="button">Next</button>
-              </div>
+          <div className="bank-table-footer">
+            <span>
+              Showing {from === 0 ? 0 : `${from}–${to}`} of {txState.total} transactions ({dateLabel})
+              <span className="bank-dot">•</span> Page {page} of {pageCount}
+            </span>
+            <div className="bank-pager">
+              <button disabled={page <= 1} onClick={() => setPage(page - 1)} type="button">Previous</button>
+              <button className="is-current" type="button" aria-current="page">{page}</button>
+              <button disabled={page >= pageCount} onClick={() => setPage(page + 1)} type="button">Next</button>
             </div>
-          </section>
-        </main>
+          </div>
+        </section>
+      </main>
     </BankShell>
   )
 }

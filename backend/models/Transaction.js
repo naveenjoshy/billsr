@@ -18,7 +18,11 @@ const TransactionSchema = new mongoose.Schema({
     cancellation_reason: { type: String },
     reviewed_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
   },
-  collect_date: { type: Date, required: true, default: Date.now }
+  collect_date: { type: Date, required: true, default: Date.now },
+  transact_time: { type: Date, required: true, default: Date.now },
+  transaction_time: { type: Date, default: Date.now }
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
 export const Transaction = mongoose.model('Transaction', TransactionSchema);

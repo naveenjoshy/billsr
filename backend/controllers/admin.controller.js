@@ -430,7 +430,7 @@ export async function getGlobalAuditLogs(req, res) {
         .populate('updated_by', 'name userID role')
         .lean(),
       Transaction.find(txQuery)
-        .sort({ collect_date: -1 })
+        .sort({ transact_time: -1, collect_date: -1, _id: -1 })
         .limit(150)
         .populate('bank_id', 'bank_name')
         .populate({ path: 'agent_id', populate: { path: 'user_id', select: 'userID name' } })
@@ -572,12 +572,13 @@ export async function getGlobalAuditLogs(req, res) {
         eventType = 'warning'
       }
 
+      const txTimeVal = tx.transact_time || tx.collect_date
       return {
         id: `tx-${tx._id}`,
         description: desc,
-        timestamp: tx.collect_date ? new Date(tx.collect_date).toISOString() : new Date().toISOString(),
-        date: tx.collect_date ? new Date(tx.collect_date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-        time: tx.collect_date ? new Date(tx.collect_date).toLocaleTimeString('en-GB') : '',
+        timestamp: txTimeVal ? new Date(txTimeVal).toISOString() : new Date().toISOString(),
+        date: txTimeVal ? new Date(txTimeVal).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        time: txTimeVal ? new Date(txTimeVal).toLocaleTimeString('en-GB') : '',
         source: 'CBS Transaction Ledger',
         type: eventType,
         user: tx.cancellation_info?.reviewed_by?.name || tx.agent_id?.user_id?.name || 'Agent',

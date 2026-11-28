@@ -44,12 +44,11 @@ export async function getAgentHome(req, res) {
   const now = Date.now()
   const holdingDays = Math.max(agent.cash_holding_days ?? 1, 1)
   const since = new Date(now - holdingDays * DAY_MS)
-  const startOfDay = new Date()
-  startOfDay.setHours(0, 0, 0, 0)
-  const endOfDay = new Date()
-  endOfDay.setHours(23, 59, 59, 999)
+  const nowDate = new Date()
+  const startOfDay = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), 0, 0, 0, 0)
+  const endOfDay = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), 23, 59, 59, 999)
 
-  let [windowRows, todayRows, todayDocs] = await Promise.all([
+  const [windowRows, todayRows, todayDocs] = await Promise.all([
     Transaction.find({
       agent_id: agent._id,
       transact_mode: 'C',
@@ -66,55 +65,12 @@ export async function getAgentHome(req, res) {
       .select('transact_type transact_amt')
       .lean(),
     Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay, $lte: endOfDay } })
-      .sort({ collect_date: -1, _id: -1 })
+      .sort({ transact_time: -1, collect_date: -1, _id: -1 })
       .limit(100)
       .populate('customer_id', 'name shop_name address phone')
       .populate('scheme_id', 'scheme_name')
       .lean(),
   ])
-
-  // If there are existing transactions in DB for this agent but all pre-date today,
-  // align them to today so the agent has realistic live collections in hand
-  if (todayDocs.length === 0) {
-    const pastTxs = await Transaction.find({ agent_id: agent._id, transaction_status: { $ne: 'C' } })
-      .sort({ collect_date: -1, _id: -1 })
-      .limit(10)
-      .lean()
-
-    if (pastTxs.length > 0) {
-      const todayBase = new Date(startOfDay.getTime() + 9 * 60 * 60 * 1000) // 9:00 AM
-      await Promise.all(
-        pastTxs.map((tx, idx) => {
-          const updatedDate = new Date(todayBase.getTime() + (idx * 28 + 12) * 60 * 1000)
-          return Transaction.updateOne({ _id: tx._id }, { $set: { collect_date: updatedDate } })
-        }),
-      )
-
-      ;[windowRows, todayRows, todayDocs] = await Promise.all([
-        Transaction.find({
-          agent_id: agent._id,
-          transact_mode: 'C',
-          transaction_status: { $ne: 'C' },
-          collect_date: { $gte: since },
-        })
-          .select('transact_type transact_amt collect_date')
-          .lean(),
-        Transaction.find({
-          agent_id: agent._id,
-          transaction_status: { $ne: 'C' },
-          collect_date: { $gte: startOfDay, $lte: endOfDay },
-        })
-          .select('transact_type transact_amt')
-          .lean(),
-        Transaction.find({ agent_id: agent._id, collect_date: { $gte: startOfDay, $lte: endOfDay } })
-          .sort({ collect_date: -1, _id: -1 })
-          .limit(100)
-          .populate('customer_id', 'name shop_name address phone')
-          .populate('scheme_id', 'scheme_name')
-          .lean(),
-      ])
-    }
-  }
 
   const held = Math.max(sumBy(windowRows, 'D') - sumBy(windowRows, 'W'), 0)
   const limit = num(agent.cash_holding_limit)
@@ -137,7 +93,7 @@ export async function getAgentHome(req, res) {
   const customerIds = assignedCustomers.map((c) => c._id)
   const [customerSchemes, latestTxs] = await Promise.all([
     CustomerScheme.find({ customer_id: { $in: customerIds } }).populate('scheme_id').lean(),
-    Transaction.find({ customer_id: { $in: customerIds } }).sort({ collect_date: -1, _id: -1 }).lean(),
+    Transaction.find({ customer_id: { $in: customerIds } }).sort({ transact_time: -1, collect_date: -1, _id: -1 }).lean(),
   ])
 
   const custSchemeMap = new Map()
@@ -176,7 +132,9 @@ export async function getAgentHome(req, res) {
             ? 'Cancelled'
             : 'Pending',
     cancellationReason: t.cancellation_info?.cancellation_reason || null,
-    at: t.collect_date,
+    at: t.transact_time || t.collect_date,
+    transactTime: t.transact_time || t.collect_date,
+    transactionTime: t.transaction_time || t.transact_time || t.collect_date,
     isCompleted: t.transaction_status === 'A',
   }))
 
@@ -276,7 +234,7 @@ export async function createAgentTransaction(req, res) {
   }
 
   const lastTx = await Transaction.findOne({ customer_id: customerId })
-    .sort({ collect_date: -1, _id: -1 })
+    .sort({ transact_time: -1, collect_date: -1, _id: -1 })
     .lean()
   let openingBal = 3210.0
   if (lastTx && lastTx.balance_snapshot?.new_balance != null) {
@@ -289,6 +247,9 @@ export async function createAgentTransaction(req, res) {
   }
   const newBalance = type === 'D' ? openingBal + transactAmount : Math.max(openingBal - transactAmount, 0)
   const randomReceipt = `REC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`
+
+  const clientTime = req.body?.transactTime || req.body?.transact_time || req.body?.transactionTime || req.body?.time
+  const txTime = clientTime && !isNaN(new Date(clientTime).getTime()) ? new Date(clientTime) : new Date()
 
   const transaction = await Transaction.create({
     receipt_no: randomReceipt,
@@ -304,7 +265,9 @@ export async function createAgentTransaction(req, res) {
       opening_bal: openingBal,
       new_balance: newBalance,
     },
-    collect_date: new Date(),
+    collect_date: txTime,
+    transact_time: txTime,
+    transaction_time: txTime,
   })
 
   const populated = await Transaction.findById(transaction._id)
@@ -328,7 +291,9 @@ export async function createAgentTransaction(req, res) {
       openingBalance: openingBal,
       newBalance: newBalance,
       status: populated.transaction_status,
-      at: populated.collect_date,
+      at: populated.transact_time || populated.collect_date,
+      transactTime: populated.transact_time || populated.collect_date,
+      transactionTime: populated.transaction_time || populated.transact_time || populated.collect_date,
     },
   })
 }
@@ -410,6 +375,7 @@ export async function onboardCustomer(req, res) {
   const randomReceipt = `REC-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`
   const depositAmt = Number(initialDeposit) || 500.0
 
+  const now = new Date()
   if (targetSchemeId && depositAmt > 0) {
     await Transaction.create({
       receipt_no: randomReceipt,
@@ -425,7 +391,9 @@ export async function onboardCustomer(req, res) {
         opening_bal: 0,
         new_balance: depositAmt,
       },
-      collect_date: new Date(),
+      collect_date: now,
+      transact_time: now,
+      transaction_time: now,
     })
   }
 

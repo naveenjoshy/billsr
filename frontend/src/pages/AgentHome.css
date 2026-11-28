@@ -1507,14 +1507,18 @@
 
 /* --- Status Color Coding for Completed, Pending, and Cancelled --- */
 .agent-vendor-item.status-pending-cancel {
-  background-color: #fffbeb;
-  border: 1px solid #fde68a;
+  background-color: #ffedd5 !important;
+  border: 1px solid #fdba74 !important;
 }
 
 .agent-vendor-item.status-cancelled {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  opacity: 0.88;
+  background-color: #fee2e2 !important;
+  border: 1px solid #fca5a5 !important;
+  opacity: 0.95;
+}
+
+.bg-orange-light {
+  background-color: #fed7aa;
 }
 
 .bg-amber-light {
@@ -1522,7 +1526,7 @@
 }
 
 .bg-red-light {
-  background-color: #fee2e2;
+  background-color: #fecaca;
 }
 
 .name-cancelled {
@@ -1535,10 +1539,23 @@
   text-decoration: line-through;
 }
 
+.text-orange {
+  color: #ea580c !important;
+}
+
 .tag-pending-cancel {
-  background-color: #fef3c7;
-  color: #b45309;
-  border: 1px solid #fde68a;
+  background-color: #ffedd5;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.tag-cancelled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
   padding: 1px 6px;
   border-radius: 2px;
   font-weight: 700;
@@ -1817,14 +1834,19 @@
 /* Dark Theme Adaptations */
 [data-theme='dark'] .agent-vendor-item.status-pending-cancel,
 .dark .agent-vendor-item.status-pending-cancel {
-  background-color: rgba(217, 119, 6, 0.12);
-  border-color: rgba(245, 158, 11, 0.3);
+  background-color: rgba(249, 115, 22, 0.22) !important;
+  border-color: rgba(251, 146, 60, 0.45) !important;
 }
 
 [data-theme='dark'] .agent-vendor-item.status-cancelled,
 .dark .agent-vendor-item.status-cancelled {
-  background-color: rgba(220, 38, 38, 0.12);
-  border-color: rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(248, 113, 113, 0.45) !important;
+}
+
+[data-theme='dark'] .bg-orange-light,
+.dark .bg-orange-light {
+  background-color: rgba(249, 115, 22, 0.3) !important;
 }
 
 [data-theme='dark'] .bg-amber-light,
@@ -1837,11 +1859,23 @@
   background-color: rgba(220, 38, 38, 0.2) !important;
 }
 
+[data-theme='dark'] .text-orange,
+.dark .text-orange {
+  color: #fb923c !important;
+}
+
 [data-theme='dark'] .tag-pending-cancel,
 .dark .tag-pending-cancel {
-  background-color: rgba(217, 119, 6, 0.25);
-  color: #fcd34d;
-  border-color: #d97706;
+  background-color: rgba(249, 115, 22, 0.25) !important;
+  color: #fb923c !important;
+  border-color: rgba(251, 146, 60, 0.5) !important;
+}
+
+[data-theme='dark'] .tag-cancelled,
+.dark .tag-cancelled {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.5) !important;
 }
 
 [data-theme='dark'] .agent-tx-popup-menu,
@@ -1927,4 +1961,264 @@
 [data-theme='dark'] .agent-cancel-form-head strong,
 .dark .agent-cancel-form-head strong {
   color: #f8fafc;
+}
+
+/* --- Receipt & E-Receipt Options on Transaction Details --- */
+.agent-tx-receipt-tools {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agent-tx-receipt-tools-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-tx-receipt-tools-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.agent-tx-receipt-tools-sub {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.agent-tx-receipt-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.agent-btn-duplicate-receipt {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #0284c7;
+  color: #ffffff;
+  border: 1px solid #0369a1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-btn-duplicate-receipt:hover {
+  background: #0369a1;
+}
+
+.agent-btn-toggle-ereceipt {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #059669;
+  color: #ffffff;
+  border: 1px solid #047857;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-btn-toggle-ereceipt:hover {
+  background: #047857;
+}
+
+.agent-btn-toggle-ereceipt.is-active {
+  background: #0f766e;
+  border-color: #115e59;
+}
+
+.agent-ereceipt-panel {
+  padding-top: 10px;
+  border-top: 1px dashed #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agent-ereceipt-phone-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.agent-ereceipt-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.agent-ereceipt-input-row {
+  display: flex;
+  width: 100%;
+}
+
+.agent-ereceipt-input {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.agent-ereceipt-input:focus {
+  border-color: #0284c7;
+}
+
+.agent-ereceipt-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.agent-btn-share-whatsapp {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.agent-btn-share-whatsapp:hover {
+  background: #1ebe5d;
+}
+
+.agent-btn-share-sms {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.agent-btn-share-sms:hover {
+  background: #2563eb;
+}
+
+.agent-ereceipt-preview {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 2px;
+}
+
+.agent-ereceipt-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.agent-btn-copy-preview {
+  background: none;
+  border: none;
+  color: #0284c7;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.agent-ereceipt-preview-text {
+  font-family: monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #334155;
+  white-space: pre-wrap;
+  margin: 0;
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+[data-theme='dark'] .agent-tx-receipt-tools,
+.dark .agent-tx-receipt-tools {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .agent-tx-receipt-tools-title,
+.dark .agent-tx-receipt-tools-title {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-tx-receipt-tools-sub,
+.dark .agent-tx-receipt-tools-sub {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-ereceipt-panel,
+.dark .agent-ereceipt-panel {
+  border-top-color: #334155;
+}
+
+[data-theme='dark'] .agent-ereceipt-label,
+.dark .agent-ereceipt-label {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .agent-ereceipt-input,
+.dark .agent-ereceipt-input {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .agent-ereceipt-preview,
+.dark .agent-ereceipt-preview {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .agent-ereceipt-preview-header,
+.dark .agent-ereceipt-preview-header {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .agent-ereceipt-preview-text,
+.dark .agent-ereceipt-preview-text {
+  color: #e2e8f0;
 }

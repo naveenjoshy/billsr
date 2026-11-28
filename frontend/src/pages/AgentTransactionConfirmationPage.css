@@ -648,6 +648,20 @@
   display: inline-block;
 }
 
+.thermal-duplicate-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #b91c1c;
+  background-color: #fee2e2;
+  border: 1px dashed #ef4444;
+  padding: 2px 6px;
+  margin: 4px auto;
+  display: block;
+  border-radius: 3px;
+  text-align: center;
+}
+
 [data-theme='dark'] .thermal-voucher-mode {
   background: rgba(255, 255, 255, 0.08);
 }

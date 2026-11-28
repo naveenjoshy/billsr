@@ -64,6 +64,7 @@ export default function AgentTransactionConfirmationPage({
   scheme,
   agent,
   user,
+  isDuplicate = false,
   onNavigateHome,
   onNewTransaction,
   onNavigateLedger,
@@ -112,11 +113,14 @@ export default function AgentTransactionConfirmationPage({
 
   // Printable e-Slip message preview
   const messagePreview = useMemo(() => {
+    const heading = isDuplicate
+      ? '*DUPLICATE TRANSACTION RECEIPT*'
+      : '*FIELD TRANSACTION ACKNOWLEDGEMENT*'
     return (
       `*${bankName}*\n` +
       `--------------------------------\n` +
-      `*FIELD TRANSACTION ACKNOWLEDGEMENT*\n` +
-      `*Receipt No:* #${receiptNo}\n` +
+      `${heading}\n` +
+      `*Receipt No:* #${receiptNo}${isDuplicate ? ' (DUPLICATE)' : ''}\n` +
       `*Type:* ${isDeposit ? 'DEPOSIT (CREDIT)' : 'PAYOUT (DEBIT)'}\n` +
       `*Mode:* ${isCash ? 'Cash' : 'Transfer'}\n` +
       `*Amount:* ${money(amountVal)}\n` +
@@ -127,14 +131,20 @@ export default function AgentTransactionConfirmationPage({
       `*Date/Time:* ${txDate}\n` +
       `*Agent:* ${agentName} (${agentId})\n` +
       `--------------------------------\n` +
-      `_Instant CBS committed thermal record via Billsr_`
+      `_${isDuplicate ? 'Duplicate copy generated via Billsr CBS' : 'Instant CBS committed thermal record via Billsr'}_`
     )
-  }, [bankName, receiptNo, isDeposit, isCash, amountVal, customerName, customerAcct, schemeName, openingBal, newBal, txDate, agentName, agentId])
+  }, [bankName, isDuplicate, receiptNo, isDeposit, isCash, amountVal, customerName, customerAcct, schemeName, openingBal, newBal, txDate, agentName, agentId])
 
   // Handler: Print Slip
   const handlePrintSlip = () => {
     window.print()
-    toast.success('Thermal print job dispatched to Bluetooth ESC/POS printer.', 'Printing Slip', 2400)
+    toast.success(
+      isDuplicate
+        ? 'Duplicate thermal slip dispatched to Bluetooth printer.'
+        : 'Thermal print job dispatched to Bluetooth ESC/POS printer.',
+      'Printing Slip',
+      2400,
+    )
   }
 
   // Handler: Share WhatsApp
@@ -215,11 +225,17 @@ export default function AgentTransactionConfirmationPage({
 
             <div className="succ-cbs-pill" data-node-id="4:4522">
               <span className="succ-cbs-dot" />
-              <span>CBS CLEARED &amp; COMMITTED</span>
+              <span>{isDuplicate ? 'DUPLICATE RECEIPT • CBS VERIFIED' : 'CBS CLEARED & COMMITTED'}</span>
             </div>
 
-            <h1 className="succ-title" data-node-id="4:4525">Transaction Successful</h1>
-            <p className="succ-subtitle" data-node-id="4:4528">Core Banking System (CBS) Synchronized Instantly</p>
+            <h1 className="succ-title" data-node-id="4:4525">
+              {isDuplicate ? 'Duplicate Receipt' : 'Transaction Successful'}
+            </h1>
+            <p className="succ-subtitle" data-node-id="4:4528">
+              {isDuplicate
+                ? 'Official Duplicate Copy of CBS Verified Transaction'
+                : 'Core Banking System (CBS) Synchronized Instantly'}
+            </p>
           </section>
 
           {/* 2. Primary Transaction Receipt Slip Card (Figma Node 4:4393) */}
@@ -294,7 +310,7 @@ export default function AgentTransactionConfirmationPage({
                   <img src={succPrinterIcon} alt="" width="18" height="16" />
                 </div>
                 <div className="succ-print-info">
-                  <h3 className="succ-card-title">Print Slip</h3>
+                  <h3 className="succ-card-title">{isDuplicate ? 'Print Duplicate Slip' : 'Print Slip'}</h3>
                   <span className="succ-card-sub">ESC/POS 203 DPI • Ready</span>
                 </div>
               </div>
@@ -304,10 +320,10 @@ export default function AgentTransactionConfirmationPage({
                 type="button"
                 className="succ-print-action-btn"
                 onClick={handlePrintSlip}
-                title="Print 58mm Thermal Slip"
+                title={isDuplicate ? 'Print 58mm Duplicate Thermal Slip' : 'Print 58mm Thermal Slip'}
               >
                 <img src={succPrinterIcon} alt="" width="15" height="15" />
-                <span>Print Slip</span>
+                <span>{isDuplicate ? 'Print Duplicate' : 'Print Slip'}</span>
               </button>
             </div>
 
@@ -319,6 +335,7 @@ export default function AgentTransactionConfirmationPage({
                 <div className="thermal-header">
                   <div className="thermal-bank-name">{bankName}</div>
                   <div className="thermal-system-tag">FIELD TRANS LOG SYSTEM - BILLSR</div>
+                  {isDuplicate && <div className="thermal-duplicate-badge">*** DUPLICATE RECEIPT ***</div>}
                   <div className="thermal-voucher-mode">
                     {isDeposit
                       ? `COLLECTION RECEIPT (${isCash ? 'CASH RECEIVED' : 'TRANSFER RECEIVED'})`
@@ -551,11 +568,11 @@ export default function AgentTransactionConfirmationPage({
             <button
               type="button"
               className="succ-primary-cta"
-              onClick={onNewTransaction || onNavigateHome}
+              onClick={isDuplicate ? onNavigateHome : (onNewTransaction || onNavigateHome)}
               data-node-id="4:4548"
             >
-              <img src={succScanQrIcon} alt="" width="18" height="18" />
-              <span>Next Customer / Scan QR</span>
+              <img src={isDuplicate ? navHomeIcon : succScanQrIcon} alt="" width="18" height="18" />
+              <span>{isDuplicate ? 'Return to Home Dashboard' : 'Next Customer / Scan QR'}</span>
             </button>
 
             <div className="succ-secondary-ctas-row" data-node-id="4:4554">

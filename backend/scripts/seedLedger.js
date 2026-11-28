@@ -328,7 +328,12 @@ async function seed() {
     ]
 
     for (const t of txs) {
-      await Transaction.create({ ...t, bank_id: bank._id })
+      await Transaction.create({
+        ...t,
+        bank_id: bank._id,
+        transact_time: t.collect_date,
+        transaction_time: t.collect_date,
+      })
     }
 
     console.log(`Successfully seeded ${txs.length} transactions for ${bank.bank_name}!`)

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { logoutUser } from '../services/authService'
 import {
   getAgentHome,
@@ -10,7 +10,13 @@ import { useTheme } from '../context/ThemeContext'
 import { useToast } from '../context/ToastContext'
 import CustomerOnboardingPage from './CustomerOnboardingPage'
 import AgentTransactionpage from './AgentTransactionpage'
+import AgentTransactionConfirmationPage from './AgentTransactionConfirmationPage'
 import './AgentHome.css'
+
+import succPrinterIcon from '../assets/agent/succ-printer.svg'
+import succDigitalReceiptIcon from '../assets/agent/succ-digital-receipt.svg'
+import txShareWhatsappIcon from '../assets/agent/tx-share-whatsapp.svg'
+import txShareSmsIcon from '../assets/agent/tx-share-sms.svg'
 
 import cashLimitIcon from '../assets/agent/cash-limit.svg'
 import collectedIcon from '../assets/agent/collected.svg'
@@ -64,6 +70,9 @@ export default function AgentHome({ user, onLoggedOut }) {
 
   // Transaction Details & Cancellation Action Popup Menu State
   const [selectedTx, setSelectedTx] = useState(null)
+  const [duplicateReceiptTx, setDuplicateReceiptTx] = useState(null)
+  const [ereceiptPhone, setEreceiptPhone] = useState('')
+  const [showEreceiptSection, setShowEreceiptSection] = useState(false)
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
@@ -305,6 +314,23 @@ export default function AgentHome({ user, onLoggedOut }) {
     }
   }
 
+  const hold = homeData?.cashHold
+  const today = homeData?.today
+  const queue = homeData?.queue
+  const todayTransactions = useMemo(() => {
+    const list = homeData?.todayTransactions || queue?.items || []
+    return [...list].sort((a, b) => {
+      const timeA = a.transactTime || a.at ? new Date(a.transactTime || a.at).getTime() : 0
+      const timeB = b.transactTime || b.at ? new Date(b.transactTime || b.at).getTime() : 0
+      if (timeB !== timeA) return timeB - timeA
+      return String(b._id || '').localeCompare(String(a._id || ''))
+    })
+  }, [homeData?.todayTransactions, queue?.items])
+  const allStops = queue?.allStops || []
+  const unvisitedStops = allStops.filter((s) => !s.isCompleted)
+  const utilization = hold ? Number(hold.utilization || 0) : 0
+  const barWidth = Math.min(Math.max(utilization, 0), 100)
+
   const handleAction = (actionKey) => {
     if (actionKey === 'transact' || actionKey === 'deposit') {
       setTransactType('D')
@@ -329,10 +355,11 @@ export default function AgentHome({ user, onLoggedOut }) {
       setActiveTab('transact')
       toast.info('QR Code terminal active: select customer to complete collection', 'Scanner Ready', 2200)
     } else if (actionKey === 'print') {
-      const latestTx = homeData?.todayTransactions?.[0] || homeData?.queue?.items?.[0]
+      const latestTx = todayTransactions[0]
       if (latestTx) {
+        setDuplicateReceiptTx(latestTx)
         toast.info(
-          `Thermal Slip #${latestTx.receiptNo} generated for ${latestTx.customer} (${money(latestTx.amount)})`,
+          `Thermal Slip #${latestTx.receiptNo} opened for reprint.`,
           'Receipt Printer',
           2600,
         )
@@ -351,14 +378,117 @@ export default function AgentHome({ user, onLoggedOut }) {
     }
   }
 
-  const hold = homeData?.cashHold
-  const today = homeData?.today
-  const queue = homeData?.queue
-  const todayTransactions = homeData?.todayTransactions || queue?.items || []
-  const allStops = queue?.allStops || []
-  const unvisitedStops = allStops.filter((s) => !s.isCompleted)
-  const utilization = hold ? Number(hold.utilization || 0) : 0
-  const barWidth = Math.min(Math.max(utilization, 0), 100)
+  const selectedTxMessagePreview = useMemo(() => {
+    if (!selectedTx) return ''
+    const bName = homeData?.agent?.bankName || 'Devikulam Taluk Agrl & Rural Development Bank'
+    const isDeposit = selectedTx.type === 'D'
+    const isCash = selectedTx.mode === 'C'
+    const txDate = selectedTx.at
+      ? new Date(selectedTx.at)
+          .toLocaleString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          })
+          .toUpperCase()
+      : 'TODAY'
+    const customerAcct = `#1042-${String(selectedTx.customerId || '9981').slice(-4)}-01`
+    const aName = homeData?.agent?.name || user?.name || 'Collection Agent'
+    const aId = homeData?.agent?.userID || user?.userID || 'AGT-1021'
+
+    return (
+      `*${bName}*\n` +
+      `--------------------------------\n` +
+      `*DUPLICATE TRANSACTION RECEIPT*\n` +
+      `*Receipt No:* #${selectedTx.receiptNo} (DUPLICATE)\n` +
+      `*Type:* ${isDeposit ? 'DEPOSIT (CREDIT)' : 'PAYOUT (DEBIT)'}\n` +
+      `*Mode:* ${isCash ? 'Cash' : 'Transfer'}\n` +
+      `*Amount:* ${money(selectedTx.amount)}\n` +
+      `*Customer:* ${selectedTx.customer} (${customerAcct})\n` +
+      `*Scheme:* ${selectedTx.scheme}\n` +
+      `*Date/Time:* ${txDate}\n` +
+      `*Agent:* ${aName} (${aId})\n` +
+      `--------------------------------\n` +
+      `_Duplicate copy generated via Billsr CBS_`
+    )
+  }, [selectedTx, homeData?.agent, user])
+
+  const handleModalShareWhatsapp = () => {
+    if (!selectedTx) return
+    const cleanPhone = ereceiptPhone ? ereceiptPhone.replace(/[^0-9]/g, '') : ''
+    const url = cleanPhone
+      ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(selectedTxMessagePreview)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(selectedTxMessagePreview)}`
+    window.open(url, '_blank')
+    toast.info(
+      `Sharing duplicate receipt via WhatsApp to ${ereceiptPhone || 'customer'}...`,
+      'WhatsApp Dispatch',
+      2200,
+    )
+  }
+
+  const handleModalSendSms = () => {
+    if (!selectedTx) return
+    const bName = homeData?.agent?.bankName || 'Devikulam Bank'
+    const cleanPhone = ereceiptPhone ? ereceiptPhone.replace(/[^0-9+]/g, '') : ''
+    const shortSms = `${bName} [DUPLICATE]: ${selectedTx.type === 'D' ? 'Deposit' : 'Payout'} of ${money(selectedTx.amount)} confirmed. Slip #${selectedTx.receiptNo}. Customer: ${selectedTx.customer}.`
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shortSms)
+      toast.success('Duplicate e-Slip SMS text copied to clipboard.', 'SMS Ready', 2000)
+    }
+    if (cleanPhone) {
+      window.location.href = `sms:${cleanPhone}?body=${encodeURIComponent(shortSms)}`
+    }
+  }
+
+  const handleModalPrintDuplicate = () => {
+    if (!selectedTx) return
+    setDuplicateReceiptTx(selectedTx)
+  }
+
+  if (duplicateReceiptTx) {
+    const cust = homeData?.customers?.find((c) => c._id === duplicateReceiptTx.customerId)
+    return (
+      <AgentTransactionConfirmationPage
+        transaction={duplicateReceiptTx}
+        customer={
+          cust || {
+            name: duplicateReceiptTx.customer,
+            phone: duplicateReceiptTx.phone,
+            shopName: duplicateReceiptTx.shopName,
+            address: duplicateReceiptTx.address,
+            accountNo: `#1042-${String(duplicateReceiptTx.customerId || '9981').slice(-4)}-01`,
+          }
+        }
+        scheme={{ name: duplicateReceiptTx.scheme || 'MBS Daily Pigmy' }}
+        agent={homeData?.agent}
+        user={user}
+        isDuplicate={true}
+        onNavigateHome={() => {
+          setDuplicateReceiptTx(null)
+          setSelectedTx(null)
+        }}
+        onNewTransaction={() => {
+          setDuplicateReceiptTx(null)
+          setSelectedTx(null)
+          setActiveTab('transact')
+        }}
+        onNavigateOnboard={() => {
+          setDuplicateReceiptTx(null)
+          setSelectedTx(null)
+          setActiveTab('onboard')
+        }}
+        onNavigateLedger={() => {
+          setDuplicateReceiptTx(null)
+          setSelectedTx(null)
+          reloadHomeData()
+        }}
+      />
+    )
+  }
 
   if (activeTab === 'onboard') {
     return (
@@ -649,7 +779,7 @@ export default function AgentHome({ user, onLoggedOut }) {
                     </div>
                     <p className="agent-card-subtitle" data-node-id="4:1826">
                       {sectionView === 'transactions'
-                        ? `Last entry on first basis • ${todayTransactions.length} transaction${todayTransactions.length === 1 ? '' : 's'}`
+                        ? `Today's collections • ${todayTransactions.length} transaction${todayTransactions.length === 1 ? '' : 's'}`
                         : `Route #CM-04 • ${unvisitedStops.length} stops remaining`}
                     </p>
                   </div>
@@ -713,7 +843,7 @@ export default function AgentHome({ user, onLoggedOut }) {
                             : 'status-completed'
 
                         const iconBg = isPendingCancel
-                          ? 'bg-amber-light'
+                          ? 'bg-orange-light'
                           : isCancelled
                             ? 'bg-red-light'
                             : isDeposit
@@ -738,7 +868,7 @@ export default function AgentHome({ user, onLoggedOut }) {
                         const amountClass = isCancelled
                           ? 'text-cancelled'
                           : isPendingCancel
-                            ? 'text-amber'
+                            ? 'text-orange'
                             : !isDeposit
                               ? 'text-rust'
                               : 'text-emerald'
@@ -749,6 +879,9 @@ export default function AgentHome({ user, onLoggedOut }) {
                             className={`agent-vendor-item is-clickable ${itemRowClass}`}
                             onClick={() => {
                               setSelectedTx(item)
+                              const cust = homeData?.customers?.find((c) => c._id === item.customerId)
+                              setEreceiptPhone(item.phone || cust?.phone || '+91 98765-43210')
+                              setShowEreceiptSection(false)
                               setShowCancelForm(false)
                               setCancelReason('')
                             }}
@@ -796,8 +929,8 @@ export default function AgentHome({ user, onLoggedOut }) {
                                     {isPendingCancel ? 'Pending' : isCancelled ? 'Cancelled' : item.status}
                                   </span>
                                 )}
-                                {item.at && (
-                                  <span className="agent-vendor-time">{formatTime(item.at)}</span>
+                                {(item.transactTime || item.at) && (
+                                  <span className="agent-vendor-time">{formatTime(item.transactTime || item.at)}</span>
                                 )}
                               </div>
                             </div>
@@ -1067,6 +1200,100 @@ export default function AgentHome({ user, onLoggedOut }) {
                 <span className="agent-tx-value mono-val">#{selectedTx.receiptNo}</span>
               </div>
             </div>
+
+            {/* Receipt & E-Receipt Options */}
+            {selectedTx.statusCode !== 'C' && selectedTx.status !== 'Cancelled' && (
+              <div className="agent-tx-receipt-tools">
+                <div className="agent-tx-receipt-tools-head">
+                  <span className="agent-tx-receipt-tools-title">Receipt &amp; Dispatch Options</span>
+                  <span className="agent-tx-receipt-tools-sub">Re-issue duplicate slip or send instant digital receipt</span>
+                </div>
+
+                <div className="agent-tx-receipt-btn-group">
+                  <button
+                    type="button"
+                    className="agent-btn-duplicate-receipt"
+                    onClick={handleModalPrintDuplicate}
+                    title="Generate and view official duplicate thermal slip"
+                  >
+                    <img src={succPrinterIcon} alt="" width="15" height="15" />
+                    <span>Generate Duplicate Receipt</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`agent-btn-toggle-ereceipt ${showEreceiptSection ? 'is-active' : ''}`}
+                    onClick={() => setShowEreceiptSection((prev) => !prev)}
+                    title="Send digital receipt via WhatsApp or SMS"
+                  >
+                    <img src={succDigitalReceiptIcon} alt="" width="15" height="15" />
+                    <span>{showEreceiptSection ? 'Hide E-Receipt' : 'Send E-Receipt'}</span>
+                  </button>
+                </div>
+
+                {/* E-Receipt Inline Dispatch Panel */}
+                {showEreceiptSection && (
+                  <div className="agent-ereceipt-panel">
+                    <div className="agent-ereceipt-phone-box">
+                      <label className="agent-ereceipt-label" htmlFor="ereceipt-phone-input">
+                        Recipient Mobile Number:
+                      </label>
+                      <div className="agent-ereceipt-input-row">
+                        <input
+                          id="ereceipt-phone-input"
+                          type="tel"
+                          className="agent-ereceipt-input"
+                          value={ereceiptPhone}
+                          onChange={(e) => setEreceiptPhone(e.target.value)}
+                          placeholder="+91 98765-43210"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="agent-ereceipt-actions">
+                      <button
+                        type="button"
+                        className="agent-btn-share-whatsapp"
+                        onClick={handleModalShareWhatsapp}
+                        title="Dispatch digital receipt to customer on WhatsApp"
+                      >
+                        <img src={txShareWhatsappIcon} alt="" width="15" height="15" />
+                        <span>Send WhatsApp</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="agent-btn-share-sms"
+                        onClick={handleModalSendSms}
+                        title="Send SMS text e-Slip to recipient"
+                      >
+                        <img src={txShareSmsIcon} alt="" width="15" height="15" />
+                        <span>Send SMS</span>
+                      </button>
+                    </div>
+
+                    {/* Live E-Receipt Message Preview */}
+                    <div className="agent-ereceipt-preview">
+                      <div className="agent-ereceipt-preview-header">
+                        <span>DIGITAL E-RECEIPT PREVIEW</span>
+                        <button
+                          type="button"
+                          className="agent-btn-copy-preview"
+                          onClick={() => {
+                            if (navigator.clipboard) {
+                              navigator.clipboard.writeText(selectedTxMessagePreview)
+                              toast.success('E-Receipt message copied to clipboard.', 'Copied', 1800)
+                            }
+                          }}
+                        >
+                          Copy Text
+                        </button>
+                      </div>
+                      <pre className="agent-ereceipt-preview-text">{selectedTxMessagePreview}</pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* If Cancellation Notice applies */}
             {(selectedTx.statusCode === 'P' || selectedTx.status === 'Pending Cancellation') && (

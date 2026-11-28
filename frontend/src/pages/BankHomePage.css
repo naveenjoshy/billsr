@@ -230,8 +230,146 @@
 .bank-main {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   padding: 16px 16px 28px;
+}
+
+/* Operational Date Selector Bar on top of Cards */
+.bank-date-bar {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.bank-date-bar-left {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bank-date-picker-wrap {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  display: flex;
+  gap: 8px;
+  padding: 5px 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.bank-date-picker-wrap:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.bank-date-picker-label {
+  align-items: center;
+  color: #475569;
+  display: flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bank-date-picker-input {
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.bank-date-today-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #334155;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  transition: all 0.15s ease;
+}
+
+.bank-date-today-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.bank-date-today-btn.is-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.25);
+}
+
+.bank-date-status-tag {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.bank-date-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.bank-date-status-dot.is-live {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.bank-date-status-dot.is-archived {
+  background: #94a3b8;
+}
+
+.bank-date-status-label {
+  background: #f1f5f9;
+  border-radius: 4px;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+
+.bank-date-display-text {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.bank-date-display-text strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.bank-date-bar-right {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.bank-date-refresh-btn {
+  padding: 6px 14px;
+  font-size: 12px;
 }
 
 .bank-kpis {
@@ -506,6 +644,65 @@
   background: #1e293b;
   border-color: #475569;
   color: #ffffff;
+}
+
+[data-theme='dark'] .bank-date-bar,
+.dark .bank-date-bar {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme='dark'] .bank-date-picker-wrap,
+.dark .bank-date-picker-wrap {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .bank-date-picker-label,
+.dark .bank-date-picker-label {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-date-picker-input,
+.dark .bank-date-picker-input {
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+[data-theme='dark'] .bank-date-today-btn,
+.dark .bank-date-today-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .bank-date-today-btn:hover,
+.dark .bank-date-today-btn:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .bank-date-today-btn.is-active,
+.dark .bank-date-today-btn.is-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+[data-theme='dark'] .bank-date-status-label,
+.dark .bank-date-status-label {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-date-display-text,
+.dark .bank-date-display-text {
+  color: #94a3b8;
+}
+
+[data-theme='dark'] .bank-date-display-text strong,
+.dark .bank-date-display-text strong {
+  color: #f1f5f9;
 }
 
 .bank-risk-row {

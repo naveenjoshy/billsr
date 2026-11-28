@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { getAgentHome, createAgentTransaction } from '../services/agentService'
 import { useToast } from '../context/ToastContext'
 import AgentTransactionConfirmationPage from './AgentTransactionConfirmationPage'
@@ -13,7 +13,6 @@ import txTransferIcon from '../assets/agent/tx-transfer-icon.svg'
 import txStreakIcon from '../assets/agent/tx-streak-icon.svg'
 import txAmountIcon from '../assets/agent/tx-amount-icon.svg'
 import txProjectedIcon from '../assets/agent/tx-projected-icon.svg'
-import txTallyIcon from '../assets/agent/tx-tally-icon.svg'
 import txCollectPrintIcon from '../assets/agent/tx-collect-print.svg'
 
 // Bottom Nav Icons
@@ -32,11 +31,6 @@ const moneyShort = (val) =>
   `₹${Number(val || 0).toLocaleString('en-IN', {
     maximumFractionDigits: 0,
   })}`
-
-const DENOMINATION_ROWS = [
-  [500, 200, 100],
-  [50, 20, 10],
-]
 
 export default function AgentTransactionpage({
   user,
@@ -60,16 +54,6 @@ export default function AgentTransactionpage({
   const [transactType, setTransactType] = useState(initialType || 'D') // 'D' = Deposit, 'W' = Withdraw
   const [transactMode, setTransactMode] = useState(initialMode || 'C') // 'C' = Cash, 'T' = Transfer
   const [amount, setAmount] = useState('1000')
-
-  // Interactive Denominations state
-  const [denominations, setDenominations] = useState({
-    500: 2,
-    200: 0,
-    100: 0,
-    50: 0,
-    20: 0,
-    10: 0,
-  })
 
   // Submission & Confirmation State
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -143,68 +127,11 @@ export default function AgentTransactionpage({
     }
   }
 
-  // Calculate denominations auto-split when amount changes
-  const autoSplitDenominations = useCallback((totalAmount) => {
-    let rem = Math.max(Math.floor(Number(totalAmount) || 0), 0)
-    const counts = { 500: 0, 200: 0, 100: 0, 50: 0, 20: 0, 10: 0 }
-
-    counts[500] = Math.floor(rem / 500)
-    rem %= 500
-
-    counts[200] = Math.floor(rem / 200)
-    rem %= 200
-
-    counts[100] = Math.floor(rem / 100)
-    rem %= 100
-
-    counts[50] = Math.floor(rem / 50)
-    rem %= 50
-
-    counts[20] = Math.floor(rem / 20)
-    rem %= 20
-
-    counts[10] = Math.floor(rem / 10)
-
-    setDenominations(counts)
-  }, [])
-
   // Handle Amount Input Change
   const handleAmountChange = (newVal) => {
     setAmount(newVal)
     setCompletedTx(null)
-    const numeric = parseFloat(newVal)
-    if (!isNaN(numeric) && numeric > 0) {
-      autoSplitDenominations(numeric)
-    }
   }
-
-  // Denomination +/- Buttons
-  const adjustDenomination = (denom, delta) => {
-    setDenominations((prev) => {
-      const current = prev[denom] || 0
-      const updated = Math.max(current + delta, 0)
-      const nextCounts = { ...prev, [denom]: updated }
-
-      // Compute total from new denomination counts and update amount
-      const newTotal = Object.entries(nextCounts).reduce(
-        (sum, [d, c]) => sum + Number(d) * Number(c),
-        0,
-      )
-      if (newTotal > 0) {
-        setAmount(newTotal.toString())
-      }
-      return nextCounts
-    })
-    setCompletedTx(null)
-  }
-
-  // Denominations Subtotal
-  const denominationTotal = useMemo(() => {
-    return Object.entries(denominations).reduce(
-      (sum, [d, c]) => sum + Number(d) * Number(c),
-      0,
-    )
-  }, [denominations])
 
   // Calculation of Live & Projected Balance
   const currentLedgerBalance = currentCustomer?.balance ?? 3210.0
@@ -301,6 +228,7 @@ export default function AgentTransactionpage({
         amount: parsedAmount,
         type: effectiveTransactType,
         mode: transactMode,
+        transactTime: new Date().toISOString(),
       })
 
       const tx = res.transaction
@@ -355,7 +283,6 @@ export default function AgentTransactionpage({
         onNewTransaction={() => {
           setCompletedTx(null)
           setAmount('1000')
-          autoSplitDenominations(1000)
         }}
       />
     )
@@ -652,58 +579,6 @@ export default function AgentTransactionpage({
                   >
                     Clear
                   </button>
-                </div>
-
-                {/* Interactive Denomination Tally (Figma Node 4:5010) */}
-                <div className="denomination-tally-section">
-                  <div className="tally-head">
-                    <div className="tally-title-wrap">
-                      <img src={txTallyIcon} alt="" width="14" height="14" />
-                      <h3>Denomination Tally</h3>
-                    </div>
-                    <span className="tally-status">
-                      Tally: <strong>{moneyShort(denominationTotal)}</strong>
-                      {Math.abs(denominationTotal - parsedAmount) > 0.01 && (
-                        <span className="tally-mismatch-dot" title="Tally differs from entered amount" />
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="denominations-container">
-                    {DENOMINATION_ROWS.map((row, rowIdx) => (
-                      <div key={rowIdx} className="denominations-row">
-                        {row.map((denom) => {
-                          const count = denominations[denom] || 0
-                          return (
-                            <div key={denom} className="denom-chip">
-                              <span className="denom-label">₹{denom}</span>
-                              <span className="denom-count">× {count}</span>
-                              <div className="denom-actions">
-                                <button
-                                  type="button"
-                                  className="denom-btn minus"
-                                  onClick={() => adjustDenomination(denom, -1)}
-                                  disabled={count === 0 || isSubmitting}
-                                  aria-label={`Decrease ₹${denom} count`}
-                                >
-                                  -
-                                </button>
-                                <button
-                                  type="button"
-                                  className="denom-btn plus"
-                                  onClick={() => adjustDenomination(denom, 1)}
-                                  disabled={isSubmitting}
-                                  aria-label={`Increase ₹${denom} count`}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </section>
 
